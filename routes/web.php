@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Log;
 
 // PUBLIC STOREFRONT
 Route::get('/', function () {
@@ -19,3 +20,5 @@ Route::middleware(['auth', 'role:admin'])
         })->name('dashboard');
 
     });
+
+require __DIR__.'/auth.php';

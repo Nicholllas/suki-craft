@@ -1,31 +1,73 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@extends('layouts.admin')
 
-    <title>Admin Dashboard - Suki Craft</title>
-</head>
-<body>
+@section('title', 'Dashboard')
 
-    <h1>Admin Dashboard</h1>
+@section('page-title', 'Dashboard')
 
-    <p>
-        Welcome, {{ auth()->user()->name }}
-    </p>
+@section('content')
 
-    <p>
-        Role:
-        {{ auth()->user()->getRoleNames()->implode(', ') }}
-    </p>
+    <div>
 
-    <form method="POST" action="{{ route('logout') }}">
-        @csrf
+        <div class="mb-6">
 
-        <button type="submit">
-            Logout
-        </button>
-    </form>
+            <h2 class="text-2xl font-bold">
+                Dashboard
+            </h2>
 
-</body>
-</html>
+            <p class="mt-1 text-sm text-gray-500">
+                Selamat datang kembali di Suki Craft Admin.
+            </p>
+
+        </div>
+
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+            <div class="rounded-xl border bg-white p-6">
+                <p class="text-sm text-gray-500">
+                    Products
+                </p>
+
+                <p class="mt-2 text-2xl font-bold">
+                    -
+                </p>
+            </div>
+
+
+            <div class="rounded-xl border bg-white p-6">
+                <p class="text-sm text-gray-500">
+                    Orders
+                </p>
+
+                <p class="mt-2 text-2xl font-bold">
+                    -
+                </p>
+            </div>
+
+
+            <div class="rounded-xl border bg-white p-6">
+                <p class="text-sm text-gray-500">
+                    Customers
+                </p>
+
+                <p class="mt-2 text-2xl font-bold">
+                    -
+                </p>
+            </div>
+
+
+            <div class="rounded-xl border bg-white p-6">
+                <p class="text-sm text-gray-500">
+                    Revenue
+                </p>
+
+                <p class="mt-2 text-2xl font-bold">
+                    -
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+@endsection
