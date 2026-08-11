@@ -1,7 +1,21 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
+// PUBLIC STOREFRONT
 Route::get('/', function () {
-    return view('welcome');
-});
+    return view('store.home');
+})->name('home');
+
+// ADMIN
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+
+        Route::get('/dashboard', function () {
+            return view('admin.dashboard');
+        })->name('dashboard');
+
+    });
