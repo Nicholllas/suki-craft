@@ -2,7 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Enums\AdminRole;
+use App\Models\Admin;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -10,16 +11,16 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::updateOrCreate(
+        Admin::updateOrCreate(
             [
-                'email' => 'admin@sukicraft.test',
+                'email' => env('ADMIN_DEFAULT_EMAIL', 'admin@sukicraft.test'),
             ],
             [
-                'name' => 'Administrator',
-                'password' => Hash::make('password'),
+                'is_active' => true,
+                'name' => env('ADMIN_DEFAULT_NAME', 'Super Administrator'),
+                'password' => Hash::make(env('ADMIN_DEFAULT_PASSWORD', 'password')),
+                'role' => AdminRole::SUPER_ADMIN,
             ]
         );
-
-        $admin->assignRole('admin');
     }
 }

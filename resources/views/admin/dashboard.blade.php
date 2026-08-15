@@ -1,73 +1,31 @@
 @extends('layouts.admin')
 
 @section('title', 'Dashboard')
-
 @section('page-title', 'Dashboard')
 
 @section('content')
-
-    <div>
-
-        <div class="mb-6">
-
-            <h2 class="text-2xl font-bold">
-                Dashboard
-            </h2>
-
-            <p class="mt-1 text-sm text-gray-500">
-                Selamat datang kembali di Suki Craft Admin.
-            </p>
-
+    <div x-data="{ periodOpen: false, period: 'Minggu ini' }">
+        <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+            <div><p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Ringkasan toko</p><h1 class="mt-2 font-serif text-3xl font-semibold tracking-tight text-stone-800 sm:text-4xl">Selamat datang, {{ str(auth('admin')->user()->name)->before(' ') }} ✿</h1><p class="mt-2 text-sm text-stone-500">Pantau ritme toko dan semua momen spesial pelanggan hari ini.</p></div>
+            <div class="relative" @click.outside="periodOpen = false"><button @click="periodOpen = !periodOpen" class="flex h-11 items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 text-sm font-medium text-stone-600 shadow-sm transition hover:border-rose-200"><svg class="h-4 w-4 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3.75v3m10.5-3v3M4.5 9.75h15m-13.5-4.5h12a1.5 1.5 0 0 1 1.5 1.5v11.5a1.5 1.5 0 0 1-1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5V6.75A1.5 1.5 0 0 1 6 5.25Z" /></svg><span x-text="period"></span><svg class="h-3.5 w-3.5 text-stone-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 7.22a.75.75 0 0 1 1.06 0L10 10.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg></button><div x-cloak x-show="periodOpen" x-transition.origin.top.right class="absolute right-0 z-10 mt-2 w-40 rounded-xl border border-stone-100 bg-white p-1.5 shadow-xl shadow-stone-900/10"><template x-for="item in ['Hari ini', 'Minggu ini', 'Bulan ini']" :key="item"><button @click="period = item; periodOpen = false" class="w-full rounded-lg px-3 py-2 text-left text-sm text-stone-600 hover:bg-rose-50 hover:text-rose-600" x-text="item"></button></template></div></div>
         </div>
 
-
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
-            <div class="rounded-xl border bg-white p-6">
-                <p class="text-sm text-gray-500">
-                    Products
-                </p>
-
-                <p class="mt-2 text-2xl font-bold">
-                    -
-                </p>
-            </div>
-
-
-            <div class="rounded-xl border bg-white p-6">
-                <p class="text-sm text-gray-500">
-                    Orders
-                </p>
-
-                <p class="mt-2 text-2xl font-bold">
-                    -
-                </p>
-            </div>
-
-
-            <div class="rounded-xl border bg-white p-6">
-                <p class="text-sm text-gray-500">
-                    Customers
-                </p>
-
-                <p class="mt-2 text-2xl font-bold">
-                    -
-                </p>
-            </div>
-
-
-            <div class="rounded-xl border bg-white p-6">
-                <p class="text-sm text-gray-500">
-                    Revenue
-                </p>
-
-                <p class="mt-2 text-2xl font-bold">
-                    -
-                </p>
-            </div>
-
+        <div class="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <x-stat-widget label="Pendapatan hari ini" value="Rp0" detail="Belum ada transaksi hari ini" tone="rose"><x-slot:icon><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m3-9.5c-.45-1.16-1.56-1.9-3-1.9-1.82 0-3.25 1.17-3.25 2.7 0 3.7 6.5 1.85 6.5 5.55 0 1.53-1.43 2.7-3.25 2.7-1.44 0-2.55-.74-3-1.9" /></svg></x-slot:icon></x-stat-widget>
+            <x-stat-widget label="Pendapatan bulan ini" value="Rp0" detail="Belum ada transaksi bulan ini" tone="emerald"><x-slot:icon><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5h15M6.75 16.5V12m5.25 4.5V7.5m5.25 9V10.5" /></svg></x-slot:icon></x-stat-widget>
+            <x-stat-widget label="Pesanan baru" value="0" detail="Menunggu masuk dari pelanggan" tone="sky"><x-slot:icon><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 4.5h10.5v15h-10.5zM9 9h6m-6 3h6m-6 3h3" /></svg></x-slot:icon></x-stat-widget>
+            <x-stat-widget label="Menunggu pembayaran" value="0" detail="Perlu konfirmasi admin" tone="amber"><x-slot:icon><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.25" /><path stroke-linecap="round" d="M12 7.5V12l3 1.5" /></svg></x-slot:icon></x-stat-widget>
+            <x-stat-widget label="Stok produk menipis" :value="$lowStockProducts->count()" :detail="$activeProducts . ' produk aktif dari ' . $productCount" tone="violet"><x-slot:icon><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v4.5m0 3v.01M4.5 19.5h15L12 4.5 4.5 19.5Z" /></svg></x-slot:icon></x-stat-widget>
         </div>
 
+        <div class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(19rem,0.85fr)]">
+            <x-card padding="p-5 sm:p-6"><div class="flex items-start justify-between gap-4"><div><h2 class="font-serif text-xl font-semibold text-stone-800">Tren penjualan</h2><p class="mt-1 text-sm text-stone-500">Pendapatan harian dalam periode yang dipilih.</p></div><span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Belum ada data</span></div><div class="mt-8 flex h-52 items-end gap-2 sm:gap-4"><div class="flex h-full flex-1 flex-col justify-between text-[10px] text-stone-400"><span>Rp1jt</span><span>Rp750rb</span><span>Rp500rb</span><span>Rp250rb</span><span>Rp0</span></div><div class="relative flex h-full flex-[8] items-end gap-2 border-b border-l border-dashed border-stone-200 px-3 pt-3 sm:gap-3"><div class="absolute inset-x-0 top-1/4 border-t border-dashed border-stone-100"></div><div class="absolute inset-x-0 top-2/4 border-t border-dashed border-stone-100"></div><div class="absolute inset-x-0 top-3/4 border-t border-dashed border-stone-100"></div>@foreach(['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'] as $day)<div class="relative z-10 flex flex-1 flex-col items-center justify-end gap-2"><div class="w-full rounded-t-lg bg-rose-100" style="height: 6%"></div><span class="text-[10px] text-stone-400">{{ $day }}</span></div>@endforeach</div></div></x-card>
+            <x-card padding="p-5 sm:p-6"><h2 class="font-serif text-xl font-semibold text-stone-800">Status pesanan</h2><p class="mt-1 text-sm text-stone-500">Distribusi pesanan saat ini.</p><div class="mt-7 flex items-center gap-6"><div class="grid h-32 w-32 shrink-0 place-items-center rounded-full" style="background: conic-gradient(#fce7f3 0 20%, #e0f2fe 20% 40%, #ede9fe 40% 60%, #d1fae5 60% 80%, #fee2e2 80% 100%)"><div class="grid h-20 w-20 place-items-center rounded-full bg-white text-center"><span class="text-2xl font-semibold text-stone-800">0</span><span class="text-[10px] text-stone-400">pesanan</span></div></div><div class="space-y-2 text-xs"><p class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-amber-200"></span>Pending <b class="ml-auto">0</b></p><p class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-sky-200"></span>Diproses <b class="ml-auto">0</b></p><p class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-violet-200"></span>Dikirim <b class="ml-auto">0</b></p><p class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-200"></span>Selesai <b class="ml-auto">0</b></p></div></div></x-card>
+        </div>
+
+        <div class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(19rem,0.85fr)]">
+            <div class="min-w-0"><div class="mb-4 flex items-center justify-between"><div><h2 class="font-serif text-xl font-semibold text-stone-800">Pesanan terbaru</h2><p class="mt-1 text-sm text-stone-500">Pesanan yang baru masuk ke toko.</p></div><a href="{{ route('admin.orders.index') }}" class="shrink-0 text-sm font-semibold text-rose-600 hover:text-rose-700">Lihat semua →</a></div><x-data-table :headers="['Pesanan', 'Pelanggan', 'Total', 'Status', 'Aksi']" :is-empty="true" empty-title="Belum ada pesanan masuk" empty-description="Pesanan dari pelanggan akan ditampilkan di sini."></x-data-table></div>
+            <div class="min-w-0"><div class="mb-4 flex items-center justify-between"><div><h2 class="font-serif text-xl font-semibold text-stone-800">Perlu perhatian</h2><p class="mt-1 text-sm text-stone-500">Produk dengan stok rendah.</p></div><a href="{{ route('admin.inventory.index') }}" class="shrink-0 text-sm font-semibold text-rose-600 hover:text-rose-700">Kelola →</a></div><x-card padding="p-2">@forelse($lowStockProducts as $product)<div class="flex items-center gap-3 rounded-xl p-3 hover:bg-rose-50/50"><span class="grid h-10 w-10 place-items-center rounded-xl bg-violet-50 text-sm font-semibold text-violet-600">{{ str($product->name)->substr(0, 1)->upper() }}</span><div class="min-w-0 flex-1"><p class="truncate text-sm font-semibold text-stone-700">{{ $product->name }}</p><p class="mt-0.5 text-xs text-stone-400">{{ $product->category?->name ?? 'Tanpa kategori' }}</p></div><x-status-badge :status="$product->stock === 0 ? 'Dibatalkan' : 'Pending'">{{ $product->stock === 0 ? 'Habis' : $product->stock . ' tersisa' }}</x-status-badge></div>@empty<x-empty-state title="Stok aman" description="Belum ada produk yang berada di bawah batas stok minimum." />@endforelse</x-card></div>
+        </div>
     </div>
-
 @endsection

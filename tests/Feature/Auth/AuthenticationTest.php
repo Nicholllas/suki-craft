@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 test('login screen can be rendered', function () {
     $response = $this->get('/login');
@@ -17,7 +18,22 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('home', absolute: false));
+});
+
+test('customer accounts always return to the storefront after login', function () {
+    $admin = User::factory()->create();
+
+    Role::findOrCreate('admin', 'web');
+    $admin->assignRole('admin');
+
+    $response = $this->post('/login', [
+        'email' => $admin->email,
+        'password' => 'password',
+    ]);
+
+    $this->assertAuthenticatedAs($admin);
+    $response->assertRedirect(route('home', absolute: false));
 });
 
 test('users can not authenticate with invalid password', function () {
