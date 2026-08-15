@@ -5,3 +5,29 @@
 [x-cloak] {
     display: none !important;
 }
+
+@layer components {
+    .suki-swal-popup {
+        @apply rounded-3xl p-6;
+    }
+
+    .suki-swal-title {
+        @apply font-serif text-2xl font-semibold text-stone-800;
+    }
+
+    .swal2-actions.suki-swal-actions {
+        @apply mt-7 !grid w-full grid-cols-1 gap-4 px-6 sm:grid-cols-2;
+    }
+
+    .suki-swal-actions > button {
+        @apply m-0 min-h-12 w-full;
+    }
+
+    .suki-swal-confirm {
+        @apply rounded-xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-600;
+    }
+
+    .suki-swal-cancel {
+        @apply rounded-xl bg-stone-100 px-5 py-3 text-sm font-semibold text-stone-600 transition hover:bg-stone-200;
+    }
+}

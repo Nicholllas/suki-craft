@@ -37,7 +37,7 @@
                         <div class="mt-5 flex items-center justify-between border-t border-stone-100 pt-4">
                             <a href="{{ route('admin.products.edit', $product) }}" class="text-sm font-semibold text-rose-600 hover:text-rose-700">Kelola produk</a>
 
-                            <form method="POST" action="{{ route('admin.products.toggle', $product) }}" onsubmit="return confirm('Ubah status produk ini?')">
+                            <form method="POST" action="{{ route('admin.products.toggle', $product) }}" data-confirm="Status produk akan diperbarui." data-confirm-button="Ya, ubah status" data-confirm-title="Ubah status produk?">
                                 @csrf
                                 @method('PATCH')
                                 <button class="text-xs font-semibold text-stone-500 hover:text-stone-800">{{ $product->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>

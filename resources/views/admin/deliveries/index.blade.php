@@ -59,7 +59,7 @@
                         <td class="min-w-48 px-5 py-4">
                             <div class="flex flex-wrap gap-2">
                                 @if ($order->status === \App\Enums\OrderStatus::PAYMENT_CONFIRMED)
-                                    <form method="POST" action="{{ route('admin.deliveries.processing', $order) }}" onsubmit="return confirm('Mulai proses perakitan buket ini?')">
+                                    <form method="POST" action="{{ route('admin.deliveries.processing', $order) }}" data-confirm="Buket akan masuk ke tahap perakitan." data-confirm-button="Ya, mulai proses" data-confirm-title="Mulai proses pesanan?">
                                         @csrf
                                         @method('PATCH')
                                         <button type="submit" class="rounded-lg bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 transition hover:bg-sky-100">Mulai proses</button>
@@ -69,7 +69,7 @@
                                 @if ($order->status === \App\Enums\OrderStatus::PROCESSING)
                                     <button type="button" x-on:click="$dispatch('open-modal', 'assign-courier-{{ $order->id }}')" class="rounded-lg bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 transition hover:bg-violet-100">{{ $order->courier ? 'Ganti kurir' : 'Tugaskan kurir' }}</button>
                                     @if ($order->courier)
-                                        <form method="POST" action="{{ route('admin.deliveries.out_for_delivery', $order) }}" onsubmit="return confirm('Tandai pesanan ini sedang dalam pengiriman?')">
+                                        <form method="POST" action="{{ route('admin.deliveries.out_for_delivery', $order) }}" data-confirm="Pesanan akan ditandai sedang dalam pengiriman." data-confirm-button="Ya, mulai antar" data-confirm-title="Mulai pengiriman?">
                                             @csrf
                                             @method('PATCH')
                                             <button type="submit" class="rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-violet-700">Mulai antar</button>
