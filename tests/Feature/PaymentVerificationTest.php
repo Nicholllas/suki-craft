@@ -47,7 +47,7 @@ test('an admin can view orders awaiting payment verification', function () {
     PaymentProof::factory()->for($order)->create();
 
     $this->actingAs($this->admin, 'admin')
-        ->get(route('admin.orders.index'))
+        ->get(route('admin.payment-verifications.index'))
         ->assertOk()
         ->assertSee($order->order_number);
 });
@@ -57,8 +57,8 @@ test('an admin can approve a pending payment proof', function () {
     $proof = PaymentProof::factory()->for($order)->create();
 
     $this->actingAs($this->admin, 'admin')
-        ->patch(route('admin.orders.payment-proofs.approve', ['order' => $order, 'paymentProof' => $proof]))
-        ->assertRedirect(route('admin.orders.show', $order));
+        ->patch(route('admin.payment-verifications.payment-proofs.approve', ['order' => $order, 'paymentProof' => $proof]))
+        ->assertRedirect(route('admin.payment-verifications.show', $order));
 
     expect($order->refresh()->status)->toBe(OrderStatus::PAYMENT_CONFIRMED)
         ->and($proof->refresh()->status)->toBe(PaymentProofStatus::APPROVED)
@@ -73,10 +73,10 @@ test('a rejected payment proof lets a customer upload another proof', function (
     $proof = PaymentProof::factory()->for($order)->create();
 
     $this->actingAs($this->admin, 'admin')
-        ->patch(route('admin.orders.payment-proofs.reject', ['order' => $order, 'paymentProof' => $proof]), [
+        ->patch(route('admin.payment-verifications.payment-proofs.reject', ['order' => $order, 'paymentProof' => $proof]), [
             'reason' => 'Nominal pada bukti pembayaran belum sesuai total pesanan.',
         ])
-        ->assertRedirect(route('admin.orders.show', $order));
+        ->assertRedirect(route('admin.payment-verifications.show', $order));
 
     expect($order->refresh()->status)->toBe(OrderStatus::PENDING_PAYMENT)
         ->and($proof->refresh()->status)->toBe(PaymentProofStatus::REJECTED)
@@ -96,7 +96,7 @@ test('payment proof previews require admin authentication', function () {
     $order = Order::factory()->create(['status' => OrderStatus::AWAITING_VERIFICATION]);
     $proof = PaymentProof::factory()->for($order)->create();
 
-    $this->get(route('admin.orders.payment-proofs.preview', ['order' => $order, 'paymentProof' => $proof]))
+    $this->get(route('admin.payment-verifications.payment-proofs.preview', ['order' => $order, 'paymentProof' => $proof]))
         ->assertRedirect(route('admin.login'));
 });
 

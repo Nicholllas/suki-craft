@@ -16,7 +16,7 @@
                         <td class="whitespace-nowrap px-5 py-4 text-sm font-semibold text-stone-700">Rp{{ number_format($order->total, 0, ',', '.') }}</td>
                         <td class="whitespace-nowrap px-5 py-4 text-sm text-stone-500">{{ $order->latestPaymentProof?->uploaded_at?->locale('id')->translatedFormat('d M Y, H.i') }} WIB</td>
                         <td class="whitespace-nowrap px-5 py-4"><x-status-badge :status="$order->status->label()" /></td>
-                        <td class="whitespace-nowrap px-5 py-4"><a href="{{ route('admin.orders.show', $order) }}" class="rounded-lg px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50">Periksa bukti</a></td>
+                        <td class="whitespace-nowrap px-5 py-4"><a href="{{ route('admin.payment-verifications.show', $order) }}" class="rounded-lg px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50">Periksa bukti</a></td>
                     </tr>
                 @endforeach
             </x-data-table>

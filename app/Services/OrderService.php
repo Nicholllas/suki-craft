@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\OrderStatus;
+use App\Models\Admin;
 use App\Models\CartItem;
 use App\Models\Order;
 use Illuminate\Support\Facades\DB;
@@ -67,6 +68,31 @@ class OrderService
             $cart->items()->delete();
 
             return $order;
+        });
+    }
+
+    public function overrideStatus(Order $order, string $newStatus, Admin $admin, string $reason): void
+    {
+        $status = OrderStatus::tryFrom($newStatus);
+
+        if (! $status) {
+            throw ValidationException::withMessages(['status' => 'Status pesanan yang dipilih tidak valid.']);
+        }
+
+        if (blank($reason)) {
+            throw ValidationException::withMessages(['reason' => 'Catatan atau alasan perubahan status wajib diisi.']);
+        }
+
+        DB::transaction(function () use ($admin, $order, $reason, $status): void {
+            $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+            $previousStatus = $lockedOrder->status;
+
+            $lockedOrder->update(['status' => $status]);
+            $lockedOrder->statusHistories()->create([
+                'changed_by' => $admin->id,
+                'note' => 'Status diubah manual dari '.$previousStatus->label().' menjadi '.$status->label().'. Alasan: '.$reason,
+                'status' => $status,
+            ]);
         });
     }
 

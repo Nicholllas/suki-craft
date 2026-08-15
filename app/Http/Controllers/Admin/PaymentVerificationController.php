@@ -54,7 +54,7 @@ class PaymentVerificationController extends Controller
         $this->ensurePaymentProofBelongsToOrder($order, $paymentProof);
         $this->paymentService->approve($paymentProof, $this->adminFromRequest($request));
 
-        return redirect()->route('admin.orders.show', $order)->with('success', 'Pembayaran berhasil dikonfirmasi.');
+        return redirect()->route('admin.payment-verifications.show', $order)->with('success', 'Pembayaran berhasil dikonfirmasi.');
     }
 
     public function reject(Order $order, PaymentProof $paymentProof, RejectPaymentProofRequest $request): RedirectResponse
@@ -62,7 +62,7 @@ class PaymentVerificationController extends Controller
         $this->ensurePaymentProofBelongsToOrder($order, $paymentProof);
         $this->paymentService->reject($paymentProof, $this->adminFromRequest($request), $request->validated('reason'));
 
-        return redirect()->route('admin.orders.show', $order)->with('success', 'Bukti pembayaran ditolak dan pelanggan dapat mengunggah ulang.');
+        return redirect()->route('admin.payment-verifications.show', $order)->with('success', 'Bukti pembayaran ditolak dan pelanggan dapat mengunggah ulang.');
     }
 
     public function preview(Order $order, PaymentProof $paymentProof): StreamedResponse

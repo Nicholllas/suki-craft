@@ -25,7 +25,11 @@
                 <x-admin.nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12 12 3.75 20.25 12v8.25H14.5V15h-5v5.25H3.75V12Z" /></svg>Dashboard</x-admin.nav-link>
                 <x-admin.nav-link :href="route('admin.orders.index')" :active="request()->routeIs('admin.orders.*')">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75h9l3 3v13.5H4.5V6.75l3-3ZM8.25 10.5h7.5m-7.5 3h7.5m-7.5 3h4.5" /></svg>
-                    Pesanan
+                    Semua Pesanan
+                </x-admin.nav-link>
+                <x-admin.nav-link :href="route('admin.payment-verifications.index')" :active="request()->routeIs('admin.payment-verifications.*')">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75h9l3 3v13.5H4.5V6.75l3-3ZM8.25 10.5h7.5m-7.5 3h7.5m-7.5 3h4.5" /></svg>
+                    Verifikasi pembayaran
                     @if ($pendingPaymentVerificationCount > 0)
                         <span class="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">{{ $pendingPaymentVerificationCount }}</span>
                     @endif
