@@ -21,9 +21,17 @@ class PaymentVerificationController extends Controller
 
     public function index(): View
     {
+        $paymentProof = new PaymentProof;
+
         $orders = Order::query()
             ->where('status', OrderStatus::AWAITING_VERIFICATION)
-            ->with(['latestPaymentProof' => fn ($query) => $query->select('id', 'order_id', 'path', 'status', 'uploaded_at')])
+            ->with(['latestPaymentProof' => fn ($query) => $query->select([
+                $paymentProof->qualifyColumn('id'),
+                $paymentProof->qualifyColumn('order_id'),
+                $paymentProof->qualifyColumn('path'),
+                $paymentProof->qualifyColumn('status'),
+                $paymentProof->qualifyColumn('uploaded_at'),
+            ])])
             ->withMax('paymentProofs as latest_proof_uploaded_at', 'uploaded_at')
             ->orderBy('latest_proof_uploaded_at')
             ->paginate(15);

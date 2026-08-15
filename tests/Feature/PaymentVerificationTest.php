@@ -42,6 +42,16 @@ test('a customer can upload a payment proof for a pending order', function () {
     Storage::disk('local')->assertExists($proof->path);
 });
 
+test('an admin can view orders awaiting payment verification', function () {
+    $order = Order::factory()->create(['status' => OrderStatus::AWAITING_VERIFICATION]);
+    PaymentProof::factory()->for($order)->create();
+
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.orders.index'))
+        ->assertOk()
+        ->assertSee($order->order_number);
+});
+
 test('an admin can approve a pending payment proof', function () {
     $order = Order::factory()->create(['status' => OrderStatus::AWAITING_VERIFICATION]);
     $proof = PaymentProof::factory()->for($order)->create();
