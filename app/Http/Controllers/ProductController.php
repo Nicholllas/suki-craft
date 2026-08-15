@@ -16,7 +16,7 @@ class ProductController extends Controller
             ->get();
 
         $products = Product::query()
-            ->with('category')
+            ->with(['category', 'images', 'variants'])
             ->where('is_active', true)
             ->whereHas('category', function ($query) {
                 $query->where('is_active', true);
@@ -56,6 +56,8 @@ class ProductController extends Controller
             $product->category?->is_active,
             404
         );
+
+        $product->load(['category', 'images', 'variants']);
 
         return view(
             'products.show',
