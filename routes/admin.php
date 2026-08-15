@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\Auth\AdminNewPasswordController;
 use App\Http\Controllers\Admin\Auth\AdminPasswordResetLinkController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\PaymentVerificationController;
 use App\Http\Controllers\Admin\ProductController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,7 +28,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('profile', [AdminProfileController::class, 'update'])->name('profile.update');
         Route::put('profile/password', [AdminProfileController::class, 'updatePassword'])->name('profile.password.update');
 
-        Route::view('orders', 'admin.orders.index')->name('orders.index');
+        Route::get('orders', [PaymentVerificationController::class, 'index'])->name('orders.index');
+        Route::get('orders/{order}', [PaymentVerificationController::class, 'show'])->name('orders.show');
+        Route::get('orders/{order}/payment-proofs/{paymentProof}/preview', [PaymentVerificationController::class, 'preview'])->name('orders.payment-proofs.preview');
+        Route::patch('orders/{order}/payment-proofs/{paymentProof}/approve', [PaymentVerificationController::class, 'approve'])->name('orders.payment-proofs.approve');
+        Route::patch('orders/{order}/payment-proofs/{paymentProof}/reject', [PaymentVerificationController::class, 'reject'])->name('orders.payment-proofs.reject');
         Route::resource('categories', CategoryController::class)->except(['destroy', 'show']);
         Route::patch('categories/{category}/toggle', [CategoryController::class, 'toggle'])->name('categories.toggle');
         Route::resource('products', ProductController::class)->except(['destroy', 'show']);

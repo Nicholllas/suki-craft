@@ -15,6 +15,10 @@
             <div class="mt-6 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{{ session('success') }}</div>
         @endif
 
+        @if(session('error'))
+            <div class="mt-6 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{{ session('error') }}</div>
+        @endif
+
         @if($items->isEmpty())
             <div class="mt-8 rounded-3xl border border-dashed border-rose-200 bg-rose-50/60 px-6 py-16 text-center"><div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-white text-2xl text-rose-400 shadow-sm">✿</div><h2 class="mt-5 font-serif text-2xl font-semibold text-stone-800">Keranjangmu masih kosong</h2><p class="mx-auto mt-2 max-w-md text-sm leading-6 text-stone-500">Jelajahi koleksi bunga segar kami dan temukan buket untuk momen spesialmu.</p><a href="{{ route('products.index') }}" class="mt-6 inline-flex rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-600">Jelajahi koleksi buket</a></div>
         @else
