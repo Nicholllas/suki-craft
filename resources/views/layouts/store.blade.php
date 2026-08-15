@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Suki Craft')</title>
     <meta name="description" content="@yield('description', 'Suki Craft - Flower & Gift Shop')">
     <link rel="canonical" href="{{ url()->current() }}">
@@ -17,7 +18,9 @@
 <body class="min-h-screen overflow-x-hidden bg-[#fffdf9] font-sans text-stone-800 antialiased">
     <div class="border-b border-rose-100 bg-rose-50 px-4 py-2 text-center text-xs font-medium tracking-wide text-rose-700 sm:text-sm">Gratis kartu ucapan untuk setiap pesanan buket</div>
 
-    <header x-data="{ open: false }" class="sticky top-0 z-50 border-b border-stone-100 bg-[#fffdf9]/95 backdrop-blur">
+    @php($cartItemCount = app(\App\Services\CartService::class)->getItemCount())
+
+    <header x-data="{ open: false, cartCount: {{ $cartItemCount }} }" @cart-updated.window="cartCount = $event.detail.count ?? 0" class="sticky top-0 z-50 border-b border-stone-100 bg-[#fffdf9]/95 backdrop-blur">
         <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <a href="{{ route('home') }}" class="group flex items-center gap-2.5" aria-label="Suki Craft beranda">
                 <span class="grid h-10 w-10 place-items-center rounded-full bg-rose-100 text-rose-600 transition group-hover:scale-105">
@@ -38,13 +41,23 @@
                 @else
                     <a href="{{ route('login') }}" class="text-sm font-medium text-stone-600 transition hover:text-rose-600">Masuk</a>
                 @endauth
+                <a href="{{ route('cart.index') }}" class="relative grid h-11 w-11 place-items-center rounded-full text-stone-700 transition hover:bg-rose-50 hover:text-rose-600" aria-label="Buka keranjang">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.5h1.15c.67 0 1.25.47 1.39 1.13l.22 1.04m0 0 1.2 5.67a1.5 1.5 0 0 0 1.47 1.19h7.59a1.5 1.5 0 0 0 1.44-1.08l1.06-3.68a.75.75 0 0 0-.72-.96H6.51Zm3 13.08a1.13 1.13 0 1 0 2.25 0 1.13 1.13 0 0 0-2.25 0Zm9 0a1.13 1.13 0 1 0 2.25 0 1.13 1.13 0 0 0-2.25 0Z" /></svg>
+                    <span x-cloak x-show="cartCount > 0" x-text="cartCount > 99 ? '99+' : cartCount" class="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-5 text-white"></span>
+                </a>
                 <a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 rounded-full bg-rose-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-rose-600 hover:shadow-rose-200">Lihat Buket <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.22 3.22a.75.75 0 0 1 1.06 0l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 1 1-1.06-1.06l4.97-4.97H3.06a.75.75 0 0 1 0-1.5h12.13l-4.97-4.97a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg></a>
             </div>
 
-            <button @click="open = !open" :aria-expanded="open" class="grid h-10 w-10 place-items-center rounded-full text-stone-700 transition hover:bg-rose-50 md:hidden" aria-label="Buka menu">
-                <svg x-show="!open" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg>
-                <svg x-cloak x-show="open" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="m6 6 12 12M18 6 6 18" /></svg>
-            </button>
+            <div class="flex items-center gap-1 md:hidden">
+                <a href="{{ route('cart.index') }}" class="relative grid h-10 w-10 place-items-center rounded-full text-stone-700 transition hover:bg-rose-50 hover:text-rose-600" aria-label="Buka keranjang">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.5h1.15c.67 0 1.25.47 1.39 1.13l.22 1.04m0 0 1.2 5.67a1.5 1.5 0 0 0 1.47 1.19h7.59a1.5 1.5 0 0 0 1.44-1.08l1.06-3.68a.75.75 0 0 0-.72-.96H6.51Zm3 13.08a1.13 1.13 0 1 0 2.25 0 1.13 1.13 0 0 0-2.25 0Zm9 0a1.13 1.13 0 1 0 2.25 0 1.13 1.13 0 0 0-2.25 0Z" /></svg>
+                    <span x-cloak x-show="cartCount > 0" x-text="cartCount > 99 ? '99+' : cartCount" class="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-5 text-white"></span>
+                </a>
+                <button @click="open = !open" :aria-expanded="open" class="grid h-10 w-10 place-items-center rounded-full text-stone-700 transition hover:bg-rose-50" aria-label="Buka menu">
+                    <svg x-show="!open" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg>
+                    <svg x-cloak x-show="open" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="m6 6 12 12M18 6 6 18" /></svg>
+                </button>
+            </div>
         </div>
         <div x-cloak x-show="open" x-transition.origin.top class="border-t border-stone-100 bg-[#fffdf9] px-4 pb-5 pt-2 shadow-lg md:hidden">
             <nav class="mx-auto grid max-w-7xl gap-1 text-sm font-medium text-stone-700" aria-label="Navigasi mobile">
@@ -52,6 +65,7 @@
                 <a @click="open = false" href="#tentang" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Tentang Kami</a>
                 <a @click="open = false" href="#cara-pesan" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Cara Pesan</a>
                 <a href="{{ route('products.index') }}" class="mt-2 rounded-xl bg-rose-500 px-4 py-3 text-center font-semibold text-white">Lihat Semua Buket</a>
+                <a href="{{ route('cart.index') }}" class="rounded-xl px-4 py-3 text-center font-semibold text-stone-600 hover:bg-rose-50 hover:text-rose-600">Keranjang <span x-show="cartCount > 0" x-text="`(${cartCount})`"></span></a>
             </nav>
         </div>
     </header>
