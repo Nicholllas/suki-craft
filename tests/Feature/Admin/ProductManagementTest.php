@@ -3,6 +3,7 @@
 use App\Enums\AdminRole;
 use App\Models\Admin;
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -45,4 +46,43 @@ test('an administrator can create a product', function () {
         'is_active' => true,
     ]);
     $this->assertDatabaseCount('product_images', 1);
+
+    $product = Product::query()->firstOrFail();
+    $oldImagePath = $product->images()->value('path');
+
+    Storage::disk('public')->assertExists($oldImagePath);
+
+    $this->actingAs($admin, 'admin')
+        ->put(route('admin.products.update', $product), [
+            'base_price' => 175000,
+            'category_id' => $category->id,
+            'images' => [UploadedFile::fake()->image('buket-baru-1.jpg'), UploadedFile::fake()->image('buket-baru-2.jpg')],
+            'is_active' => true,
+            'is_featured' => false,
+            'name' => 'Buket Mawar',
+            'slug' => 'buket-mawar',
+        ])
+        ->assertRedirect(route('admin.products.edit', $product));
+
+    $newImagePaths = $product->fresh()->images()->pluck('path')->all();
+
+    Storage::disk('public')->assertMissing($oldImagePath);
+    Storage::disk('public')->assertExists($newImagePaths);
+    $this->assertDatabaseCount('product_images', 2);
+
+    $image = $product->fresh()->images()->firstOrFail();
+
+    $this->actingAs($admin, 'admin')
+        ->delete(route('admin.products.images.destroy', [$product, $image]))
+        ->assertRedirect();
+
+    Storage::disk('public')->assertMissing($image->path);
+    $this->assertDatabaseCount('product_images', 1);
+
+    $category->update(['is_active' => false]);
+
+    $this->actingAs($admin, 'admin')
+        ->get(route('admin.products.edit', $product))
+        ->assertOk()
+        ->assertSee('Buket Mawar');
 });

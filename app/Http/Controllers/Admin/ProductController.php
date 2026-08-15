@@ -60,15 +60,24 @@ class ProductController extends Controller
 
     public function update(ProductUpdateRequest $request, Product $product): RedirectResponse
     {
-        DB::transaction(function () use ($product, $request) {
+        $deletedImagePaths = DB::transaction(function () use ($product, $request) {
             $data = $request->validated();
             $product->update($this->productData($data, $product));
 
             $this->syncVariants($product, $data['variants'] ?? []);
-            $this->storeImages($product, $request->file('images', []));
+
+            if ($images = $request->file('images', [])) {
+                $deletedImagePaths = $this->replaceImages($product, $images);
+
+                return $deletedImagePaths;
+            }
+
             $this->syncImageOrder($product, $data['image_order'] ?? []);
             $this->syncPrimaryImage($product, $data['primary_image_id'] ?? null);
+
+            return [];
         });
+        Storage::disk('public')->delete($deletedImagePaths);
 
         return redirect()->route('admin.products.edit', $product)->with('success', 'Produk buket berhasil diperbarui.');
     }
@@ -88,22 +97,23 @@ class ProductController extends Controller
             return back()->with('error', 'Produk harus memiliki minimal satu foto.');
         }
 
+        $imagePath = $image->path;
         DB::transaction(function () use ($product, $image) {
             $wasPrimary = $image->is_primary;
-            Storage::disk('public')->delete($image->path);
             $image->delete();
 
             if ($wasPrimary) {
                 $this->syncPrimaryImage($product, $product->images()->value('id'));
             }
         });
+        Storage::disk('public')->delete($imagePath);
 
         return back()->with('success', 'Foto produk berhasil dihapus.');
     }
 
     private function categories(?Product $product = null)
     {
-        return Category::query()->where('is_active', true)->when($product, fn ($query) => $query->orWhereKey($product->category_id))->orderBy('name')->get();
+        return Category::query()->where('is_active', true)->when($product, fn ($query) => $query->orWhere('id', $product->category_id))->orderBy('name')->get();
     }
 
     private function productData(array $data, ?Product $product = null): array
@@ -131,6 +141,15 @@ class ProductController extends Controller
                 'sort_order' => $startOrder + $index,
             ]);
         }
+    }
+
+    private function replaceImages(Product $product, array $images): array
+    {
+        $paths = $product->images()->pluck('path')->all();
+        $product->images()->delete();
+        $this->storeImages($product, $images);
+
+        return $paths;
     }
 
     private function syncImageOrder(Product $product, array $imageIds): void
