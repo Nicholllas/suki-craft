@@ -5,6 +5,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TrackingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -21,6 +22,11 @@ Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.in
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::get('/orders/{orderNumber}/confirmation/{token}', [PaymentController::class, 'show'])->name('orders.confirmation');
 Route::post('/orders/{orderNumber}/confirmation/{token}/payment-proofs', [PaymentController::class, 'store'])->middleware('throttle:10,1')->name('orders.payment-proofs.store');
+Route::get('/orders/{orderNumber}/confirmation/{token}/delivery-proof', [PaymentController::class, 'deliveryProof'])->name('orders.delivery-proofs.show');
+Route::get('/lacak-pesanan', [TrackingController::class, 'create'])->name('tracking.create');
+Route::post('/lacak-pesanan', [TrackingController::class, 'store'])->middleware('throttle:10,1')->name('tracking.store');
+Route::get('/lacak-pesanan/{order}', [TrackingController::class, 'show'])->name('tracking.show');
+Route::get('/lacak-pesanan/{order}/bukti-pengiriman', [TrackingController::class, 'deliveryProof'])->name('tracking.delivery-proofs.show');
 
 Route::redirect('/dashboard', '/')->middleware('auth')->name('dashboard');
 

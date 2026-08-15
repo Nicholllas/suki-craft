@@ -62,6 +62,8 @@
                     @endif
                 </section>
 
+                <x-order-tracking-timeline :delivery-proof-url="$deliveryProofUrl" :order="$order" />
+
                 <section class="rounded-3xl border border-stone-200 bg-white p-5 sm:p-7">
                     <h2 class="font-serif text-2xl font-semibold text-stone-800">Detail buket</h2>
                     <div class="mt-5 divide-y divide-stone-100">

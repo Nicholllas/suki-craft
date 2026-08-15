@@ -6,8 +6,10 @@ use App\Http\Requests\UploadPaymentProofRequest;
 use App\Models\Order;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PaymentController extends Controller
 {
@@ -16,9 +18,15 @@ class PaymentController extends Controller
     public function show(string $orderNumber, string $token): View
     {
         $order = $this->orderFromToken($orderNumber, $token);
-        $order->load(['items', 'latestPaymentProof']);
+        $order->load([
+            'courier:id,name,phone',
+            'items',
+            'latestPaymentProof',
+            'statusHistories' => fn ($query) => $query->orderBy('created_at')->orderBy('id'),
+        ]);
 
         return view('orders.confirmation', [
+            'deliveryProofUrl' => $order->delivery_proof_path ? route('orders.delivery-proofs.show', ['orderNumber' => $order->order_number, 'token' => $order->public_token]) : null,
             'order' => $order,
             'payment' => config('payment'),
             'whatsAppUrl' => $this->whatsAppUrl($order),
@@ -33,6 +41,14 @@ class PaymentController extends Controller
         return redirect()
             ->route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token])
             ->with('success', 'Bukti pembayaran berhasil dikirim dan sedang menunggu verifikasi.');
+    }
+
+    public function deliveryProof(string $orderNumber, string $token): StreamedResponse
+    {
+        $order = $this->orderFromToken($orderNumber, $token);
+        abort_unless($order->delivery_proof_path, 404);
+
+        return Storage::disk('local')->response($order->delivery_proof_path);
     }
 
     private function orderFromToken(string $orderNumber, string $token): Order

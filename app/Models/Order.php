@@ -25,6 +25,10 @@ class Order extends Model
         'delivery_address',
         'delivery_date',
         'delivery_time_slot',
+        'courier_id',
+        'delivery_proof_path',
+        'delivered_at',
+        'cancellation_reason',
         'subtotal',
         'delivery_fee',
         'total',
@@ -36,6 +40,7 @@ class Order extends Model
     {
         return [
             'delivery_date' => 'date',
+            'delivered_at' => 'datetime',
             'delivery_fee' => 'decimal:2',
             'status' => OrderStatus::class,
             'subtotal' => 'decimal:2',
@@ -46,6 +51,11 @@ class Order extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'customer_id');
+    }
+
+    public function courier(): BelongsTo
+    {
+        return $this->belongsTo(Courier::class);
     }
 
     public function items(): HasMany
