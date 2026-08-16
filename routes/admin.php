@@ -9,9 +9,11 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CourierController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeliveryController;
+use App\Http\Controllers\Admin\IngredientController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PaymentVerificationController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -45,7 +47,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('products', ProductController::class)->except(['destroy', 'show']);
         Route::patch('products/{product}/toggle', [ProductController::class, 'toggle'])->name('products.toggle');
         Route::delete('products/{product}/images/{image}', [ProductController::class, 'destroyImage'])->name('products.images.destroy');
-        Route::view('inventory', 'admin.inventory.index')->name('inventory.index');
+        Route::resource('ingredients', IngredientController::class)->except(['destroy']);
+        Route::patch('ingredients/{ingredient}/toggle', [IngredientController::class, 'toggle'])->name('ingredients.toggle');
+        Route::post('ingredients/{ingredient}/stock-in', [IngredientController::class, 'stockIn'])->name('ingredients.stock-in');
+        Route::post('ingredients/{ingredient}/adjustment', [IngredientController::class, 'adjust'])->name('ingredients.adjustment');
         Route::get('deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
         Route::patch('deliveries/{order}/courier', [DeliveryController::class, 'assignCourier'])->name('deliveries.courier.assign');
         Route::patch('deliveries/{order}/processing', [DeliveryController::class, 'markProcessing'])->name('deliveries.processing');
@@ -57,7 +62,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::view('customers', 'admin.customers.index')->name('customers.index');
         Route::view('promotions', 'admin.promotions.index')->name('promotions.index');
         Route::view('reviews', 'admin.reviews.index')->name('reviews.index');
-        Route::view('reports', 'admin.reports.index')->name('reports.index');
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
         Route::view('settings', 'admin.settings.index')->name('settings.index');
 
         Route::middleware('admin.role:super_admin')->group(function () {

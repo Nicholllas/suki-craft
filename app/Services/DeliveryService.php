@@ -14,6 +14,8 @@ use Throwable;
 
 class DeliveryService
 {
+    public function __construct(private InventoryService $inventoryService) {}
+
     public function assignCourier(Order $order, Courier $courier, ?Admin $changedBy = null): void
     {
         DB::transaction(function () use ($changedBy, $courier, $order) {
@@ -36,6 +38,7 @@ class DeliveryService
             $lockedOrder = $this->lockedOrder($order->id);
             $this->ensureStatus($lockedOrder, [OrderStatus::PAYMENT_CONFIRMED]);
             $this->updateOrderStatus($lockedOrder, OrderStatus::PROCESSING, 'Buket mulai disiapkan.', $changedBy);
+            $this->inventoryService->deductForOrder($lockedOrder);
         });
     }
 

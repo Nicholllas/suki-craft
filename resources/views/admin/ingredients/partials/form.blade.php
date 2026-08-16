@@ -1,0 +1,13 @@
+@php($formIngredient = $ingredient ?? null)
+<div class="space-y-6">
+    <x-card>
+        <div class="grid gap-5 sm:grid-cols-2">
+            <div class="sm:col-span-2"><label for="name" class="text-sm font-semibold text-stone-700">Nama bahan</label><input id="name" name="name" value="{{ old('name', $formIngredient?->name) }}" required class="mt-2 h-12 w-full rounded-xl border-stone-200 bg-white px-4 text-sm focus:border-rose-300 focus:ring-rose-200" placeholder="Mawar merah"><x-input-error :messages="$errors->get('name')" class="mt-2" /></div>
+            <div><label for="unit" class="text-sm font-semibold text-stone-700">Satuan</label><input id="unit" name="unit" value="{{ old('unit', $formIngredient?->unit) }}" required class="mt-2 h-12 w-full rounded-xl border-stone-200 bg-white px-4 text-sm focus:border-rose-300 focus:ring-rose-200" placeholder="tangkai"><x-input-error :messages="$errors->get('unit')" class="mt-2" /></div>
+            <div><label for="current_stock" class="text-sm font-semibold text-stone-700">Stok saat ini</label><input id="current_stock" name="current_stock" type="number" step="0.001" value="{{ old('current_stock', $formIngredient?->current_stock ?? 0) }}" required class="mt-2 h-12 w-full rounded-xl border-stone-200 bg-white px-4 text-sm focus:border-rose-300 focus:ring-rose-200"><x-input-error :messages="$errors->get('current_stock')" class="mt-2" /></div>
+            <div><label for="minimum_stock" class="text-sm font-semibold text-stone-700">Ambang stok minimum</label><input id="minimum_stock" name="minimum_stock" type="number" step="0.001" value="{{ old('minimum_stock', $formIngredient?->minimum_stock ?? 0) }}" required class="mt-2 h-12 w-full rounded-xl border-stone-200 bg-white px-4 text-sm focus:border-rose-300 focus:ring-rose-200"><x-input-error :messages="$errors->get('minimum_stock')" class="mt-2" /></div>
+            <label class="flex items-center gap-3 rounded-xl border border-stone-100 bg-stone-50 p-4"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $formIngredient?->is_active ?? true)) class="h-4 w-4 rounded border-stone-300 text-rose-500"><span class="text-sm font-semibold text-stone-700">Bahan aktif</span></label>
+        </div>
+    </x-card>
+    <div class="flex justify-end gap-3"><a href="{{ route('admin.ingredients.index') }}" class="inline-flex h-11 items-center rounded-xl px-5 text-sm font-semibold text-stone-500">Batal</a><button type="submit" class="h-11 rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white shadow-sm hover:bg-rose-600">{{ $submitLabel }}</button></div>
+</div>

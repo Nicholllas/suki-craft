@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\AdminRole;
+use App\Notifications\AdminResetPassword;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -25,6 +27,11 @@ class Admin extends Authenticatable
 
     public function sendPasswordResetNotification($token): void
     {
-        $this->notify(new \App\Notifications\AdminResetPassword($token));
+        $this->notify(new AdminResetPassword($token));
+    }
+
+    public function ingredientStockMovements(): HasMany
+    {
+        return $this->hasMany(IngredientStockMovement::class, 'created_by');
     }
 }

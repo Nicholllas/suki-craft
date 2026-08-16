@@ -50,7 +50,7 @@ class Order extends Model
 
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'customer_id');
+        return $this->belongsTo(Customer::class);
     }
 
     public function courier(): BelongsTo
@@ -61,6 +61,11 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function ingredientStockMovements(): HasMany
+    {
+        return $this->hasMany(IngredientStockMovement::class, 'related_order_id');
     }
 
     public function latestPaymentProof(): HasOne

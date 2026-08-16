@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ProductStoreRequest;
 use App\Http\Requests\ProductUpdateRequest;
 use App\Models\Category;
+use App\Models\Ingredient;
 use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Http\RedirectResponse;
@@ -35,7 +36,7 @@ class ProductController extends Controller
 
     public function create(): View
     {
-        return view('admin.products.create', ['categories' => $this->categories()]);
+        return view('admin.products.create', ['categories' => $this->categories(), 'ingredients' => $this->ingredients()]);
     }
 
     public function store(ProductStoreRequest $request): RedirectResponse
@@ -45,6 +46,7 @@ class ProductController extends Controller
             $product = Product::create($this->productData($data));
 
             $this->syncVariants($product, $data['variants'] ?? []);
+            $this->syncIngredients($product, $data['ingredients'] ?? []);
             $this->storeImages($product, $request->file('images', []));
         });
 
@@ -53,9 +55,9 @@ class ProductController extends Controller
 
     public function edit(Product $product): View
     {
-        $product->load(['images', 'variants']);
+        $product->load(['images', 'ingredients', 'variants']);
 
-        return view('admin.products.edit', ['categories' => $this->categories($product), 'product' => $product]);
+        return view('admin.products.edit', ['categories' => $this->categories($product), 'ingredients' => $this->ingredients(), 'product' => $product]);
     }
 
     public function update(ProductUpdateRequest $request, Product $product): RedirectResponse
@@ -65,6 +67,7 @@ class ProductController extends Controller
             $product->update($this->productData($data, $product));
 
             $this->syncVariants($product, $data['variants'] ?? []);
+            $this->syncIngredients($product, $data['ingredients'] ?? []);
 
             if ($images = $request->file('images', [])) {
                 $deletedImagePaths = $this->replaceImages($product, $images);
@@ -114,6 +117,11 @@ class ProductController extends Controller
     private function categories(?Product $product = null)
     {
         return Category::query()->where('is_active', true)->when($product, fn ($query) => $query->orWhere('id', $product->category_id))->orderBy('name')->get();
+    }
+
+    private function ingredients()
+    {
+        return Ingredient::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'unit']);
     }
 
     private function productData(array $data, ?Product $product = null): array
@@ -179,6 +187,24 @@ class ProductController extends Controller
         }
 
         $product->variants()->when($variantIds, fn ($query) => $query->whereNotIn('id', $variantIds), fn ($query) => $query)->delete();
+    }
+
+    private function syncIngredients(Product $product, array $ingredients): void
+    {
+        $variantIds = $product->variants()->pluck('id');
+        $product->ingredients()->delete();
+
+        foreach ($ingredients as $ingredient) {
+            $variantId = $ingredient['product_variant_id'] ?? null;
+
+            abort_unless(! $variantId || $variantIds->contains($variantId), 422);
+
+            $product->ingredients()->create([
+                'ingredient_id' => $ingredient['ingredient_id'],
+                'product_variant_id' => $variantId,
+                'quantity_needed' => $ingredient['quantity_needed'],
+            ]);
+        }
     }
 
     private function uniqueSlug(string $value, ?Product $product = null): string

@@ -3,6 +3,7 @@
 use App\Enums\AdminRole;
 use App\Models\Admin;
 use App\Models\Category;
+use App\Models\Ingredient;
 use App\Models\Product;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -22,11 +23,19 @@ test('an administrator can create a product', function () {
         'slug' => 'buket-bunga',
         'is_active' => true,
     ]);
+    $ingredient = Ingredient::create([
+        'current_stock' => 30,
+        'is_active' => true,
+        'minimum_stock' => 5,
+        'name' => 'Mawar putih',
+        'unit' => 'tangkai',
+    ]);
 
     $this->actingAs($admin, 'admin')
         ->get(route('admin.products.create'))
         ->assertOk()
-        ->assertSee('name="base_price"', false);
+        ->assertSee('name="base_price"', false)
+        ->assertSee('Resep / Bahan');
 
     $response = $this->actingAs($admin, 'admin')->post(route('admin.products.store'), [
         'category_id' => $category->id,
@@ -59,6 +68,7 @@ test('an administrator can create a product', function () {
             'images' => [UploadedFile::fake()->image('buket-baru-1.jpg'), UploadedFile::fake()->image('buket-baru-2.jpg')],
             'is_active' => true,
             'is_featured' => false,
+            'ingredients' => [['ingredient_id' => $ingredient->id, 'quantity_needed' => 6]],
             'name' => 'Buket Mawar',
             'slug' => 'buket-mawar',
         ])
@@ -78,6 +88,7 @@ test('an administrator can create a product', function () {
 
     Storage::disk('public')->assertMissing($image->path);
     $this->assertDatabaseCount('product_images', 1);
+    $this->assertDatabaseHas('product_ingredients', ['ingredient_id' => $ingredient->id, 'quantity_needed' => 6]);
 
     $category->update(['is_active' => false]);
 

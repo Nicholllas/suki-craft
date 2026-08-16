@@ -47,6 +47,11 @@ class Product extends Model
         return $this->hasMany(ProductImage::class)->orderBy('sort_order');
     }
 
+    public function ingredients(): HasMany
+    {
+        return $this->hasMany(ProductIngredient::class);
+    }
+
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class)->orderBy('label');
