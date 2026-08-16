@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureAdminHasRole;
+use App\Http\Middleware\EnsureAdminIsActive;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,13 +22,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin.active' => \App\Http\Middleware\EnsureAdminIsActive::class,
-            'admin.role' => \App\Http\Middleware\EnsureAdminHasRole::class,
+            'admin.active' => EnsureAdminIsActive::class,
+            'admin.role' => EnsureAdminHasRole::class,
             'permission' => PermissionMiddleware::class,
             'role' => RoleMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
-        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('admin/*') ? route('admin.login') : route('login'));
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('admin/*') ? route('admin.login') : ($request->is('akun/*') ? route('customer.login') : route('login')));
         $middleware->redirectUsersTo(fn (Request $request) => $request->is('admin/*') && auth('admin')->check() ? route('admin.dashboard') : route('home'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {

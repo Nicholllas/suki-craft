@@ -36,18 +36,18 @@
                     <div class="mt-6 grid gap-5 sm:grid-cols-2">
                         <div class="sm:col-span-2">
                             <label for="customer-name" class="text-sm font-semibold text-stone-700">Nama penerima</label>
-                            <input id="customer-name" name="customer_name" type="text" value="{{ old('customer_name', auth()->user()?->name) }}" autocomplete="name" required class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-rose-300 focus:ring-rose-200 @error('customer_name') border-rose-400 @enderror" placeholder="Nama lengkap penerima">
+                            <input id="customer-name" name="customer_name" type="text" value="{{ old('customer_name', $customer?->name) }}" autocomplete="name" required class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-rose-300 focus:ring-rose-200 @error('customer_name') border-rose-400 @enderror" placeholder="Nama lengkap penerima">
                             @error('customer_name')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
                             <label for="customer-phone" class="text-sm font-semibold text-stone-700">Nomor WhatsApp</label>
-                            <input id="customer-phone" name="customer_phone" type="tel" value="{{ old('customer_phone') }}" inputmode="tel" autocomplete="tel" required class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-rose-300 focus:ring-rose-200 @error('customer_phone') border-rose-400 @enderror" placeholder="08xxxxxxxxxx">
+                            <input id="customer-phone" name="customer_phone" type="tel" value="{{ old('customer_phone', $customer?->phone) }}" inputmode="tel" autocomplete="tel" required class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-rose-300 focus:ring-rose-200 @error('customer_phone') border-rose-400 @enderror" placeholder="08xxxxxxxxxx">
                             <p class="mt-2 text-xs text-stone-400">Gunakan format 08xx atau +628xx.</p>
                             @error('customer_phone')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
                             <label for="customer-email" class="text-sm font-semibold text-stone-700">Email <span class="font-normal text-stone-400">(opsional)</span></label>
-                            <input id="customer-email" name="customer_email" type="email" value="{{ old('customer_email', auth()->user()?->email) }}" autocomplete="email" class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-rose-300 focus:ring-rose-200 @error('customer_email') border-rose-400 @enderror" placeholder="email@contoh.com">
+                            <input id="customer-email" name="customer_email" type="email" value="{{ old('customer_email', $customer?->email) }}" autocomplete="email" class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-rose-300 focus:ring-rose-200 @error('customer_email') border-rose-400 @enderror" placeholder="email@contoh.com">
                             @error('customer_email')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
                         </div>
                     </div>

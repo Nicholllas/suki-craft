@@ -2,8 +2,8 @@
 
 use App\Models\CartItem;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Product;
-use App\Models\User;
 
 beforeEach(function () {
     $this->category = Category::create([
@@ -52,9 +52,9 @@ test('a guest can add a customized product to the cart with a server calculated 
 });
 
 test('a customer can update and remove only items in their current cart', function () {
-    $customer = User::factory()->create();
+    $customer = Customer::factory()->create();
 
-    $this->actingAs($customer)->post(route('cart.add'), [
+    $this->actingAs($customer, 'customer')->post(route('cart.add'), [
         'product_id' => $this->product->id,
         'quantity' => 1,
         'variant_id' => $this->variant->id,
@@ -62,10 +62,10 @@ test('a customer can update and remove only items in their current cart', functi
 
     $item = CartItem::query()->firstOrFail();
 
-    $this->actingAs($customer)->patch(route('cart.update', $item), ['quantity' => 3])->assertRedirect();
+    $this->actingAs($customer, 'customer')->patch(route('cart.update', $item), ['quantity' => 3])->assertRedirect();
     $this->assertDatabaseHas('cart_items', ['id' => $item->id, 'quantity' => 3]);
 
-    $this->actingAs($customer)->get(route('cart.index'))->assertOk()->assertSee('Buket Mawar');
-    $this->actingAs($customer)->delete(route('cart.remove', $item))->assertRedirect();
+    $this->actingAs($customer, 'customer')->get(route('cart.index'))->assertOk()->assertSee('Buket Mawar');
+    $this->actingAs($customer, 'customer')->delete(route('cart.remove', $item))->assertRedirect();
     $this->assertDatabaseMissing('cart_items', ['id' => $item->id]);
 });

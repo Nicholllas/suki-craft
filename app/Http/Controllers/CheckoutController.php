@@ -6,6 +6,7 @@ use App\Http\Requests\CheckoutRequest;
 use App\Services\CartService;
 use App\Services\OrderService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CheckoutController extends Controller
@@ -15,7 +16,7 @@ class CheckoutController extends Controller
         private OrderService $orderService,
     ) {}
 
-    public function index(): View|RedirectResponse
+    public function index(Request $request): View|RedirectResponse
     {
         $cart = $this->cartService->getCurrentCart();
 
@@ -27,6 +28,7 @@ class CheckoutController extends Controller
 
         return view('checkout.index', [
             'cart' => $cart,
+            'customer' => $request->user('customer'),
             'deliveryFee' => (float) config('delivery.flat_fee', 0),
             'minimumDeliveryDate' => today()->addDay()->toDateString(),
             'subtotal' => $this->cartService->getTotal(),

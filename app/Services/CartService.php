@@ -94,7 +94,8 @@ class CartService
                     continue;
                 }
 
-                $guestItem->update(['cart_id' => $customerCart->id]);
+                $guestItem->cart_id = $customerCart->id;
+                $guestItem->save();
                 $customerCart->items->push($guestItem);
             }
 
@@ -163,7 +164,7 @@ class CartService
 
     private function customerId(): ?int
     {
-        return $this->request->user()?->id;
+        return $this->request->user('customer')?->id;
     }
 
     private function itemsMatch(CartItem $first, CartItem $second): bool

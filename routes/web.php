@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\Customer\AuthController as CustomerAuthController;
+use App\Http\Controllers\Customer\OrderHistoryController;
+use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
@@ -27,6 +30,29 @@ Route::get('/lacak-pesanan', [TrackingController::class, 'create'])->name('track
 Route::post('/lacak-pesanan', [TrackingController::class, 'store'])->middleware('throttle:10,1')->name('tracking.store');
 Route::get('/lacak-pesanan/{order}', [TrackingController::class, 'show'])->name('tracking.show');
 Route::get('/lacak-pesanan/{order}/bukti-pengiriman', [TrackingController::class, 'deliveryProof'])->name('tracking.delivery-proofs.show');
+
+Route::prefix('akun')->name('customer.')->group(function () {
+    Route::middleware('guest:customer')->group(function () {
+        Route::get('daftar', [CustomerAuthController::class, 'createRegistration'])->name('register');
+        Route::post('daftar', [CustomerAuthController::class, 'register'])->name('register.store');
+        Route::get('masuk', [CustomerAuthController::class, 'createLogin'])->name('login');
+        Route::post('masuk', [CustomerAuthController::class, 'login'])->name('login.store');
+        Route::get('lupa-password', [CustomerAuthController::class, 'createPasswordResetLink'])->name('password.request');
+        Route::post('lupa-password', [CustomerAuthController::class, 'sendPasswordResetLink'])->name('password.email');
+        Route::get('reset-password/{token}', [CustomerAuthController::class, 'createNewPassword'])->name('password.reset');
+        Route::post('reset-password', [CustomerAuthController::class, 'resetPassword'])->name('password.store');
+    });
+
+    Route::middleware('auth:customer')->group(function () {
+        Route::post('keluar', [CustomerAuthController::class, 'logout'])->name('logout');
+        Route::get('profil', [CustomerProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('profil', [CustomerProfileController::class, 'update'])->name('profile.update');
+        Route::put('profil/password', [CustomerProfileController::class, 'updatePassword'])->name('profile.password.update');
+        Route::get('pesanan', [OrderHistoryController::class, 'index'])->name('orders.index');
+        Route::get('pesanan/{order}', [OrderHistoryController::class, 'show'])->name('orders.show');
+        Route::get('pesanan/{order}/bukti-pengiriman', [OrderHistoryController::class, 'deliveryProof'])->name('orders.delivery-proof');
+    });
+});
 
 Route::redirect('/dashboard', '/')->middleware('auth')->name('dashboard');
 

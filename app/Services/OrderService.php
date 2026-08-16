@@ -32,7 +32,7 @@ class OrderService
             $subtotal = $cart->items->sum(fn (CartItem $item): float => $item->subtotal);
             $deliveryFee = (float) config('delivery.flat_fee', 0);
             $order = Order::query()->create([
-                'customer_id' => $cart->customer_id,
+                'customer_id' => auth('customer')->id(),
                 'customer_email' => $checkoutData['customer_email'] ?? null,
                 'customer_name' => $checkoutData['customer_name'],
                 'customer_phone' => $checkoutData['customer_phone'],

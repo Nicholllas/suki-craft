@@ -1,0 +1,7 @@
+@extends('layouts.store')
+
+@section('title', 'Lupa Password | Suki Craft')
+
+@section('content')
+    <section class="mx-auto max-w-lg px-4 py-10 sm:px-6 sm:py-14"><div class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-8"><a href="{{ route('customer.login') }}" class="text-sm font-semibold text-rose-600 hover:text-rose-700">← Kembali ke masuk</a><p class="mt-7 text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Pemulihan akses</p><h1 class="mt-2 font-serif text-3xl font-semibold tracking-tight text-stone-800">Lupa password?</h1><p class="mt-2 text-sm leading-6 text-stone-500">Masukkan email Anda dan kami akan mengirimkan tautan reset password.</p>@if(session('status'))<div class="mt-6 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ session('status') }}</div>@endif<form method="POST" action="{{ route('customer.password.email') }}" class="mt-7 space-y-5">@csrf<div><label for="email" class="text-sm font-semibold text-stone-700">Email</label><input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm focus:border-rose-300 focus:ring-rose-200 @error('email') border-rose-400 @enderror">@error('email')<p class="mt-2 text-xs text-rose-600">{{ $message }}</p>@enderror</div><button type="submit" class="inline-flex h-12 w-full items-center justify-center rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white transition hover:bg-rose-600">Kirim tautan reset</button></form></div></section>
+@endsection

@@ -20,7 +20,7 @@
 
     @php($cartItemCount = app(\App\Services\CartService::class)->getItemCount())
 
-    <header x-data="{ open: false, cartCount: {{ $cartItemCount }} }" @cart-updated.window="cartCount = $event.detail.count ?? 0" class="sticky top-0 z-50 border-b border-stone-100 bg-[#fffdf9]/95 backdrop-blur">
+    <header x-data="{ accountOpen: false, open: false, cartCount: {{ $cartItemCount }} }" @cart-updated.window="cartCount = $event.detail.count ?? 0" class="sticky top-0 z-50 border-b border-stone-100 bg-[#fffdf9]/95 backdrop-blur">
         <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <a href="{{ route('home') }}" class="group flex items-center gap-2.5" aria-label="Suki Craft beranda">
                 <span class="grid h-10 w-10 place-items-center rounded-full bg-rose-100 text-rose-600 transition group-hover:scale-105">
@@ -37,10 +37,11 @@
             </nav>
 
             <div class="hidden items-center gap-3 md:flex">
-                @auth
-                    <a href="{{ route('dashboard') }}" class="text-sm font-medium text-stone-600 transition hover:text-rose-600">Akun Saya</a>
+                @auth('customer')
+                    <div class="relative"><button @click="accountOpen = !accountOpen" @click.outside="accountOpen = false" :aria-expanded="accountOpen" class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-stone-700 transition hover:bg-rose-50 hover:text-rose-600"><span class="max-w-28 truncate">{{ auth('customer')->user()->name }}</span><svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 0 1 1.09 1.03l-4.25 4.5a.75.75 0 0 1-1.09 0l-4.25-4.5a.75.75 0 0 1 .02-1.05Z" clip-rule="evenodd" /></svg></button><div x-cloak x-show="accountOpen" x-transition.origin.top.right class="absolute right-0 top-full mt-2 w-52 rounded-2xl border border-stone-200 bg-white p-2 shadow-xl shadow-stone-900/10"><a href="{{ route('customer.profile.edit') }}" class="block rounded-xl px-3 py-2.5 text-sm font-semibold text-stone-600 hover:bg-rose-50 hover:text-rose-600">Profil</a><a href="{{ route('customer.orders.index') }}" class="block rounded-xl px-3 py-2.5 text-sm font-semibold text-stone-600 hover:bg-rose-50 hover:text-rose-600">Riwayat Pesanan</a><form method="POST" action="{{ route('customer.logout') }}">@csrf<button type="submit" class="mt-1 w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50">Keluar</button></form></div></div>
                 @else
-                    <a href="{{ route('login') }}" class="text-sm font-medium text-stone-600 transition hover:text-rose-600">Masuk</a>
+                    <a href="{{ route('customer.login') }}" class="text-sm font-medium text-stone-600 transition hover:text-rose-600">Masuk</a>
+                    <a href="{{ route('customer.register') }}" class="text-sm font-semibold text-rose-600 transition hover:text-rose-700">Daftar</a>
                 @endauth
                 <a href="{{ route('cart.index') }}" class="relative grid h-11 w-11 place-items-center rounded-full text-stone-700 transition hover:bg-rose-50 hover:text-rose-600" aria-label="Buka keranjang">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.5h1.15c.67 0 1.25.47 1.39 1.13l.22 1.04m0 0 1.2 5.67a1.5 1.5 0 0 0 1.47 1.19h7.59a1.5 1.5 0 0 0 1.44-1.08l1.06-3.68a.75.75 0 0 0-.72-.96H6.51Zm3 13.08a1.13 1.13 0 1 0 2.25 0 1.13 1.13 0 0 0-2.25 0Zm9 0a1.13 1.13 0 1 0 2.25 0 1.13 1.13 0 0 0-2.25 0Z" /></svg>
@@ -66,6 +67,13 @@
                 <a @click="open = false" href="{{ route('tracking.create') }}" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Lacak Pesanan</a>
                 <a @click="open = false" href="#tentang" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Tentang Kami</a>
                 <a @click="open = false" href="#cara-pesan" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Cara Pesan</a>
+                @auth('customer')
+                    <a href="{{ route('customer.profile.edit') }}" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Profil</a>
+                    <a href="{{ route('customer.orders.index') }}" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Riwayat Pesanan</a>
+                    <form method="POST" action="{{ route('customer.logout') }}">@csrf<button type="submit" class="w-full rounded-xl px-4 py-3 text-left text-rose-600 hover:bg-rose-50">Keluar</button></form>
+                @else
+                    <div class="grid grid-cols-2 gap-2 px-1 py-2"><a href="{{ route('customer.login') }}" class="rounded-xl border border-rose-200 px-4 py-3 text-center font-semibold text-rose-600 hover:bg-rose-50">Masuk</a><a href="{{ route('customer.register') }}" class="rounded-xl bg-rose-500 px-4 py-3 text-center font-semibold text-white hover:bg-rose-600">Daftar</a></div>
+                @endauth
                 <a href="{{ route('products.index') }}" class="mt-2 rounded-xl bg-rose-500 px-4 py-3 text-center font-semibold text-white">Lihat Semua Buket</a>
                 <a href="{{ route('cart.index') }}" class="rounded-xl px-4 py-3 text-center font-semibold text-stone-600 hover:bg-rose-50 hover:text-rose-600">Keranjang <span x-show="cartCount > 0" x-text="`(${cartCount})`"></span></a>
             </nav>

@@ -3,11 +3,13 @@
 use App\Enums\OrderStatus;
 use App\Models\Cart;
 use App\Models\Category;
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\Product;
-use App\Models\User;
+use App\Services\OrderService;
+use Illuminate\Http\Request;
 
 beforeEach(function () {
     $this->category = Category::create([
@@ -33,13 +35,13 @@ beforeEach(function () {
         'price_adjustment' => 25000,
         'sku' => 'MAWAR-L',
     ]);
-    $this->customer = User::factory()->create();
+    $this->customer = Customer::factory()->create();
 });
 
 test('a customer can checkout with server-calculated snapshots and view the confirmation', function () {
     config(['delivery.flat_fee' => 20000]);
 
-    $this->actingAs($this->customer)->post(route('cart.add'), [
+    $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
         'card_message' => 'Selamat ulang tahun!',
         'product_id' => $this->product->id,
         'quantity' => 2,
@@ -48,11 +50,12 @@ test('a customer can checkout with server-calculated snapshots and view the conf
         'variant_id' => $this->variant->id,
     ])->assertRedirect();
 
-    $response = $this->actingAs($this->customer)->post(route('checkout.store'), checkoutData());
+    $response = $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData());
     $order = Order::query()->with(['items', 'statusHistories'])->sole();
 
     $response->assertRedirect(route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]));
     expect($order->status)->toBe(OrderStatus::PENDING_PAYMENT)
+        ->and($order->customer_id)->toBe($this->customer->id)
         ->and((float) $order->subtotal)->toBe(350000.0)
         ->and((float) $order->delivery_fee)->toBe(20000.0)
         ->and((float) $order->total)->toBe(370000.0)
@@ -77,19 +80,38 @@ test('a customer can checkout with server-calculated snapshots and view the conf
 });
 
 test('checkout requires a delivery date from tomorrow onward', function () {
-    $this->actingAs($this->customer)->post(route('cart.add'), [
+    $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
         'product_id' => $this->product->id,
         'quantity' => 1,
         'variant_id' => $this->variant->id,
     ])->assertRedirect();
 
-    $this->actingAs($this->customer)->post(route('checkout.store'), checkoutData(['delivery_date' => today()->toDateString()]))
+    $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData(['delivery_date' => today()->toDateString()]))
         ->assertSessionHasErrors('delivery_date');
     expect(Order::query()->doesntExist())->toBeTrue();
 });
 
+test('a guest can checkout without attaching the order to a customer account', function () {
+    $session = app('session')->driver();
+    $session->start();
+    $request = Request::create('/');
+    $request->setLaravelSession($session);
+    app()->instance('request', $request);
+    $cart = Cart::query()->create(['session_id' => $session->getId()]);
+    $cart->items()->create([
+        'product_id' => $this->product->id,
+        'product_variant_id' => $this->variant->id,
+        'quantity' => 1,
+        'unit_price' => 175000,
+    ]);
+
+    $order = app(OrderService::class)->createFromCart(checkoutData());
+
+    expect($order->customer_id)->toBeNull();
+});
+
 test('an empty cart redirects customers back to their cart', function () {
-    $this->actingAs($this->customer)->get(route('checkout.index'))
+    $this->actingAs($this->customer, 'customer')->get(route('checkout.index'))
         ->assertRedirect(route('cart.index'))
         ->assertSessionHas('error', 'Tambahkan buket ke keranjang sebelum checkout.');
 
