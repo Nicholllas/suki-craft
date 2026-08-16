@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\ReviewService;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class ProductController extends Controller
 {
+    public function __construct(private ReviewService $reviewService) {}
+
     public function index(Request $request)
     {
         $categories = Category::query()
@@ -27,7 +31,7 @@ class ProductController extends Controller
                     $query->where(
                         'name',
                         'like',
-                        '%' . $request->search . '%'
+                        '%'.$request->search.'%'
                     );
                 }
             )
@@ -49,7 +53,7 @@ class ProductController extends Controller
         );
     }
 
-    public function show(Product $product)
+    public function show(Product $product): View
     {
         abort_unless(
             $product->is_active &&
@@ -59,9 +63,12 @@ class ProductController extends Controller
 
         $product->load(['category', 'images', 'variants']);
 
-        return view(
-            'products.show',
-            compact('product')
-        );
+        $reviews = $this->reviewService->getApprovedForProduct($product);
+
+        return view('products.show', [
+            'averageRating' => $this->reviewService->getAverageRating($product),
+            'product' => $product,
+            'reviews' => $reviews,
+        ]);
     }
 }

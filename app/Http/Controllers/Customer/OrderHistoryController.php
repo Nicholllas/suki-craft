@@ -23,6 +23,7 @@ class OrderHistoryController extends Controller
         $order = $this->ownedOrder($request, $order);
         $order->load([
             'courier:id,name,phone',
+            'items.review',
             'statusHistories' => fn ($query) => $query->orderBy('created_at')->orderBy('id'),
         ]);
 

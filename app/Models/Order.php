@@ -78,6 +78,11 @@ class Order extends Model
         return $this->hasMany(PaymentProof::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
     public function statusHistories(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class);

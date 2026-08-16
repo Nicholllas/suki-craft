@@ -52,6 +52,11 @@ class Product extends Model
         return $this->hasMany(ProductIngredient::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class)->orderBy('label');

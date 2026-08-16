@@ -83,6 +83,7 @@
             <div class="self-center">
                 <p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">{{ $product->category->name }}</p>
                 <h1 class="mt-3 font-serif text-4xl font-semibold tracking-tight text-stone-800 sm:text-5xl">{{ $product->name }}</h1>
+                <div class="mt-4 flex items-center gap-2"><div class="flex text-amber-400" aria-label="Rating rata-rata {{ number_format($averageRating, 1) }} dari 5">@foreach(range(1, 5) as $star)<span>{{ $averageRating >= $star ? '★' : '☆' }}</span>@endforeach</div><span class="text-sm font-semibold text-stone-700">{{ number_format($averageRating, 1, ',', '.') }}</span><span class="text-sm text-stone-400">({{ $reviews->total() }} ulasan)</span></div>
                 <p class="mt-5 text-base leading-7 text-stone-600">{{ $product->description ?: 'Rangkaian bunga segar yang dipilih dan dirangkai dengan teliti untuk membuat momen Anda terasa lebih berarti.' }}</p>
 
                 <div class="mt-7 border-y border-stone-200 py-5">
@@ -136,6 +137,24 @@
 
                 <div class="mt-7 rounded-2xl bg-rose-50 p-5"><div class="flex gap-3"><svg class="mt-0.5 h-5 w-5 shrink-0 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m12 3 1.66 5.1H19l-4.33 3.15 1.66 5.1L12 13.2l-4.33 3.15 1.66-5.1L5 8.1h5.34L12 3Z" /></svg><div><p class="text-sm font-semibold text-stone-800">Dirangkai saat pesanan dibuat</p><p class="mt-1 text-sm leading-6 text-stone-600">Bunga dipilih sesuai kesegaran dan setiap pesanan mendapat kartu ucapan gratis.</p></div></div></div>
             </div>
+        </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 sm:pb-16 lg:px-8">
+        <div class="border-t border-stone-200 pt-10 sm:pt-14">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Ulasan pelanggan</p><h2 class="mt-2 font-serif text-3xl font-semibold text-stone-800">Cerita dari penerima buket</h2></div><div class="flex items-center gap-2 text-sm text-stone-500"><span class="text-amber-400">★</span><span>{{ number_format($averageRating, 1, ',', '.') }} dari 5 · {{ $reviews->total() }} ulasan</span></div></div>
+
+            @forelse($reviews as $review)
+                <article class="mt-6 rounded-2xl border border-stone-200 bg-white p-5 sm:p-6">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p class="font-semibold text-stone-800">{{ $review->reviewer_name }}</p><div class="mt-2 flex text-amber-400" aria-label="{{ $review->rating }} dari 5 bintang">@foreach(range(1, 5) as $star)<span>{{ $review->rating >= $star ? '★' : '☆' }}</span>@endforeach</div></div><p class="text-xs text-stone-400">{{ ($review->reviewed_at ?? $review->created_at)->locale('id')->translatedFormat('d F Y') }}</p></div>
+                    @if($review->comment)<p class="mt-4 text-sm leading-7 text-stone-600">{{ $review->comment }}</p>@endif
+                    @if($review->photo_path)<a href="{{ Storage::url($review->photo_path) }}" target="_blank" rel="noopener noreferrer" class="mt-4 block overflow-hidden rounded-2xl border border-stone-100"><img src="{{ Storage::url($review->photo_path) }}" alt="Foto ulasan {{ $review->reviewer_name }}" class="max-h-96 w-full object-cover"></a>@endif
+                </article>
+            @empty
+                <div class="mt-6 rounded-2xl border border-dashed border-rose-200 bg-rose-50/60 px-6 py-10 text-center"><p class="font-serif text-xl font-semibold text-stone-800">Belum ada ulasan</p><p class="mt-2 text-sm text-stone-500">Jadilah yang pertama membagikan pengalaman dengan buket ini.</p></div>
+            @endforelse
+
+            @if($reviews->hasPages())<div class="mt-7">{{ $reviews->links() }}</div>@endif
         </div>
     </section>
 @endsection
