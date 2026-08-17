@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [StorefrontController::class, 'index'])->name('home');
 
 Route::view('/tentang-kami', 'store.about')->name('about');
+Route::view('/cara-pesan', 'store.how-to-order')->name('how_to_order');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');

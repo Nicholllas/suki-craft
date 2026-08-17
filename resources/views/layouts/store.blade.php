@@ -33,7 +33,7 @@
                 <a href="{{ route('products.index') }}" class="transition hover:text-rose-600">Koleksi</a>
                 <a href="{{ route('tracking.create') }}" class="transition hover:text-rose-600">Lacak Pesanan</a>
                 <a href="{{ route('about') }}" class="transition hover:text-rose-600">Tentang Kami</a>
-                <a href="#cara-pesan" class="transition hover:text-rose-600">Cara Pesan</a>
+                <a href="{{ route('how_to_order') }}" class="transition hover:text-rose-600">Cara Pesan</a>
             </nav>
 
             <div class="hidden items-center gap-3 md:flex">
@@ -66,7 +66,7 @@
                 <a @click="open = false" href="{{ route('products.index') }}" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Koleksi</a>
                 <a @click="open = false" href="{{ route('tracking.create') }}" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Lacak Pesanan</a>
                 <a @click="open = false" href="{{ route('about') }}" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Tentang Kami</a>
-                <a @click="open = false" href="#cara-pesan" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Cara Pesan</a>
+                <a @click="open = false" href="{{ route('how_to_order') }}" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Cara Pesan</a>
                 @auth('customer')
                     <a href="{{ route('customer.profile.edit') }}" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Profil</a>
                     <a href="{{ route('customer.orders.index') }}" class="rounded-xl px-4 py-3 hover:bg-rose-50 hover:text-rose-600">Riwayat Pesanan</a>
@@ -85,7 +85,7 @@
     <footer class="bg-stone-900 text-stone-300">
         <div class="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
             <div class="lg:col-span-2"><a href="{{ route('home') }}" class="font-serif text-2xl font-semibold text-white">Suki Craft</a><p class="mt-4 max-w-sm text-sm leading-6 text-stone-400">Buket bunga yang dirangkai dengan penuh rasa, untuk membantu Anda menyampaikan hal yang tak selalu mudah diucapkan.</p></div>
-            <div><h2 class="text-sm font-semibold text-white">Jelajahi</h2><ul class="mt-4 space-y-3 text-sm"><li><a href="{{ route('products.index') }}" class="transition hover:text-rose-300">Koleksi Buket</a></li><li><a href="{{ route('tracking.create') }}" class="transition hover:text-rose-300">Lacak Pesanan</a></li><li><a href="{{ route('about') }}" class="transition hover:text-rose-300">Tentang Suki Craft</a></li><li><a href="#cara-pesan" class="transition hover:text-rose-300">Cara Pemesanan</a></li></ul></div>
+            <div><h2 class="text-sm font-semibold text-white">Jelajahi</h2><ul class="mt-4 space-y-3 text-sm"><li><a href="{{ route('products.index') }}" class="transition hover:text-rose-300">Koleksi Buket</a></li><li><a href="{{ route('tracking.create') }}" class="transition hover:text-rose-300">Lacak Pesanan</a></li><li><a href="{{ route('about') }}" class="transition hover:text-rose-300">Tentang Suki Craft</a></li><li><a href="{{ route('how_to_order') }}" class="transition hover:text-rose-300">Cara Pemesanan</a></li></ul></div>
             <div><h2 class="text-sm font-semibold text-white">Hubungi Kami</h2><ul class="mt-4 space-y-3 text-sm text-stone-400"><li class="flex items-center gap-2"><svg class="h-4 w-4 text-rose-300" viewBox="0 0 24 24" fill="currentColor"><path d="M2.25 6.75A2.25 2.25 0 0 1 4.5 4.5h15a2.25 2.25 0 0 1 2.25 2.25v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75Zm2.09-.75L12 11.74 19.66 6H4.34Z" /></svg>hello@sukicraft.com</li><li class="flex items-center gap-2"><svg class="h-4 w-4 text-rose-300" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.25a7.5 7.5 0 0 0-7.5 7.5c0 5.625 7.5 12 7.5 12s7.5-6.375 7.5-12a7.5 7.5 0 0 0-7.5-7.5Zm0 10.5a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" /></svg>Indonesia</li></ul></div>
         </div>
         <div class="border-t border-stone-800 px-4 py-5 text-center text-xs text-stone-500">&copy; {{ date('Y') }} Suki Craft. Made with love.</div>
