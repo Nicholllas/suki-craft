@@ -16,7 +16,7 @@ class OrderService
 
     public function createFromCart(array $checkoutData, ?string $promotionCode = null): Order
     {
-        return DB::transaction(function () use ($checkoutData) {
+        return DB::transaction(function () use ($checkoutData, $promotionCode) {
             $cart = $this->cartService->getCurrentCart();
 
             if (! $cart) {

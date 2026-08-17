@@ -12,5 +12,7 @@ test('storefront only receives active banners in display order', function () {
         ->assertSeeInOrder([$firstBanner->title, $secondBanner->title])
         ->assertDontSee($hiddenBanner->title)
         ->assertSee('/storage/promo-banners/banner-pertama.jpg', false)
-        ->assertSee('object-contain', false);
+        ->assertSee('object-contain', false)
+        ->assertSee('aria-label="Banner sebelumnya"', false)
+        ->assertSee('aria-label="Banner berikutnya"', false);
 });

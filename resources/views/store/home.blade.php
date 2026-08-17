@@ -6,19 +6,31 @@
 @section('content')
     @if ($promoBanners->isNotEmpty())
         <section class="bg-[#fffaf5] px-4 pt-6 sm:px-6 sm:pt-8 lg:px-8" x-data="{ active: 0, total: {{ $promoBanners->count() }}, next() { this.active = (this.active + 1) % this.total }, previous() { this.active = (this.active - 1 + this.total) % this.total } }" x-init="if (total > 1) { setInterval(() => next(), 6000) }">
-            <div class="relative mx-auto max-w-7xl overflow-hidden rounded-3xl shadow-lg shadow-rose-900/5">
-                @foreach ($promoBanners as $index => $promoBanner)
-                    <a href="{{ $promoBanner->link_url ?: route('products.index') }}" x-show="active === {{ $index }}" x-transition.opacity class="relative block aspect-[4/3] overflow-hidden bg-rose-100 sm:aspect-[16/9]"><img src="{{ Storage::url($promoBanner->image_path) }}" alt="" aria-hidden="true" class="absolute inset-0 h-full w-full scale-110 object-cover opacity-20 blur-2xl"><img src="{{ Storage::url($promoBanner->image_path) }}" alt="{{ $promoBanner->title }}" class="relative z-10 h-full w-full object-contain"><span class="sr-only">{{ $promoBanner->title }}</span></a>
-                @endforeach
+            <div @class(['mx-auto max-w-[90rem]', 'grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-1 sm:grid-cols-[3.25rem_minmax(0,1fr)_3.25rem] sm:gap-4' => $promoBanners->count() > 1])>
                 @if ($promoBanners->count() > 1)
-                    <button type="button" @click="previous" class="absolute left-4 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-stone-700 shadow-lg shadow-stone-900/10 transition hover:bg-white sm:grid" aria-label="Banner sebelumnya">←</button><button type="button" @click="next" class="absolute right-4 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-stone-700 shadow-lg shadow-stone-900/10 transition hover:bg-white sm:grid" aria-label="Banner berikutnya">→</button>
+                    <button type="button" @click="previous()" class="grid h-11 w-11 place-items-center rounded-full border border-rose-100 bg-white text-stone-700 shadow-md shadow-rose-900/10 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2" aria-label="Banner sebelumnya"><span aria-hidden="true">←</span></button>
+                @endif
+                <div class="relative mx-auto aspect-[4/3] w-full max-w-7xl overflow-hidden rounded-3xl bg-rose-100 shadow-lg shadow-rose-900/5 sm:aspect-[16/9]">
+                    @foreach ($promoBanners as $index => $promoBanner)
+                        <a href="{{ $promoBanner->link_url ?: route('products.index') }}" x-show="active === {{ $index }}" x-transition.opacity class="absolute inset-0 overflow-hidden"><img src="{{ Storage::url($promoBanner->image_path) }}" alt="" aria-hidden="true" class="absolute inset-0 h-full w-full scale-110 object-cover opacity-20 blur-2xl"><img src="{{ Storage::url($promoBanner->image_path) }}" alt="{{ $promoBanner->title }}" class="relative z-10 h-full w-full object-contain"><span class="sr-only">{{ $promoBanner->title }}</span></a>
+                    @endforeach
+                </div>
+                @if ($promoBanners->count() > 1)
+                    <button type="button" @click="next()" class="grid h-11 w-11 place-items-center rounded-full border border-rose-100 bg-white text-stone-700 shadow-md shadow-rose-900/10 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2" aria-label="Banner berikutnya"><span aria-hidden="true">→</span></button>
                 @endif
             </div>
             @if ($promoBanners->count() > 1)
-                <div class="mx-auto mt-4 flex max-w-7xl justify-center gap-2"><template x-for="index in total"><button type="button" @click="active = index - 1" :class="active === index - 1 ? 'w-7 bg-rose-500' : 'w-2 bg-rose-200 hover:bg-rose-300'" class="h-2 rounded-full transition-all" :aria-label="`Tampilkan banner ${index}`"></button></template></div>
+                <div class="mx-auto mt-3 flex max-w-7xl items-center justify-center" aria-label="Pilih banner"><template x-for="index in total"><button type="button" @click="active = index - 1" class="grid h-11 w-8 place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2" :aria-current="active === index - 1 ? 'true' : null" :aria-label="`Tampilkan banner ${index}`"><span class="h-2 rounded-full transition-all" :class="active === index - 1 ? 'w-6 bg-rose-500' : 'w-2 bg-rose-200 hover:bg-rose-300'"></span></button></template></div>
             @endif
         </section>
     @endif
+    <section class="border-y border-rose-100 bg-white">
+        <div class="mx-auto grid max-w-7xl gap-px px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
+            @foreach ([['icon' => '♡', 'title' => 'Kustomisasi buket', 'description' => 'Pesan kartu dan catatan florist'], ['icon' => '✦', 'title' => 'Kartu ucapan gratis', 'description' => 'Untuk setiap pesanan buket'], ['icon' => '⌑', 'title' => 'Bayar dengan mudah', 'description' => 'QRIS atau transfer bank'], ['icon' => '⌁', 'title' => 'Lacak pesanan', 'description' => 'Pantau status pengirimanmu']] as $benefit)
+                <div class="flex items-center gap-4 py-5 sm:px-5 lg:py-6"><span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-rose-50 text-lg text-rose-600">{{ $benefit['icon'] }}</span><div><p class="text-sm font-semibold text-stone-800">{{ $benefit['title'] }}</p><p class="mt-1 text-xs text-stone-500">{{ $benefit['description'] }}</p></div></div>
+            @endforeach
+        </div>
+    </section>
     <section class="relative isolate overflow-hidden">
         <div class="absolute inset-0 -z-20 bg-[#fffaf5]"></div>
         <div class="absolute -left-40 top-24 -z-10 h-80 w-80 rounded-full bg-rose-100/70 blur-3xl"></div>
@@ -44,12 +56,29 @@
 
     <section id="koleksi" class="scroll-mt-20 bg-white py-20 sm:py-24">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div class="max-w-xl"><p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">Temukan yang tepat</p><h2 class="mt-3 font-serif text-4xl font-semibold tracking-tight text-stone-800 sm:text-5xl">Buket untuk setiap momen.</h2></div><a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-rose-600 transition hover:text-rose-700">Lihat semua produk <span aria-hidden="true">→</span></a></div>
+            <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div class="max-w-xl"><p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">Temukan yang tepat</p><h2 class="mt-3 font-serif text-4xl font-semibold tracking-tight text-stone-800 sm:text-5xl">Cari hadiah untuk setiap cerita.</h2><p class="mt-4 text-sm leading-6 text-stone-500">Mulai dari koleksi yang paling sesuai atau gunakan pencarian untuk menemukan buket favoritmu.</p></div><a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-rose-600 transition hover:text-rose-700">Lihat semua produk <span aria-hidden="true">→</span></a></div>
+            <form method="GET" action="{{ route('products.index') }}" class="mt-8 rounded-2xl border border-stone-100 bg-[#fffaf7] p-2 shadow-sm sm:flex sm:items-center"><label for="home-product-search" class="sr-only">Cari buket</label><div class="flex min-w-0 flex-1 items-center gap-3 px-3"><svg class="h-5 w-5 shrink-0 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path stroke-linecap="round" d="m16 16 4.25 4.25" /></svg><input id="home-product-search" type="search" name="search" placeholder="Cari buket, jenis bunga, atau koleksi..." class="h-12 w-full border-0 bg-transparent text-sm text-stone-800 placeholder:text-stone-400 focus:ring-0"></div><button class="mt-2 inline-flex h-12 w-full items-center justify-center rounded-xl bg-stone-800 px-6 text-sm font-semibold text-white transition hover:bg-rose-600 sm:mt-0 sm:w-auto">Cari buket</button></form>
+            @if ($categories->isNotEmpty())
+                <div class="mt-5 flex flex-wrap gap-2" aria-label="Jelajahi berdasarkan kategori"><a href="{{ route('products.index') }}" class="rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-rose-200">Semua koleksi</a>@foreach ($categories as $category)<a href="{{ route('products.index', ['category' => $category->slug]) }}" class="rounded-full bg-white px-4 py-2 text-sm font-medium text-stone-600 ring-1 ring-stone-200 transition hover:bg-rose-50 hover:text-rose-600">{{ $category->name }}</a>@endforeach</div>
+            @endif
             <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ([['title' => 'Untuk Merayakan', 'image' => 'photo-1523438885200-e635ba2c371e'], ['title' => 'Untuk Mengungkapkan', 'image' => 'photo-1490750967868-88aa4486c946'], ['title' => 'Untuk Menguatkan', 'image' => 'photo-1561181286-d3fee7d55364'], ['title' => 'Untuk Hari Spesial', 'image' => 'photo-1582794543139-8ac9cb0e6aac']] as $collection)
                     <a href="{{ route('products.index') }}" class="group relative block h-72 overflow-hidden rounded-3xl bg-stone-100 sm:h-80"><img src="https://images.unsplash.com/{{ $collection['image'] }}?auto=format&fit=crop&w=700&q=80" alt="{{ $collection['title'] }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105"><div class="absolute inset-0 bg-gradient-to-t from-stone-900/65 via-stone-900/5 to-transparent"></div><span class="absolute bottom-5 left-5 flex items-center gap-2 text-lg font-semibold text-white">{{ $collection['title'] }} <span class="grid h-7 w-7 place-items-center rounded-full bg-white/20 text-sm backdrop-blur transition group-hover:bg-white group-hover:text-stone-800">→</span></span></a>
                 @endforeach
             </div>
+        </div>
+    </section>
+
+    <section class="bg-[#fdf5ef] py-20 sm:py-24">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div class="max-w-xl"><p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">Pilihan Suki Craft</p><h2 class="mt-3 font-serif text-4xl font-semibold tracking-tight text-stone-800 sm:text-5xl">Buket yang sedang menanti untuk dipilih.</h2></div><a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-rose-600 transition hover:text-rose-700">Jelajahi katalog <span aria-hidden="true">→</span></a></div>
+            @forelse ($featuredProducts as $product)
+                @if ($loop->first)<div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">@endif
+                @php($imagePath = $product->primary_image?->path)
+                <article class="group overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-stone-900/5 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-rose-900/10"><a href="{{ route('products.show', $product->slug) }}" class="block"><div class="relative aspect-[4/5] overflow-hidden bg-rose-50">@if ($imagePath)<img src="{{ Storage::url($imagePath) }}" alt="{{ $product->name }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">@else<div class="grid h-full place-items-center text-5xl text-rose-300">✿</div>@endif @if ($product->is_featured)<span class="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-rose-600 shadow-sm backdrop-blur">Pilihan spesial</span>@endif</div></a><div class="p-5"><p class="text-xs font-semibold uppercase tracking-[0.14em] text-rose-500">{{ $product->category->name }}</p><h3 class="mt-2 font-serif text-xl font-semibold text-stone-800"><a href="{{ route('products.show', $product->slug) }}" class="transition hover:text-rose-600">{{ $product->name }}</a></h3><p class="mt-3 text-xs text-stone-400">Mulai dari</p><div class="mt-1 flex items-center justify-between gap-3"><p class="text-lg font-semibold text-stone-800">Rp{{ number_format($product->final_price, 0, ',', '.') }}</p><a href="{{ route('products.show', $product->slug) }}" class="grid h-10 w-10 place-items-center rounded-full bg-rose-50 text-rose-600 transition group-hover:bg-rose-500 group-hover:text-white" aria-label="Lihat {{ $product->name }}">→</a></div></div></article>
+                @if ($loop->last)</div>@endif
+            @empty
+                <div class="mt-10 rounded-3xl border border-dashed border-rose-200 bg-white/70 px-6 py-14 text-center"><span class="text-4xl text-rose-300">✿</span><h3 class="mt-4 font-serif text-2xl font-semibold text-stone-800">Koleksi buket akan segera hadir</h3><p class="mt-2 text-sm text-stone-500">Sambil menunggu, lihat seluruh katalog untuk menemukan rangkaian yang tersedia.</p><a href="{{ route('products.index') }}" class="mt-6 inline-flex rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-600">Buka katalog</a></div>
+            @endforelse
         </div>
     </section>
 
