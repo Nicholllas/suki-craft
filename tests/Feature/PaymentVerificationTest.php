@@ -7,6 +7,7 @@ use App\Models\Admin;
 use App\Models\Order;
 use App\Models\PaymentProof;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
@@ -17,6 +18,10 @@ beforeEach(function () {
         'password' => 'password',
         'role' => AdminRole::ADMIN,
     ]);
+});
+
+afterEach(function () {
+    Carbon::setTestNow();
 });
 
 test('a customer can upload a payment proof for a pending order', function () {
@@ -40,6 +45,26 @@ test('a customer can upload a payment proof for a pending order', function () {
     expect($proof->status)->toBe(PaymentProofStatus::PENDING)
         ->and($proof->uploaded_at)->not->toBeNull();
     Storage::disk('local')->assertExists($proof->path);
+});
+
+test('a customer cannot upload a payment proof after the delivery slot begins', function () {
+    Storage::fake('local');
+    Carbon::setTestNow('2026-08-18 12:00:00');
+    $order = Order::factory()->create([
+        'delivery_date' => '2026-08-18',
+        'delivery_time_slot' => '12:00-15:00',
+        'status' => OrderStatus::PENDING_PAYMENT,
+    ]);
+
+    $this->post(route('orders.payment-proofs.store', [
+        'orderNumber' => $order->order_number,
+        'token' => $order->public_token,
+    ]), ['proof' => UploadedFile::fake()->image('bukti-bayar.png')])
+        ->assertSessionHasErrors('proof');
+
+    expect($order->refresh()->status)->toBe(OrderStatus::CANCELLED)
+        ->and($order->paymentProofs()->doesntExist())->toBeTrue()
+        ->and($order->cancellation_reason)->toBe('Batas waktu pembayaran telah berakhir.');
 });
 
 test('an admin can view orders awaiting payment verification', function () {

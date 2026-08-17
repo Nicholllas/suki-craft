@@ -11,12 +11,13 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\IngredientController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PaymentSettingsController;
 use App\Http\Controllers\Admin\PaymentVerificationController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\PromoBannerController;
+use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReviewModerationController;
-use App\Http\Controllers\Admin\PromotionController;
-use App\Http\Controllers\Admin\PromoBannerController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -71,7 +72,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('reviews/{review}/approve', [ReviewModerationController::class, 'approve'])->name('reviews.approve');
         Route::patch('reviews/{review}/reject', [ReviewModerationController::class, 'reject'])->name('reviews.reject');
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
-        Route::view('settings', 'admin.settings.index')->name('settings.index');
+        Route::get('settings', [PaymentSettingsController::class, 'edit'])->name('settings.index');
+        Route::put('settings', [PaymentSettingsController::class, 'update'])->name('settings.update');
 
         Route::middleware('admin.role:super_admin')->group(function () {
             Route::resource('accounts', AdminAccountController::class)->except(['destroy', 'show'])->parameters(['accounts' => 'admin']);

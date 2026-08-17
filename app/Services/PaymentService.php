@@ -20,11 +20,17 @@ class PaymentService
         $path = null;
 
         try {
-            return DB::transaction(function () use ($order, $file, &$path) {
+            $proof = DB::transaction(function () use ($order, $file, &$path): PaymentProof|false {
                 $lockedOrder = $this->lockedOrder($order->id);
 
                 if ($lockedOrder->status !== OrderStatus::PENDING_PAYMENT) {
                     throw ValidationException::withMessages(['proof' => 'Bukti pembayaran belum dapat diunggah untuk pesanan ini.']);
+                }
+
+                if ($lockedOrder->paymentDeadlineHasPassed()) {
+                    $this->expireOrder($lockedOrder);
+
+                    return false;
                 }
 
                 $path = $file->store('payment-proofs', 'local');
@@ -38,6 +44,12 @@ class PaymentService
 
                 return $proof;
             });
+
+            if ($proof === false) {
+                throw ValidationException::withMessages(['proof' => 'Batas waktu pembayaran untuk pesanan ini telah berakhir.']);
+            }
+
+            return $proof;
         } catch (Throwable $exception) {
             if ($path) {
                 Storage::disk('local')->delete($path);
@@ -45,6 +57,21 @@ class PaymentService
 
             throw $exception;
         }
+    }
+
+    public function expireIfPaymentDeadlinePassed(Order $order): bool
+    {
+        return DB::transaction(function () use ($order): bool {
+            $lockedOrder = $this->lockedOrder($order->id);
+
+            if ($lockedOrder->status !== OrderStatus::PENDING_PAYMENT || ! $lockedOrder->paymentDeadlineHasPassed()) {
+                return false;
+            }
+
+            $this->expireOrder($lockedOrder);
+
+            return true;
+        });
     }
 
     public function approve(PaymentProof $proof, Admin $verifier): void
@@ -106,6 +133,18 @@ class PaymentService
             'changed_by' => $changedBy?->id,
             'note' => $note,
             'status' => $status,
+        ]);
+    }
+
+    private function expireOrder(Order $order): void
+    {
+        $order->update([
+            'cancellation_reason' => 'Batas waktu pembayaran telah berakhir.',
+            'status' => OrderStatus::CANCELLED,
+        ]);
+        $order->statusHistories()->create([
+            'note' => 'Pesanan dibatalkan otomatis karena batas pembayaran berakhir pada '.$order->paymentDeadline()->format('d-m-Y H:i').' WIB.',
+            'status' => OrderStatus::CANCELLED,
         ]);
     }
 }

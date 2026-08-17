@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UploadPaymentProofRequest;
 use App\Models\Order;
 use App\Services\PaymentService;
+use App\Services\QrisDynamicPayloadService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -13,11 +15,20 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PaymentController extends Controller
 {
-    public function __construct(private PaymentService $paymentService) {}
+    public function __construct(
+        private PaymentService $paymentService,
+        private QrisDynamicPayloadService $qrisDynamicPayloadService,
+    ) {}
 
     public function show(string $orderNumber, string $token): View
     {
         $order = $this->orderFromToken($orderNumber, $token);
+
+        if ($this->paymentService->expireIfPaymentDeadlinePassed($order)) {
+            $order->refresh();
+        }
+
+        $payment = $this->qrisDynamicPayloadService->paymentConfiguration();
         $order->load([
             'courier:id,name,phone',
             'items',
@@ -28,8 +39,24 @@ class PaymentController extends Controller
         return view('orders.confirmation', [
             'deliveryProofUrl' => $order->delivery_proof_path ? route('orders.delivery-proofs.show', ['orderNumber' => $order->order_number, 'token' => $order->public_token]) : null,
             'order' => $order,
-            'payment' => config('payment'),
+            'payment' => $payment,
+            'qrisImageUrl' => $this->qrisDynamicPayloadService->isEnabled($payment)
+                ? route('orders.qris.show', ['orderNumber' => $order->order_number, 'token' => $order->public_token])
+                : null,
             'whatsAppUrl' => $this->whatsAppUrl($order),
+        ]);
+    }
+
+    public function qris(string $orderNumber, string $token): Response
+    {
+        $order = $this->orderFromToken($orderNumber, $token);
+        $svg = $this->qrisDynamicPayloadService->svgFor($order, $this->qrisDynamicPayloadService->paymentConfiguration());
+
+        abort_unless($svg, 404);
+
+        return response($svg, 200, [
+            'Cache-Control' => 'private, no-store',
+            'Content-Type' => 'image/svg+xml',
         ]);
     }
 

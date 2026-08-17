@@ -28,12 +28,15 @@
                             <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Instruksi pembayaran</p>
                             <h3 class="mt-2 font-serif text-xl font-semibold text-stone-800">Bayar total Rp{{ number_format($order->total, 0, ',', '.') }}</h3>
                             <p class="mt-2 text-sm leading-6 text-stone-500">Gunakan QRIS atau transfer bank, lalu unggah bukti pembayaran agar tim kami dapat memproses pesananmu.</p>
+                            @if ($order->status === \App\Enums\OrderStatus::PENDING_PAYMENT)
+                                <p class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">Selesaikan pembayaran sebelum {{ $order->paymentDeadline()->locale('id')->translatedFormat('d F Y, H.i') }} WIB, yaitu sebelum slot pengiriman dimulai.</p>
+                            @endif
 
                             <div class="mt-5 grid gap-5 sm:grid-cols-2">
                                 @if (filled($payment['bank_name']) || filled($payment['bank_account_number']))
                                     <div class="rounded-2xl bg-stone-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.14em] text-stone-400">Transfer bank</p><p class="mt-3 text-sm font-semibold text-stone-800">{{ $payment['bank_name'] ?: 'Bank' }}</p><p class="mt-1 font-mono text-base font-bold text-stone-800">{{ $payment['bank_account_number'] ?: 'Nomor rekening belum diatur' }}</p>@if (filled($payment['bank_account_holder']))<p class="mt-1 text-xs text-stone-500">a.n. {{ $payment['bank_account_holder'] }}</p>@endif</div>
                                 @endif
-                                <a href="{{ asset($payment['qris_path']) }}" target="_blank" rel="noopener noreferrer" class="group rounded-2xl border border-rose-100 bg-rose-50 p-3 text-center transition hover:border-rose-200 hover:bg-rose-100/60"><img src="{{ asset($payment['qris_path']) }}" alt="QRIS pembayaran Suki Craft" class="mx-auto aspect-square w-full max-w-52 rounded-xl bg-white object-contain p-2"><span class="mt-2 block text-xs font-semibold text-rose-700">Ketuk untuk perbesar QRIS</span></a>
+                                <a href="{{ $qrisImageUrl ?? asset($payment['qris_path']) }}" target="_blank" rel="noopener noreferrer" class="group rounded-2xl border border-rose-100 bg-rose-50 p-3 text-center transition hover:border-rose-200 hover:bg-rose-100/60"><img src="{{ $qrisImageUrl ?? asset($payment['qris_path']) }}" alt="QRIS pembayaran Suki Craft" class="mx-auto aspect-square w-full max-w-52 rounded-xl bg-white object-contain p-2"><span class="mt-2 block text-xs font-semibold text-rose-700">{{ $qrisImageUrl ? 'Scan untuk bayar sesuai total pesanan' : 'Ketuk untuk perbesar QRIS' }}</span></a>
                             </div>
 
                             @if ($order->status === \App\Enums\OrderStatus::AWAITING_VERIFICATION)

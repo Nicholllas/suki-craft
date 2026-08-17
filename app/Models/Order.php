@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use App\Enums\OrderStatus;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 class Order extends Model
 {
@@ -94,5 +96,15 @@ class Order extends Model
     public function statusHistories(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class);
+    }
+
+    public function paymentDeadline(): Carbon
+    {
+        return $this->delivery_date->copy()->setTimeFromTimeString(Str::before($this->delivery_time_slot, '-'));
+    }
+
+    public function paymentDeadlineHasPassed(): bool
+    {
+        return now()->greaterThanOrEqualTo($this->paymentDeadline());
     }
 }

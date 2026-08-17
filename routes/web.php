@@ -27,6 +27,7 @@ Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.in
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::post('/checkout/promotion', [CheckoutController::class, 'validatePromotion'])->middleware('throttle:10,1')->name('checkout.promotions.validate');
 Route::get('/orders/{orderNumber}/confirmation/{token}', [PaymentController::class, 'show'])->name('orders.confirmation');
+Route::get('/orders/{orderNumber}/confirmation/{token}/qris', [PaymentController::class, 'qris'])->name('orders.qris.show');
 Route::post('/orders/{orderNumber}/confirmation/{token}/payment-proofs', [PaymentController::class, 'store'])->middleware('throttle:10,1')->name('orders.payment-proofs.store');
 Route::get('/orders/{orderNumber}/confirmation/{token}/delivery-proof', [PaymentController::class, 'deliveryProof'])->name('orders.delivery-proofs.show');
 Route::get('/lacak-pesanan', [TrackingController::class, 'create'])->name('tracking.create');

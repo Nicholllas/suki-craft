@@ -75,7 +75,8 @@ test('a customer can checkout with server-calculated snapshots and view the conf
     $this->get(route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]))
         ->assertOk()
         ->assertSee($order->order_number)
-        ->assertSee('Menunggu pembayaran');
+        ->assertSee('Menunggu pembayaran')
+        ->assertSee('Selesaikan pembayaran sebelum');
     $this->get(route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => fake()->uuid()]))->assertNotFound();
 });
 
