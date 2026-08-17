@@ -19,6 +19,7 @@ class Order extends Model
         'order_number',
         'public_token',
         'customer_id',
+        'promotion_id',
         'customer_name',
         'customer_phone',
         'customer_email',
@@ -31,6 +32,7 @@ class Order extends Model
         'cancellation_reason',
         'subtotal',
         'delivery_fee',
+        'discount_amount',
         'total',
         'status',
         'notes',
@@ -42,6 +44,7 @@ class Order extends Model
             'delivery_date' => 'date',
             'delivered_at' => 'datetime',
             'delivery_fee' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
             'status' => OrderStatus::class,
             'subtotal' => 'decimal:2',
             'total' => 'decimal:2',
@@ -51,6 +54,11 @@ class Order extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function promotion(): BelongsTo
+    {
+        return $this->belongsTo(Promotion::class);
     }
 
     public function courier(): BelongsTo

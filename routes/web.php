@@ -9,13 +9,13 @@ use App\Http\Controllers\Customer\ReviewController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\TrackingController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('store.home');
-})->name('home');
+Route::get('/', [StorefrontController::class, 'index'])->name('home');
 
+Route::view('/tentang-kami', 'store.about')->name('about');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -24,6 +24,7 @@ Route::patch('/cart/items/{cartItem}', [CartController::class, 'update'])->name(
 Route::delete('/cart/items/{cartItem}', [CartController::class, 'remove'])->name('cart.remove');
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::post('/checkout/promotion', [CheckoutController::class, 'validatePromotion'])->middleware('throttle:10,1')->name('checkout.promotions.validate');
 Route::get('/orders/{orderNumber}/confirmation/{token}', [PaymentController::class, 'show'])->name('orders.confirmation');
 Route::post('/orders/{orderNumber}/confirmation/{token}/payment-proofs', [PaymentController::class, 'store'])->middleware('throttle:10,1')->name('orders.payment-proofs.store');
 Route::get('/orders/{orderNumber}/confirmation/{token}/delivery-proof', [PaymentController::class, 'deliveryProof'])->name('orders.delivery-proofs.show');

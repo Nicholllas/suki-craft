@@ -1,0 +1,9 @@
+@extends('layouts.admin')
+
+@section('title', 'Banner Promo')
+@section('page-title', 'Banner Promo')
+
+@section('content')
+    <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Storefront</p><h1 class="mt-2 font-serif text-3xl font-semibold text-stone-800">Banner promo</h1><p class="mt-2 text-sm text-stone-500">Atur urutan dan visibilitas banner yang tampil di beranda.</p></div><a href="{{ route('admin.promo-banners.create') }}" class="inline-flex h-11 items-center justify-center rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white">+ Tambah banner</a></div>
+    <div class="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">@forelse ($promoBanners as $promoBanner)<article class="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"><img src="{{ Storage::url($promoBanner->image_path) }}" alt="{{ $promoBanner->title }}" class="aspect-[16/7] w-full object-cover"><div class="p-5"><div class="flex items-start justify-between gap-3"><div><h2 class="font-semibold text-stone-800">{{ $promoBanner->title }}</h2><p class="mt-1 text-xs text-stone-500">Urutan: {{ $promoBanner->sort_order }}</p></div><x-status-badge :status="$promoBanner->is_active ? 'Aktif' : 'Nonaktif'" /></div><div class="mt-5 flex gap-3"><a href="{{ route('admin.promo-banners.edit', $promoBanner) }}" class="text-sm font-semibold text-rose-600">Edit</a><form method="POST" action="{{ route('admin.promo-banners.toggle', $promoBanner) }}">@csrf @method('PATCH')<button class="text-sm font-semibold text-stone-500">{{ $promoBanner->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button></form></div></div></article>@empty <div class="md:col-span-2 xl:col-span-3"><x-empty-state title="Belum ada banner promo" description="Tambahkan banner pertama untuk beranda storefront." /></div>@endforelse</div><div class="mt-6">{{ $promoBanners->links() }}</div>
+@endsection

@@ -22,6 +22,7 @@ class CheckoutRequest extends FormRequest
             'delivery_date' => ['required', Rule::date()->format('Y-m-d')->afterOrEqual(today()->addDay())],
             'delivery_time_slot' => ['required', 'string', Rule::in($this->deliveryTimeSlots())],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'promotion_code' => ['nullable', 'string', 'max:50'],
         ];
     }
 
@@ -42,6 +43,7 @@ class CheckoutRequest extends FormRequest
             'delivery_address' => $this->trimmedInput('delivery_address'),
             'delivery_time_slot' => $this->trimmedInput('delivery_time_slot'),
             'notes' => $this->trimmedInput('notes'),
+            'promotion_code' => $this->trimmedInput('promotion_code'),
         ]);
     }
 

@@ -12,9 +12,9 @@ use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
-    public function __construct(private CartService $cartService) {}
+    public function __construct(private CartService $cartService, private PromotionService $promotionService) {}
 
-    public function createFromCart(array $checkoutData): Order
+    public function createFromCart(array $checkoutData, ?string $promotionCode = null): Order
     {
         return DB::transaction(function () use ($checkoutData) {
             $cart = $this->cartService->getCurrentCart();
@@ -31,6 +31,8 @@ class OrderService
 
             $subtotal = $cart->items->sum(fn (CartItem $item): float => $item->subtotal);
             $deliveryFee = (float) config('delivery.flat_fee', 0);
+            $promotion = filled($promotionCode) ? $this->promotionService->validate($promotionCode, $subtotal, $checkoutData['customer_phone'], auth('customer')->id()) : null;
+            $discountAmount = $promotion ? $this->promotionService->calculateDiscount($promotion, $subtotal) : 0;
             $order = Order::query()->create([
                 'customer_id' => auth('customer')->id(),
                 'customer_email' => $checkoutData['customer_email'] ?? null,
@@ -39,14 +41,19 @@ class OrderService
                 'delivery_address' => $checkoutData['delivery_address'],
                 'delivery_date' => $checkoutData['delivery_date'],
                 'delivery_fee' => $deliveryFee,
+                'discount_amount' => $discountAmount,
                 'delivery_time_slot' => $checkoutData['delivery_time_slot'],
                 'notes' => $checkoutData['notes'] ?? null,
                 'order_number' => $this->nextOrderNumber(),
                 'public_token' => (string) Str::uuid(),
                 'status' => OrderStatus::PENDING_PAYMENT,
                 'subtotal' => $subtotal,
-                'total' => $subtotal + $deliveryFee,
+                'total' => $subtotal + $deliveryFee - $discountAmount,
             ]);
+
+            if ($promotion) {
+                $this->promotionService->applyToOrder($order, $promotion, $discountAmount);
+            }
 
             $order->items()->createMany($cart->items->map(fn (CartItem $item): array => [
                 'card_message' => $item->card_message,

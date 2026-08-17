@@ -15,6 +15,8 @@ use App\Http\Controllers\Admin\PaymentVerificationController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReviewModerationController;
+use App\Http\Controllers\Admin\PromotionController;
+use App\Http\Controllers\Admin\PromoBannerController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -61,7 +63,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('couriers', CourierController::class)->except(['create', 'destroy', 'edit', 'show']);
         Route::patch('couriers/{courier}/toggle', [CourierController::class, 'toggle'])->name('couriers.toggle');
         Route::view('customers', 'admin.customers.index')->name('customers.index');
-        Route::view('promotions', 'admin.promotions.index')->name('promotions.index');
+        Route::resource('promotions', PromotionController::class)->except(['destroy']);
+        Route::patch('promotions/{promotion}/toggle', [PromotionController::class, 'toggle'])->name('promotions.toggle');
+        Route::resource('promo-banners', PromoBannerController::class)->except(['destroy', 'show']);
+        Route::patch('promo-banners/{promoBanner}/toggle', [PromoBannerController::class, 'toggle'])->name('promo-banners.toggle');
         Route::get('reviews', [ReviewModerationController::class, 'index'])->name('reviews.index');
         Route::patch('reviews/{review}/approve', [ReviewModerationController::class, 'approve'])->name('reviews.approve');
         Route::patch('reviews/{review}/reject', [ReviewModerationController::class, 'reject'])->name('reviews.reject');
