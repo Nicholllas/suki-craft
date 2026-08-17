@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -11,6 +12,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OrderHistoryController extends Controller
 {
+    public function __construct(private PaymentService $paymentService) {}
+
     public function index(Request $request): View
     {
         return view('customer.orders.index', [
@@ -21,6 +24,11 @@ class OrderHistoryController extends Controller
     public function show(Request $request, Order $order): View
     {
         $order = $this->ownedOrder($request, $order);
+
+        if ($this->paymentService->expireIfPaymentDeadlinePassed($order)) {
+            $order->refresh();
+        }
+
         $order->load([
             'courier:id,name,phone',
             'items.review',

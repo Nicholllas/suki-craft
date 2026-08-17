@@ -91,12 +91,16 @@ test('a customer only sees and opens their own orders', function () {
     $otherCustomer = Customer::factory()->create();
     $order = Order::factory()->create(['customer_id' => $customer->id]);
     $otherOrder = Order::factory()->create(['customer_id' => $otherCustomer->id]);
+    $paymentUrl = route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]);
 
     $this->actingAs($customer, 'customer')->get(route('customer.orders.index'))
         ->assertSuccessful()
         ->assertSee($order->order_number)
         ->assertDontSee($otherOrder->order_number);
-    $this->actingAs($customer, 'customer')->get(route('customer.orders.show', $order))->assertSuccessful();
+    $this->actingAs($customer, 'customer')->get(route('customer.orders.show', $order))
+        ->assertSuccessful()
+        ->assertSee('Lanjutkan pembayaran')
+        ->assertSee($paymentUrl);
     $this->actingAs($customer, 'customer')->get(route('customer.orders.show', $otherOrder))->assertNotFound();
 });
 
