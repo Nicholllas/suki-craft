@@ -22,6 +22,33 @@ Alpine.data('deliverySchedule', (slots, today, currentTime, selectedDate, select
     },
 }));
 
+Alpine.data('productForm', (variants = [], recipes = []) => ({
+    recipes: recipes.map((recipe) => ({
+        ingredient_id: '',
+        product_variant_id: '',
+        quantity_needed: 1,
+        ratio_per_unit: 1,
+        ...recipe,
+        ratio_per_unit: recipe.ratio_per_unit ?? 1,
+    })),
+    section: 'info',
+    variants,
+    addRecipe() {
+        this.recipes.push({ ingredient_id: '', product_variant_id: '', quantity_needed: 1, ratio_per_unit: 1 });
+    },
+    addVariant() {
+        this.variants.push({ label: '', price_adjustment: 0, is_active: true, is_quantity_based: false });
+    },
+    isQuantityBasedRecipe(recipe) {
+        const selectedVariant = this.variants.find((variant) => String(variant.id) === String(recipe.product_variant_id));
+
+        return [true, 1, '1'].includes(selectedVariant?.is_quantity_based);
+    },
+    persistedVariants() {
+        return this.variants.filter((variant) => variant.id);
+    },
+}));
+
 const confirmationDefaults = {
     buttonsStyling: false,
     cancelButtonText: 'Batal',

@@ -33,38 +33,40 @@ class InventoryService
 
     public function deductForOrder(Order $order): void
     {
-        if ($order->ingredientStockMovements()->where('type', 'out')->exists()) {
-            return;
-        }
-
-        $requirements = $this->requirementsForOrder($order);
-
-        if ($requirements->isEmpty()) {
-            return;
-        }
-
-        $ingredients = Ingredient::query()->whereKey($requirements->keys())->lockForUpdate()->get()->keyBy('id');
-
-        foreach ($requirements as $ingredientId => $quantity) {
-            $ingredient = $ingredients->get($ingredientId);
-
-            if (! $ingredient) {
-                continue;
+        DB::transaction(function () use ($order): void {
+            if ($order->ingredientStockMovements()->where('type', 'out')->exists()) {
+                return;
             }
 
-            $newStock = (float) $ingredient->current_stock - $quantity;
-            $ingredient->update(['current_stock' => $newStock]);
-            $ingredient->stockMovements()->create(['quantity' => -$quantity, 'related_order_id' => $order->id, 'reason' => 'Pemakaian untuk pesanan '.$order->order_number, 'type' => 'out']);
+            $requirements = $this->requirementsForOrder($order);
 
-            if ($newStock <= (float) $ingredient->minimum_stock) {
-                Log::warning('Stok bahan berada di bawah ambang minimum setelah pesanan diproses.', [
-                    'current_stock' => $newStock,
-                    'ingredient_id' => $ingredient->id,
-                    'minimum_stock' => (float) $ingredient->minimum_stock,
-                    'order_id' => $order->id,
-                ]);
+            if ($requirements->isEmpty()) {
+                return;
             }
-        }
+
+            $ingredients = Ingredient::query()->whereKey($requirements->keys())->lockForUpdate()->get()->keyBy('id');
+
+            foreach ($requirements as $ingredientId => $quantity) {
+                $ingredient = $ingredients->get($ingredientId);
+
+                if (! $ingredient) {
+                    continue;
+                }
+
+                $newStock = (float) $ingredient->current_stock - $quantity;
+                $ingredient->update(['current_stock' => $newStock]);
+                $ingredient->stockMovements()->create(['quantity' => -$quantity, 'related_order_id' => $order->id, 'reason' => 'Pemakaian untuk pesanan '.$order->order_number, 'type' => 'out']);
+
+                if ($newStock <= (float) $ingredient->minimum_stock) {
+                    Log::warning('Stok bahan berada di bawah ambang minimum setelah pesanan diproses.', [
+                        'current_stock' => $newStock,
+                        'ingredient_id' => $ingredient->id,
+                        'minimum_stock' => (float) $ingredient->minimum_stock,
+                        'order_id' => $order->id,
+                    ]);
+                }
+            }
+        });
     }
 
     public function getLowStockIngredients(): Collection
@@ -80,37 +82,34 @@ class InventoryService
     private function requirementsForOrder(Order $order): Collection
     {
         $requirements = collect();
-        $order->loadMissing('itemGroups.variants:id,order_item_group_id,product_variant_id,quantity_in_bundle');
+        $order->loadMissing([
+            'itemGroups:id,order_id,product_id,bundle_quantity',
+            'itemGroups.variants:id,order_item_group_id,product_variant_id,quantity_in_bundle',
+            'itemGroups.variants.productVariant:id,is_quantity_based',
+        ]);
+        $recipesByProduct = ProductIngredient::query()->whereIn('product_id', $order->itemGroups->pluck('product_id')->unique())->get(['ingredient_id', 'product_id', 'product_variant_id', 'quantity_needed', 'ratio_per_unit'])->groupBy('product_id');
 
         foreach ($order->itemGroups as $itemGroup) {
-            if ($itemGroup->variants->isEmpty()) {
-                foreach ($this->recipesForItem($itemGroup->product_id, null) as $recipe) {
-                    $requirements[$recipe->ingredient_id] = ($requirements[$recipe->ingredient_id] ?? 0) + ((float) $recipe->quantity_needed * $itemGroup->bundle_quantity);
-                }
+            $recipes = $recipesByProduct->get($itemGroup->product_id, collect());
 
-                continue;
+            foreach ($recipes->whereNull('product_variant_id') as $recipe) {
+                $quantity = (float) $recipe->quantity_needed * $itemGroup->bundle_quantity;
+                $requirements->put($recipe->ingredient_id, (float) $requirements->get($recipe->ingredient_id, 0) + $quantity);
             }
 
             foreach ($itemGroup->variants as $variant) {
-                foreach ($this->recipesForItem($itemGroup->product_id, $variant->product_variant_id) as $recipe) {
-                    $requirements[$recipe->ingredient_id] = ($requirements[$recipe->ingredient_id] ?? 0) + ((float) $recipe->quantity_needed * $variant->quantity_in_bundle * $itemGroup->bundle_quantity);
+                if (! $variant->product_variant_id || ! $variant->productVariant) {
+                    continue;
+                }
+
+                foreach ($recipes->where('product_variant_id', $variant->product_variant_id) as $recipe) {
+                    $quantityPerVariant = $variant->productVariant->is_quantity_based ? (float) $recipe->ratio_per_unit : (float) $recipe->quantity_needed;
+                    $quantity = $quantityPerVariant * $variant->quantity_in_bundle * $itemGroup->bundle_quantity;
+                    $requirements->put($recipe->ingredient_id, (float) $requirements->get($recipe->ingredient_id, 0) + $quantity);
                 }
             }
         }
 
         return $requirements;
-    }
-
-    private function recipesForItem(int $productId, ?int $variantId): Collection
-    {
-        if ($variantId) {
-            $variantRecipes = ProductIngredient::query()->where('product_id', $productId)->where('product_variant_id', $variantId)->get();
-
-            if ($variantRecipes->isNotEmpty()) {
-                return $variantRecipes;
-            }
-        }
-
-        return ProductIngredient::query()->where('product_id', $productId)->whereNull('product_variant_id')->get();
     }
 }

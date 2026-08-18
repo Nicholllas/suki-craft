@@ -15,28 +15,31 @@ class ProductUpdateRequest extends FormRequest
         return auth('admin')->check();
     }
 
+    public function after(): array
+    {
+        return [
+            ...$this->productValidationCallbacks(),
+            function (Validator $validator): void {
+                $product = $this->route('product');
+                $remainingImages = $product->images()->count() + count($this->file('images', []));
+
+                if ($remainingImages === 0) {
+                    $validator->errors()->add('images', 'Produk harus memiliki minimal satu foto.');
+                }
+            },
+        ];
+    }
+
     public function rules(): array
     {
         return [
-            ...$this->productRules($this->route('product')),
+            ...$this->productRules(),
             'image_order' => ['nullable', 'array'],
             'image_order.*' => ['integer'],
             'images' => ['nullable', 'array'],
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'primary_image_id' => ['nullable', 'integer'],
         ];
-    }
-
-    public function withValidator(Validator $validator): void
-    {
-        $validator->after(function (Validator $validator) {
-            $product = $this->route('product');
-            $remainingImages = $product->images()->count() + count($this->file('images', []));
-
-            if ($remainingImages === 0) {
-                $validator->errors()->add('images', 'Produk harus memiliki minimal satu foto.');
-            }
-        });
     }
 
     protected function prepareForValidation(): void

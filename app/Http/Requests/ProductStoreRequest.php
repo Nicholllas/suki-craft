@@ -14,6 +14,11 @@ class ProductStoreRequest extends FormRequest
         return auth('admin')->check();
     }
 
+    public function after(): array
+    {
+        return $this->productValidationCallbacks();
+    }
+
     public function rules(): array
     {
         return [...$this->productRules(), 'images' => ['required', 'array', 'min:1'], 'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048']];

@@ -39,7 +39,8 @@ test('processing an order through the admin route deducts variant recipe quantit
         'ingredient_id' => $ingredient->id,
         'product_id' => $product->id,
         'product_variant_id' => $productVariant->id,
-        'quantity_needed' => 2,
+        'quantity_needed' => null,
+        'ratio_per_unit' => 2,
     ]);
     $order = Order::factory()->create(['status' => OrderStatus::PAYMENT_CONFIRMED]);
     $itemGroup = OrderItemGroup::create([
@@ -65,6 +66,34 @@ test('processing an order through the admin route deducts variant recipe quantit
     expect($order->refresh()->status)->toBe(OrderStatus::PROCESSING)
         ->and($ingredient->refresh()->current_stock)->toBe('18.000')
         ->and($ingredient->stockMovements()->where('type', 'out')->value('quantity'))->toBe('-12.000');
+});
+
+test('processing combines default fixed variant and quantity based ratio recipes', function () {
+    $defaultIngredient = Ingredient::create(['name' => 'Kertas pembungkus', 'unit' => 'lembar', 'current_stock' => 100, 'minimum_stock' => 3, 'is_active' => true]);
+    $fixedVariantIngredient = Ingredient::create(['name' => 'Pita ukuran besar', 'unit' => 'meter', 'current_stock' => 100, 'minimum_stock' => 3, 'is_active' => true]);
+    $ratioIngredient = Ingredient::create(['name' => 'Lembar uang', 'unit' => 'lembar', 'current_stock' => 100, 'minimum_stock' => 3, 'is_active' => true]);
+    $product = Product::factory()->create();
+    $fixedVariant = $product->variants()->create(['is_active' => true, 'is_quantity_based' => false, 'label' => 'Ukuran Besar', 'price_adjustment' => 50000]);
+    $quantityBasedVariant = $product->variants()->create(['is_active' => true, 'is_quantity_based' => true, 'label' => 'Pecahan Rp10.000', 'price_adjustment' => 10000]);
+    $unlinkedQuantityBasedVariant = $product->variants()->create(['is_active' => true, 'is_quantity_based' => true, 'label' => 'Pecahan Rp20.000', 'price_adjustment' => 20000]);
+
+    ProductIngredient::create(['ingredient_id' => $defaultIngredient->id, 'product_id' => $product->id, 'quantity_needed' => 2, 'ratio_per_unit' => null]);
+    ProductIngredient::create(['ingredient_id' => $fixedVariantIngredient->id, 'product_id' => $product->id, 'product_variant_id' => $fixedVariant->id, 'quantity_needed' => 3, 'ratio_per_unit' => null]);
+    ProductIngredient::create(['ingredient_id' => $ratioIngredient->id, 'product_id' => $product->id, 'product_variant_id' => $quantityBasedVariant->id, 'quantity_needed' => null, 'ratio_per_unit' => 0.5]);
+
+    $order = Order::factory()->create(['status' => OrderStatus::PAYMENT_CONFIRMED]);
+    $itemGroup = OrderItemGroup::create(['bundle_quantity' => 2, 'order_id' => $order->id, 'product_id' => $product->id, 'product_name' => $product->name, 'subtotal' => 500000]);
+    $itemGroup->variants()->create(['line_subtotal' => 100000, 'product_variant_id' => $fixedVariant->id, 'quantity_in_bundle' => 1, 'unit_price' => 50000, 'variant_label' => $fixedVariant->label]);
+    $itemGroup->variants()->create(['line_subtotal' => 100000, 'product_variant_id' => $quantityBasedVariant->id, 'quantity_in_bundle' => 10, 'unit_price' => 10000, 'variant_label' => $quantityBasedVariant->label]);
+    $itemGroup->variants()->create(['line_subtotal' => 140000, 'product_variant_id' => $unlinkedQuantityBasedVariant->id, 'quantity_in_bundle' => 7, 'unit_price' => 20000, 'variant_label' => $unlinkedQuantityBasedVariant->label]);
+
+    app(DeliveryService::class)->markProcessing($order);
+
+    expect($order->refresh()->status)->toBe(OrderStatus::PROCESSING)
+        ->and($defaultIngredient->refresh()->current_stock)->toBe('96.000')
+        ->and($fixedVariantIngredient->refresh()->current_stock)->toBe('94.000')
+        ->and($ratioIngredient->refresh()->current_stock)->toBe('90.000')
+        ->and($order->ingredientStockMovements()->where('type', 'out')->count())->toBe(3);
 });
 
 test('an administrator can record stock changes and view stock history', function () {

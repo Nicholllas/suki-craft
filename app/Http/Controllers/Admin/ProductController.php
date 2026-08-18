@@ -133,7 +133,7 @@ class ProductController extends Controller
             $productData['cost_price'] = 0;
             $productData['stock'] = 0;
         }
-        $productData['slug'] = $this->uniqueSlug($data['slug'] ?: $data['name'], $product);
+        $productData['slug'] = $this->uniqueSlug($data['name'], $product);
 
         return $productData;
     }
@@ -180,7 +180,8 @@ class ProductController extends Controller
         $variantIds = [];
 
         foreach ($variants as $variant) {
-            $data = Arr::only($variant, ['is_active', 'is_quantity_based', 'label', 'price_adjustment', 'sku']);
+            $data = Arr::only($variant, ['is_active', 'is_quantity_based', 'label', 'price_adjustment']);
+            $data['sku'] = $this->variantSku($product, $variant['label']);
             $record = filled($variant['id'] ?? null) ? $product->variants()->find($variant['id']) : null;
             $record ? $record->update($data) : $record = $product->variants()->create($data);
             $variantIds[] = $record->id;
@@ -191,20 +192,27 @@ class ProductController extends Controller
 
     private function syncIngredients(Product $product, array $ingredients): void
     {
-        $variantIds = $product->variants()->pluck('id');
+        $variants = $product->variants()->get(['id', 'is_quantity_based'])->keyBy('id');
         $product->ingredients()->delete();
 
         foreach ($ingredients as $ingredient) {
-            $variantId = $ingredient['product_variant_id'] ?? null;
+            $variantId = filled($ingredient['product_variant_id'] ?? null) ? (int) $ingredient['product_variant_id'] : null;
+            $variant = $variantId ? $variants->get($variantId) : null;
 
-            abort_unless(! $variantId || $variantIds->contains($variantId), 422);
+            abort_unless(! $variantId || $variant, 422);
 
             $product->ingredients()->create([
                 'ingredient_id' => $ingredient['ingredient_id'],
                 'product_variant_id' => $variantId,
-                'quantity_needed' => $ingredient['quantity_needed'],
+                'quantity_needed' => $variant?->is_quantity_based ? null : $ingredient['quantity_needed'],
+                'ratio_per_unit' => $variant?->is_quantity_based ? $ingredient['ratio_per_unit'] : null,
             ]);
         }
+    }
+
+    private function variantSku(Product $product, string $label): string
+    {
+        return Str::upper(Str::slug("{$product->slug}-{$label}"));
     }
 
     private function uniqueSlug(string $value, ?Product $product = null): string
