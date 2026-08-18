@@ -16,9 +16,10 @@ class AddCartItemRequest extends FormRequest
         return [
             'card_message' => ['nullable', 'string', 'max:200'],
             'product_id' => ['required', 'integer', 'exists:products,id'],
-            'quantity' => ['required', 'integer', 'min:1', 'max:99'],
+            'bundle_quantity' => ['required', 'integer', 'min:1', 'max:99'],
+            'selected_variants' => ['nullable', 'array'],
+            'selected_variants.*' => ['required', 'integer', 'min:1', 'max:999'],
             'special_note' => ['nullable', 'string', 'max:300'],
-            'variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
         ];
     }
 }

@@ -39,7 +39,8 @@ class TrackingController extends Controller
         $this->ensureOrderWasTracked($order);
         $order->load([
             'courier:id,name,phone',
-            'items.review',
+            'itemGroups.review',
+            'itemGroups.variants',
             'statusHistories' => fn ($query) => $query->orderBy('created_at')->orderBy('id'),
         ]);
 

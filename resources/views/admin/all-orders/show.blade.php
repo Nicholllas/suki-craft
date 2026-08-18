@@ -24,16 +24,17 @@
                             <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Item pesanan</p>
                             <h2 class="mt-2 font-serif text-2xl font-semibold text-stone-800">Buket pilihan pelanggan</h2>
                         </div>
-                        <p class="rounded-xl bg-stone-50 px-3 py-2 text-xs font-semibold text-stone-600">{{ $order->items->sum('quantity') }} item</p>
+                        <p class="rounded-xl bg-stone-50 px-3 py-2 text-xs font-semibold text-stone-600">{{ $order->itemGroups->sum('bundle_quantity') }} buket</p>
                     </div>
 
                     <div class="mt-6 divide-y divide-stone-100">
-                        @foreach ($order->items as $item)
+                        @foreach ($order->itemGroups as $item)
                             <div class="py-5 first:pt-0 last:pb-0">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
                                         <p class="text-base font-semibold text-stone-800">{{ $item->product_name }}</p>
-                                        <p class="mt-1 text-sm text-stone-500">{{ $item->variant_label ?? 'Buket pilihan' }} · {{ $item->quantity }}× Rp{{ number_format($item->unit_price, 0, ',', '.') }}</p>
+                                        <p class="mt-1 text-sm text-stone-500">{{ $item->bundle_quantity }} buket</p>
+                                        @if ($item->variants->isNotEmpty())<ul class="mt-1 text-sm text-stone-500">@foreach ($item->variants as $variant)<li>{{ $variant->variant_label }}@if ($variant->quantity_in_bundle > 1) · {{ $variant->quantity_in_bundle }}×@endif</li>@endforeach</ul>@endif
                                     </div>
                                     <p class="shrink-0 text-sm font-semibold text-stone-800">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</p>
                                 </div>
@@ -120,7 +121,7 @@
                 <x-card padding="p-5">
                     <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Pengiriman</p>
                     <p class="mt-3 text-sm font-semibold text-stone-800">{{ $order->delivery_date->locale('id')->translatedFormat('d F Y') }}</p>
-                    <p class="mt-1 text-sm text-stone-500">{{ config('delivery.time_slots.'.$order->delivery_time_slot, $order->delivery_time_slot) }}</p>
+                    <p class="mt-1 text-sm text-stone-500">{{ config('delivery.time_slots.'.$order->delivery_time_slot.'.label', $order->delivery_time_slot) }}</p>
                     <div class="mt-5 border-t border-stone-100 pt-5"><p class="text-xs font-semibold text-stone-400">Kurir</p><p class="mt-1 text-sm font-semibold text-stone-800">{{ $order->courier?->name ?? 'Belum ditugaskan' }}</p>@if ($order->courier)<p class="mt-1 text-sm text-stone-500">{{ $order->courier->phone }}</p>@endif</div>
                     @if ($order->delivered_at)<div class="mt-5 border-t border-stone-100 pt-5"><p class="text-xs font-semibold text-stone-400">Terkirim</p><p class="mt-1 text-sm font-semibold text-stone-800">{{ $order->delivered_at->locale('id')->translatedFormat('d F Y, H.i') }} WIB</p></div>@endif
                     @if ($order->cancellation_reason)<p class="mt-4 rounded-xl bg-rose-50 px-3 py-3 text-xs leading-5 text-rose-700"><span class="font-semibold">Alasan pembatalan:</span> {{ $order->cancellation_reason }}</p>@endif

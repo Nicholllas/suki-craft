@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AddCartItemRequest;
 use App\Http\Requests\UpdateCartItemRequest;
+use App\Models\Product;
 use App\Services\CartService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +17,7 @@ class CartController extends Controller
     public function index(): View
     {
         $cart = $this->cartService->getCurrentCart();
-        $cart?->load(['items.product.category', 'items.product.images', 'items.variant']);
+        $cart?->load(['itemGroups.product.category', 'itemGroups.product.images', 'itemGroups.variants.productVariant']);
 
         return view('cart.index', ['cart' => $cart, 'total' => $this->cartService->getTotal()]);
     }
@@ -24,12 +25,7 @@ class CartController extends Controller
     public function add(AddCartItemRequest $request): JsonResponse|RedirectResponse
     {
         $data = $request->validated();
-        $this->cartService->addItem(
-            $data['product_id'],
-            $data['variant_id'] ?? null,
-            $data['quantity'],
-            $data
-        );
+        $this->cartService->addToCart(Product::query()->findOrFail($data['product_id']), $data['selected_variants'] ?? [], $data['bundle_quantity'], $data);
 
         if ($request->expectsJson()) {
             return response()->json([

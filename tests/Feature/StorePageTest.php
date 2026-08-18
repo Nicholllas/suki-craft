@@ -36,3 +36,27 @@ test('the storefront features active products and their active categories', func
         ->assertDontSee($inactiveProduct->name)
         ->assertDontSee($hiddenCategoryProduct->name);
 });
+
+test('quantity-based variants use stable named inputs on the product page', function () {
+    $category = Category::factory()->create();
+    $product = Product::factory()->for($category)->create([
+        'allow_multiple_variants' => true,
+        'slug' => 'buket-uang-custom',
+    ]);
+    $variant = $product->variants()->create([
+        'is_active' => true,
+        'is_quantity_based' => true,
+        'label' => 'Pecahan Rp10.000',
+        'price_adjustment' => 10000,
+        'sku' => 'MONEY-10K',
+    ]);
+
+    $this->get(route('products.show', $product))
+        ->assertSuccessful()
+        ->assertSee("setVariantQuantity({$variant->id}, \$event.target.value)", false)
+        ->assertSee("'selected_variants[{$variant->id}]'", false)
+        ->assertSee('payload.set(`selected_variants[${variantId}]`, variantQuantity)', false)
+        ->assertDontSee(':disabled="!isSelected('.$variant->id.')"', false)
+        ->assertSee('Jumlah dalam buket')
+        ->assertDontSee('<template x-for="[variantId, variantQuantity]', false);
+});

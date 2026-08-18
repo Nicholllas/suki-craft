@@ -27,7 +27,7 @@
             @csrf
 
             <div class="space-y-6">
-                <section class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
+                <section x-data="deliverySchedule({{ Illuminate\Support\Js::from($timeSlots) }}, '{{ now('Asia/Jakarta')->toDateString() }}', '{{ now('Asia/Jakarta')->format('H:i') }}', '{{ old('delivery_date') }}', '{{ old('delivery_time_slot') }}')" class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
                     <div class="flex items-start gap-3">
                         <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rose-50 text-sm font-bold text-rose-600">1</span>
                         <div><h2 class="font-serif text-2xl font-semibold text-stone-800">Penerima buket</h2><p class="mt-1 text-sm leading-6 text-stone-500">Kami memakai data ini untuk mengatur pengantaran pesananmu.</p></div>
@@ -62,16 +62,16 @@
                     <div class="mt-6 grid gap-5 sm:grid-cols-2">
                         <div>
                             <label for="delivery-date" class="text-sm font-semibold text-stone-700">Tanggal pengiriman</label>
-                            <input id="delivery-date" name="delivery_date" type="date" value="{{ old('delivery_date') }}" min="{{ $minimumDeliveryDate }}" required class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm text-stone-800 focus:border-rose-300 focus:ring-rose-200 @error('delivery_date') border-rose-400 @enderror">
-                            <p class="mt-2 text-xs text-stone-400">Pesanan dapat dikirim mulai {{ \Illuminate\Support\Carbon::parse($minimumDeliveryDate)->translatedFormat('d F Y') }}.</p>
+                            <input id="delivery-date" name="delivery_date" type="date" value="{{ old('delivery_date') }}" min="{{ $minimumDeliveryDate }}" x-model="selectedDate" x-on:change="clearUnavailableSlot" required class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm text-stone-800 focus:border-rose-300 focus:ring-rose-200 @error('delivery_date') border-rose-400 @enderror">
+                            <p class="mt-2 text-xs text-stone-400">Pesanan dapat dikirim mulai hari ini, selama slot waktunya masih tersedia.</p>
                             @error('delivery_date')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
                             <label for="delivery-time-slot" class="text-sm font-semibold text-stone-700">Estimasi waktu tiba</label>
-                            <select id="delivery-time-slot" name="delivery_time_slot" required class="mt-2 h-12 w-full rounded-xl border-stone-200 bg-white px-4 text-sm text-stone-800 focus:border-rose-300 focus:ring-rose-200 @error('delivery_time_slot') border-rose-400 @enderror">
+                            <select id="delivery-time-slot" name="delivery_time_slot" x-model="selectedSlot" required class="mt-2 h-12 w-full rounded-xl border-stone-200 bg-white px-4 text-sm text-stone-800 focus:border-rose-300 focus:ring-rose-200 @error('delivery_time_slot') border-rose-400 @enderror">
                                 <option value="">Pilih waktu pengiriman</option>
-                                @foreach ($timeSlots as $value => $label)
-                                    <option value="{{ $value }}" @selected(old('delivery_time_slot') === $value)>{{ $label }}</option>
+                                @foreach ($timeSlots as $value => $slot)
+                                    <option value="{{ $value }}" :disabled="!isSlotAvailable(slots['{{ $value }}'])" @selected(old('delivery_time_slot') === $value)>{{ $slot['label'] }}</option>
                                 @endforeach
                             </select>
                             @error('delivery_time_slot')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
@@ -97,7 +97,7 @@
                 </div>
 
                 <div x-cloak x-show="showItems" x-transition class="mt-5 space-y-4 border-b border-stone-100 pb-5">
-                    @foreach ($cart->items as $item)
+                    @foreach ($cart->itemGroups as $item)
                         @php($imagePath = $item->product->primary_image?->path ?? $item->product->image)
                         <div class="flex gap-3">
                             <div class="h-16 w-14 shrink-0 overflow-hidden rounded-xl bg-rose-50">
@@ -107,7 +107,7 @@
                                     <div class="grid h-full place-items-center text-xl text-rose-300">✿</div>
                                 @endif
                             </div>
-                            <div class="min-w-0 flex-1"><p class="truncate text-sm font-semibold text-stone-800">{{ $item->product->name }}</p><p class="mt-0.5 text-xs text-stone-500">{{ $item->variant?->label ?? 'Buket pilihan' }} · {{ $item->quantity }}×</p><p class="mt-1 text-xs font-semibold text-stone-700">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</p></div>
+                            <div class="min-w-0 flex-1"><p class="truncate text-sm font-semibold text-stone-800">{{ $item->product->name }}</p>@if($item->variants->isNotEmpty())<ul class="mt-0.5 text-xs text-stone-500">@foreach($item->variants as $variant)<li>{{ $variant->productVariant->label }}@if($variant->quantity_in_bundle > 1) · {{ $variant->quantity_in_bundle }}×@endif</li>@endforeach</ul>@endif<p class="mt-1 text-xs text-stone-500">{{ $item->bundle_quantity }} buket</p><p class="mt-1 text-xs font-semibold text-stone-700">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</p></div>
                         </div>
                     @endforeach
                 </div>

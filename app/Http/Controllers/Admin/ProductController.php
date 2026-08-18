@@ -126,7 +126,7 @@ class ProductController extends Controller
 
     private function productData(array $data, ?Product $product = null): array
     {
-        $productData = Arr::only($data, ['base_price', 'category_id', 'description', 'is_active', 'is_featured', 'name']);
+        $productData = Arr::only($data, ['base_price', 'category_id', 'description', 'is_active', 'is_featured', 'allow_multiple_variants', 'name']);
         $productData['price'] = $data['base_price'];
 
         if (! $product) {
@@ -180,7 +180,7 @@ class ProductController extends Controller
         $variantIds = [];
 
         foreach ($variants as $variant) {
-            $data = Arr::only($variant, ['is_active', 'label', 'price_adjustment', 'sku']);
+            $data = Arr::only($variant, ['is_active', 'is_quantity_based', 'label', 'price_adjustment', 'sku']);
             $record = filled($variant['id'] ?? null) ? $product->variants()->find($variant['id']) : null;
             $record ? $record->update($data) : $record = $product->variants()->create($data);
             $variantIds[] = $record->id;

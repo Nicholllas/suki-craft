@@ -21,7 +21,7 @@ beforeEach(function () {
 });
 
 test('an administrator can complete the delivery lifecycle with a proof photo', function () {
-    Storage::fake('local');
+    fakeStorageDisk('local');
     $courier = Courier::factory()->create();
     $order = Order::factory()->create(['status' => OrderStatus::PAYMENT_CONFIRMED]);
     $deliveryService = app(DeliveryService::class);

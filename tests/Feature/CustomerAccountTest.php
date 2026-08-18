@@ -57,12 +57,12 @@ test('a guest cart is merged into the customer cart after authentication', funct
     app()->instance('request', $request);
     $cartService = app(CartService::class);
 
-    $cartService->addItem($this->product->id, null, 1);
+    $cartService->addToCart($this->product, [], 1);
     $cartService->mergeGuestCartIntoCustomer($customer->id);
 
     $cart = Cart::query()->whereBelongsTo($customer)->sole();
 
-    expect($cart->items()->sum('quantity'))->toBe(1);
+    expect($cart->itemGroups()->sum('bundle_quantity'))->toBe(1);
 });
 
 test('a customer can update their profile and password', function () {

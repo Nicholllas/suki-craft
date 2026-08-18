@@ -6,7 +6,7 @@ use App\Enums\OrderStatus;
 use App\Enums\ReviewStatus;
 use App\Models\Admin;
 use App\Models\Customer;
-use App\Models\OrderItem;
+use App\Models\OrderItemGroup;
 use App\Models\Product;
 use App\Models\Review;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -18,26 +18,26 @@ use Throwable;
 
 class ReviewService
 {
-    public function canReview(OrderItem $orderItem): bool
+    public function canReview(OrderItemGroup $orderItemGroup): bool
     {
-        $orderItem->loadMissing('order');
+        $orderItemGroup->loadMissing('order');
 
-        return $orderItem->order?->status === OrderStatus::DELIVERED && ! $orderItem->review()->exists();
+        return $orderItemGroup->order?->status === OrderStatus::DELIVERED && ! $orderItemGroup->review()->exists();
     }
 
-    public function submit(OrderItem $orderItem, array $data, ?Customer $customer = null): Review
+    public function submit(OrderItemGroup $orderItemGroup, array $data, ?Customer $customer = null): Review
     {
         $photoPath = null;
 
         try {
-            return DB::transaction(function () use ($customer, $data, $orderItem, &$photoPath): Review {
-                $lockedOrderItem = OrderItem::query()->with('order')->lockForUpdate()->findOrFail($orderItem->id);
+            return DB::transaction(function () use ($customer, $data, $orderItemGroup, &$photoPath): Review {
+                $lockedOrderItemGroup = OrderItemGroup::query()->with('order')->lockForUpdate()->findOrFail($orderItemGroup->id);
 
-                if (! $this->canReview($lockedOrderItem)) {
+                if (! $this->canReview($lockedOrderItemGroup)) {
                     throw ValidationException::withMessages(['review' => 'Ulasan untuk produk ini tidak dapat dikirim.']);
                 }
 
-                if ($customer && $lockedOrderItem->order->customer_id !== $customer->id) {
+                if ($customer && $lockedOrderItemGroup->order->customer_id !== $customer->id) {
                     throw ValidationException::withMessages(['review' => 'Pesanan ini bukan milik akun Anda.']);
                 }
 
@@ -48,12 +48,12 @@ class ReviewService
                 return Review::query()->create([
                     'comment' => $data['comment'] ?? null,
                     'customer_id' => $customer?->id,
-                    'order_id' => $lockedOrderItem->order_id,
-                    'order_item_id' => $lockedOrderItem->id,
+                    'order_id' => $lockedOrderItemGroup->order_id,
+                    'order_item_group_id' => $lockedOrderItemGroup->id,
                     'photo_path' => $photoPath,
-                    'product_id' => $lockedOrderItem->product_id,
+                    'product_id' => $lockedOrderItemGroup->product_id,
                     'rating' => $data['rating'],
-                    'reviewer_name' => $lockedOrderItem->order->customer_name,
+                    'reviewer_name' => $lockedOrderItemGroup->order->customer_name,
                     'status' => ReviewStatus::PENDING,
                 ]);
             });

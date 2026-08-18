@@ -80,11 +80,21 @@ class InventoryService
     private function requirementsForOrder(Order $order): Collection
     {
         $requirements = collect();
-        $order->loadMissing('items:id,order_id,product_id,product_variant_id,quantity');
+        $order->loadMissing('itemGroups.variants:id,order_item_group_id,product_variant_id,quantity_in_bundle');
 
-        foreach ($order->items as $item) {
-            foreach ($this->recipesForItem($item->product_id, $item->product_variant_id) as $recipe) {
-                $requirements[$recipe->ingredient_id] = ($requirements[$recipe->ingredient_id] ?? 0) + ((float) $recipe->quantity_needed * $item->quantity);
+        foreach ($order->itemGroups as $itemGroup) {
+            if ($itemGroup->variants->isEmpty()) {
+                foreach ($this->recipesForItem($itemGroup->product_id, null) as $recipe) {
+                    $requirements[$recipe->ingredient_id] = ($requirements[$recipe->ingredient_id] ?? 0) + ((float) $recipe->quantity_needed * $itemGroup->bundle_quantity);
+                }
+
+                continue;
+            }
+
+            foreach ($itemGroup->variants as $variant) {
+                foreach ($this->recipesForItem($itemGroup->product_id, $variant->product_variant_id) as $recipe) {
+                    $requirements[$recipe->ingredient_id] = ($requirements[$recipe->ingredient_id] ?? 0) + ((float) $recipe->quantity_needed * $variant->quantity_in_bundle * $itemGroup->bundle_quantity);
+                }
             }
         }
 

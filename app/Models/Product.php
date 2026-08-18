@@ -12,6 +12,8 @@ class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $attributes = ['allow_multiple_variants' => false];
+
     protected $fillable = [
         'category_id',
         'name',
@@ -23,6 +25,7 @@ class Product extends Model
         'stock',
         'is_active',
         'is_featured',
+        'allow_multiple_variants',
     ];
 
     protected function casts(): array
@@ -32,6 +35,7 @@ class Product extends Model
             'cost_price' => 'decimal:2',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
+            'allow_multiple_variants' => 'boolean',
             'price' => 'decimal:2',
             'stock' => 'integer',
         ];

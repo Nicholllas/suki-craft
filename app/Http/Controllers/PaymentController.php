@@ -31,7 +31,7 @@ class PaymentController extends Controller
         $payment = $this->qrisDynamicPayloadService->paymentConfiguration();
         $order->load([
             'courier:id,name,phone',
-            'items',
+            'itemGroups.variants',
             'latestPaymentProof',
             'statusHistories' => fn ($query) => $query->orderBy('created_at')->orderBy('id'),
         ]);

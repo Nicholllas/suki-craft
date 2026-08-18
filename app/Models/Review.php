@@ -15,7 +15,7 @@ class Review extends Model
 
     protected $fillable = [
         'order_id',
-        'order_item_id',
+        'order_item_group_id',
         'product_id',
         'customer_id',
         'reviewer_name',
@@ -46,9 +46,9 @@ class Review extends Model
         return $this->belongsTo(Order::class);
     }
 
-    public function orderItem(): BelongsTo
+    public function orderItemGroup(): BelongsTo
     {
-        return $this->belongsTo(OrderItem::class);
+        return $this->belongsTo(OrderItemGroup::class);
     }
 
     public function product(): BelongsTo

@@ -51,7 +51,7 @@ class OrderController extends Controller
     {
         $order->load([
             'courier:id,name,phone',
-            'items',
+            'itemGroups.variants',
             'paymentProofs' => fn ($query) => $query->with('verifier:id,name')->latest('uploaded_at'),
             'statusHistories' => fn ($query) => $query->with('changedBy:id,name')->orderBy('created_at')->orderBy('id'),
         ]);

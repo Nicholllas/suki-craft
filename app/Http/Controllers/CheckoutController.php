@@ -23,17 +23,17 @@ class CheckoutController extends Controller
     {
         $cart = $this->cartService->getCurrentCart();
 
-        if (! $cart || $cart->items()->doesntExist()) {
+        if (! $cart || $cart->itemGroups()->doesntExist()) {
             return redirect()->route('cart.index')->with('error', 'Tambahkan buket ke keranjang sebelum checkout.');
         }
 
-        $cart->load(['items.product.category', 'items.product.images', 'items.variant']);
+        $cart->load(['itemGroups.product.category', 'itemGroups.product.images', 'itemGroups.variants.productVariant']);
 
         return view('checkout.index', [
             'cart' => $cart,
             'customer' => $request->user('customer'),
             'deliveryFee' => (float) config('delivery.flat_fee', 0),
-            'minimumDeliveryDate' => today()->addDay()->toDateString(),
+            'minimumDeliveryDate' => now('Asia/Jakarta')->toDateString(),
             'subtotal' => $this->cartService->getTotal(),
             'timeSlots' => config('delivery.time_slots', []),
         ]);
@@ -54,7 +54,7 @@ class CheckoutController extends Controller
         $data = $request->validate(['code' => ['required', 'string', 'max:50'], 'customer_phone' => ['nullable', 'string', 'max:25']]);
         $cart = $this->cartService->getCurrentCart();
 
-        if (! $cart || $cart->items()->doesntExist()) {
+        if (! $cart || $cart->itemGroups()->doesntExist()) {
             return response()->json(['message' => 'Keranjang belanja Anda masih kosong.'], 422);
         }
 

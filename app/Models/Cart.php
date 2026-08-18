@@ -18,8 +18,8 @@ class Cart extends Model
         return $this->belongsTo(Customer::class);
     }
 
-    public function items(): HasMany
+    public function itemGroups(): HasMany
     {
-        return $this->hasMany(CartItem::class);
+        return $this->hasMany(CartItemGroup::class);
     }
 }

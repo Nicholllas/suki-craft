@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Str;
 
 class Order extends Model
 {
@@ -68,9 +67,9 @@ class Order extends Model
         return $this->belongsTo(Courier::class);
     }
 
-    public function items(): HasMany
+    public function itemGroups(): HasMany
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->hasMany(OrderItemGroup::class);
     }
 
     public function ingredientStockMovements(): HasMany
@@ -100,11 +99,13 @@ class Order extends Model
 
     public function paymentDeadline(): Carbon
     {
-        return $this->delivery_date->copy()->setTimeFromTimeString(Str::before($this->delivery_time_slot, '-'));
+        $startTime = config('delivery.time_slots.'.$this->delivery_time_slot.'.start_time');
+
+        return Carbon::parse($this->delivery_date->toDateString().' '.$startTime, 'Asia/Jakarta');
     }
 
     public function paymentDeadlineHasPassed(): bool
     {
-        return now()->greaterThanOrEqualTo($this->paymentDeadline());
+        return now('Asia/Jakarta')->greaterThanOrEqualTo($this->paymentDeadline());
     }
 }

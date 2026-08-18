@@ -4,7 +4,7 @@ use App\Enums\AdminRole;
 use App\Enums\OrderStatus;
 use App\Models\Admin;
 use App\Models\Order;
-use App\Models\OrderItem;
+use App\Models\OrderItemGroup;
 use App\Models\PaymentProof;
 
 beforeEach(function () {
@@ -47,7 +47,7 @@ test('an administrator can filter all orders by status, date, and customer detai
 
 test('an administrator can view the complete detail of an order', function () {
     $order = Order::factory()->create(['status' => OrderStatus::AWAITING_VERIFICATION]);
-    OrderItem::factory()->for($order)->create([
+    OrderItemGroup::factory()->for($order)->create([
         'card_message' => 'Selamat atas kelulusanmu!',
         'special_note' => 'Gunakan pita warna krem.',
     ]);

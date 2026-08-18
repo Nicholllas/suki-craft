@@ -6,6 +6,22 @@ import 'sweetalert2/dist/sweetalert2.min.css';
 
 window.Alpine = Alpine;
 
+Alpine.data('deliverySchedule', (slots, today, currentTime, selectedDate, selectedSlot) => ({
+    currentTime,
+    selectedDate,
+    selectedSlot,
+    slots,
+    today,
+    isSlotAvailable(slot) {
+        return this.selectedDate !== this.today || slot.end_time > this.currentTime;
+    },
+    clearUnavailableSlot() {
+        if (this.selectedSlot && !this.isSlotAvailable(this.slots[this.selectedSlot])) {
+            this.selectedSlot = '';
+        }
+    },
+}));
+
 const confirmationDefaults = {
     buttonsStyling: false,
     cancelButtonText: 'Batal',

@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Enums\OrderStatus;
 use App\Models\Admin;
-use App\Models\CartItem;
+use App\Models\CartItemGroup;
 use App\Models\Order;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -23,13 +23,13 @@ class OrderService
                 throw $this->emptyCartException();
             }
 
-            $cart->load(['items.product', 'items.variant']);
+            $cart->load(['itemGroups.product', 'itemGroups.variants.productVariant']);
 
-            if ($cart->items->isEmpty()) {
+            if ($cart->itemGroups->isEmpty()) {
                 throw $this->emptyCartException();
             }
 
-            $subtotal = $cart->items->sum(fn (CartItem $item): float => $item->subtotal);
+            $subtotal = $cart->itemGroups->sum(fn (CartItemGroup $group): float => $group->subtotal);
             $deliveryFee = (float) config('delivery.flat_fee', 0);
             $promotion = filled($promotionCode) ? $this->promotionService->validate($promotionCode, $subtotal, $checkoutData['customer_phone'], auth('customer')->id()) : null;
             $discountAmount = $promotion ? $this->promotionService->calculateDiscount($promotion, $subtotal) : 0;
@@ -55,24 +55,31 @@ class OrderService
                 $this->promotionService->applyToOrder($order, $promotion, $discountAmount);
             }
 
-            $order->items()->createMany($cart->items->map(fn (CartItem $item): array => [
-                'card_message' => $item->card_message,
-                'product_id' => $item->product_id,
-                'product_name' => $item->product->name,
-                'product_variant_id' => $item->product_variant_id,
-                'quantity' => $item->quantity,
-                'special_note' => $item->special_note,
-                'subtotal' => $item->subtotal,
-                'unit_price' => $item->unit_price,
-                'variant_label' => $item->variant?->label,
-            ])->all());
+            foreach ($cart->itemGroups as $cartItemGroup) {
+                $orderItemGroup = $order->itemGroups()->create([
+                    'bundle_quantity' => $cartItemGroup->bundle_quantity,
+                    'card_message' => $cartItemGroup->card_message,
+                    'product_id' => $cartItemGroup->product_id,
+                    'product_name' => $cartItemGroup->product->name,
+                    'special_note' => $cartItemGroup->special_note,
+                    'subtotal' => $cartItemGroup->subtotal,
+                ]);
+
+                $orderItemGroup->variants()->createMany($cartItemGroup->variants->map(fn ($variant): array => [
+                    'line_subtotal' => $variant->lineSubtotal * $cartItemGroup->bundle_quantity,
+                    'product_variant_id' => $variant->product_variant_id,
+                    'quantity_in_bundle' => $variant->quantity_in_bundle,
+                    'unit_price' => $variant->unit_price,
+                    'variant_label' => $variant->productVariant->label,
+                ])->all());
+            }
 
             $order->statusHistories()->create([
                 'note' => 'Pesanan dibuat dan menunggu pembayaran.',
                 'status' => OrderStatus::PENDING_PAYMENT,
             ]);
 
-            $cart->items()->delete();
+            $cart->itemGroups()->delete();
 
             return $order;
         });

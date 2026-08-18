@@ -9,37 +9,51 @@
         $activeVariants = $product->variants->where('is_active', true)->values();
         $variantPrices = $activeVariants->map(fn ($variant) => [
             'id' => $variant->id,
-            'price' => (float) $product->base_price + (float) $variant->price_adjustment,
+            'isQuantityBased' => $variant->is_quantity_based,
+            'price' => (float) $variant->price_adjustment,
         ])->values();
     @endphp
 
     <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8" x-data="{
         activeImage: @js($imagePath ? Storage::url($imagePath) : null),
+        allowMultipleVariants: @js($product->allow_multiple_variants),
         basePrice: {{ (float) $product->base_price }},
         cardMessage: '',
         quantity: 1,
-        selectedVariant: @js($activeVariants->first()?->id),
+        selectedVariants: @js($activeVariants->isNotEmpty() && ! $product->allow_multiple_variants ? [$activeVariants->first()->id => 1] : []),
         specialNote: '',
         submitting: false,
         toast: '',
         toastType: 'success',
         variants: @js($variantPrices),
         formatPrice(value) { return new Intl.NumberFormat('id-ID').format(value); },
-        selectedPrice() { return this.variants.find((variant) => variant.id === this.selectedVariant)?.price ?? this.basePrice; },
+        isSelected(variantId) { return Object.hasOwn(this.selectedVariants, variantId); },
+        cartPayload(form) { const payload = new FormData(form); [...payload.keys()].filter((key) => key.startsWith('selected_variants[')).forEach((key) => payload.delete(key)); Object.entries(this.selectedVariants).forEach(([variantId, variantQuantity]) => payload.set(`selected_variants[${variantId}]`, variantQuantity)); return payload; },
+        selectedPrice() { return this.basePrice + this.variants.reduce((total, variant) => total + (this.selectedVariants[variant.id] ?? 0) * variant.price, 0); },
+        setVariantQuantity(variantId, value) { const quantity = Number.parseInt(value, 10); if (Number.isInteger(quantity) && quantity > 0) { this.selectedVariants[variantId] = Math.min(999, quantity); } else { delete this.selectedVariants[variantId]; } },
+        totalPrice() { return this.selectedPrice() * this.quantity; },
+        toggleVariant(variantId) { if (this.isSelected(variantId)) { delete this.selectedVariants[variantId]; } else { this.selectedVariants[variantId] = 1; } },
         async addToCart(event) {
             this.submitting = true;
             this.toast = '';
 
             try {
                 const response = await fetch(event.target.action, {
-                    body: new FormData(event.target),
-                    headers: { Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                    body: this.cartPayload(event.target),
+                    headers: { Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'X-Requested-With': 'XMLHttpRequest' },
                     method: 'POST',
                 });
-                const data = await response.json();
+                const contentType = response.headers.get('content-type') ?? '';
+                const payload = await response.text();
+                const data = contentType.includes('application/json') && payload ? JSON.parse(payload) : {};
 
                 if (!response.ok) {
-                    throw new Error(data.message || 'Keranjang belum dapat diperbarui.');
+                    const validationMessage = Object.values(data.errors ?? {}).flat()[0];
+                    throw new Error(validationMessage || data.message || 'Keranjang belum dapat diperbarui.');
+                }
+
+                if (!data.message) {
+                    throw new Error('Respons keranjang tidak valid. Muat ulang halaman lalu coba kembali.');
                 }
 
                 this.toast = data.message;
@@ -88,22 +102,25 @@
 
                 <div class="mt-7 border-y border-stone-200 py-5">
                     <p class="text-sm text-stone-500">Harga untuk pilihanmu</p>
-                    <p class="mt-1 font-serif text-3xl font-semibold text-stone-800">Rp<span x-text="formatPrice(selectedPrice())"></span></p>
+                    <p class="mt-1 font-serif text-3xl font-semibold text-stone-800">Rp<span x-text="formatPrice(totalPrice())"></span></p>
                 </div>
 
                 <form method="POST" action="{{ route('cart.add') }}" class="mt-7 space-y-7" @submit.prevent="addToCart($event)">
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
                     @if($activeVariants->isNotEmpty())
-                        <input type="hidden" name="variant_id" :value="selectedVariant">
                         <fieldset>
                             <legend class="text-sm font-semibold text-stone-800">Pilih ukuran atau varian</legend>
                             <div class="mt-3 grid gap-2 sm:grid-cols-2">
                                 @foreach($activeVariants as $variant)
-                                    <button type="button" @click="selectedVariant = {{ $variant->id }}" :class="selectedVariant === {{ $variant->id }} ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-stone-200 bg-white text-stone-700 hover:border-rose-200'" class="flex items-center justify-between rounded-xl border px-4 py-3 text-left text-sm transition">
-                                        <span class="font-semibold">{{ $variant->label }}</span>
-                                        <span class="text-xs">{{ $variant->price_adjustment > 0 ? '+' : ($variant->price_adjustment < 0 ? '-' : '') }}Rp{{ number_format(abs($variant->price_adjustment), 0, ',', '.') }}</span>
-                                    </button>
+                                    <div :class="isSelected({{ $variant->id }}) ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-stone-200 bg-white text-stone-700 hover:border-rose-200'" class="rounded-xl border p-4 text-sm transition">
+                                        <label class="flex cursor-pointer items-center justify-between gap-3"><span class="flex items-center gap-3">@if ($product->allow_multiple_variants)<input type="checkbox" :checked="isSelected({{ $variant->id }})" @change="toggleVariant({{ $variant->id }})" class="h-4 w-4 rounded border-stone-300 text-rose-500">@else<input type="radio" name="variant-selection" :checked="isSelected({{ $variant->id }})" @change="selectedVariants = { {{ $variant->id }}: 1 }" class="h-4 w-4 border-stone-300 text-rose-500">@endif<span class="font-semibold">{{ $variant->label }}</span></span><span class="text-xs">{{ $variant->price_adjustment > 0 ? '+' : ($variant->price_adjustment < 0 ? '-' : '') }}Rp{{ number_format(abs($variant->price_adjustment), 0, ',', '.') }}</span></label>
+                                        @if ($variant->is_quantity_based)
+                                            <label :class="isSelected({{ $variant->id }}) ? 'border-rose-100 text-rose-700' : 'border-stone-100 text-stone-500'" class="mt-3 flex items-center justify-between gap-3 border-t pt-3 text-xs font-semibold transition"><span>Jumlah dalam buket</span><input type="number" :name="isSelected({{ $variant->id }}) ? 'selected_variants[{{ $variant->id }}]' : null" min="1" max="999" :value="selectedVariants[{{ $variant->id }}] ?? ''" @input="setVariantQuantity({{ $variant->id }}, $event.target.value)" placeholder="0" class="h-9 w-20 rounded-lg border-stone-200 bg-white px-2 text-center text-sm text-stone-800 placeholder:text-stone-300 focus:border-rose-300 focus:ring-rose-200"></label>
+                                        @else
+                                            <input type="hidden" name="selected_variants[{{ $variant->id }}]" value="1" :disabled="!isSelected({{ $variant->id }})">
+                                        @endif
+                                    </div>
                                 @endforeach
                             </div>
                         </fieldset>
@@ -123,7 +140,7 @@
                         <div><p class="text-sm font-semibold text-stone-800">Jumlah buket</p><p class="mt-0.5 text-xs text-stone-500">Minimal pembelian satu buket.</p></div>
                         <div class="flex items-center rounded-xl border border-stone-200 bg-white">
                             <button type="button" @click="quantity = Math.max(1, quantity - 1)" class="grid h-10 w-10 place-items-center text-lg text-stone-500 transition hover:text-rose-600" aria-label="Kurangi jumlah">−</button>
-                            <input type="number" name="quantity" x-model.number="quantity" min="1" max="99" class="h-10 w-10 border-0 bg-transparent p-0 text-center text-sm font-semibold text-stone-800 focus:ring-0">
+                            <input type="number" name="bundle_quantity" x-model.number="quantity" min="1" max="99" class="h-10 w-10 border-0 bg-transparent p-0 text-center text-sm font-semibold text-stone-800 focus:ring-0">
                             <button type="button" @click="quantity = Math.min(99, quantity + 1)" class="grid h-10 w-10 place-items-center text-lg text-stone-500 transition hover:text-rose-600" aria-label="Tambah jumlah">+</button>
                         </div>
                     </div>

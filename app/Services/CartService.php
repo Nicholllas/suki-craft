@@ -3,11 +3,12 @@
 namespace App\Services;
 
 use App\Models\Cart;
-use App\Models\CartItem;
+use App\Models\CartItemGroup;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -15,51 +16,46 @@ class CartService
 {
     public function __construct(private Request $request) {}
 
-    public function addItem(int $productId, ?int $variantId, int $quantity, array $customizations = []): CartItem
+    public function addToCart(Product $product, array $selectedVariants, int $bundleQuantity, array $customizations = []): CartItemGroup
     {
-        return DB::transaction(function () use ($productId, $variantId, $quantity, $customizations) {
-            $product = Product::query()
-                ->where('is_active', true)
-                ->whereHas('category', fn ($query) => $query->where('is_active', true))
-                ->findOrFail($productId);
+        if ($bundleQuantity < 1 || $bundleQuantity > 99) {
+            throw ValidationException::withMessages(['bundle_quantity' => ['Jumlah buket harus antara 1 dan 99.']]);
+        }
 
-            $variant = $this->resolveVariant($product, $variantId);
+        $selectedVariants = collect($selectedVariants)->mapWithKeys(fn ($quantity, $variantId): array => [(int) $variantId => (int) $quantity])->all();
+
+        return DB::transaction(function () use ($bundleQuantity, $customizations, $product, $selectedVariants): CartItemGroup {
+            $product = Product::query()->where('is_active', true)->whereHas('category', fn ($query) => $query->where('is_active', true))->findOrFail($product->id);
+            $variants = $this->resolveVariants($product, $selectedVariants);
             $cart = $this->findOrCreateCurrentCart();
             $attributes = $this->customizationAttributes($customizations);
-            $item = $cart->items()
-                ->where('product_id', $product->id)
-                ->where('product_variant_id', $variant?->id)
-                ->where('card_message', $attributes['card_message'])
-                ->where('special_note', $attributes['special_note'])
-                ->first();
-
-            if ($item) {
-                $item->increment('quantity', $quantity);
-
-                return $item->refresh();
-            }
-
-            return $cart->items()->create([
+            $group = $cart->itemGroups()->create([
                 ...$attributes,
                 'product_id' => $product->id,
-                'product_variant_id' => $variant?->id,
-                'quantity' => $quantity,
-                'unit_price' => (float) $product->base_price + (float) ($variant?->price_adjustment ?? 0),
+                'bundle_quantity' => $bundleQuantity,
             ]);
+
+            $group->variants()->createMany($variants->map(fn (ProductVariant $variant): array => [
+                'product_variant_id' => $variant->id,
+                'quantity_in_bundle' => $selectedVariants[$variant->id],
+                'unit_price' => $variant->price_adjustment,
+            ])->all());
+
+            return $group->load(['product', 'variants.productVariant']);
         });
     }
 
-    public function updateQuantity(int $cartItemId, int $quantity): CartItem
+    public function updateQuantity(int $cartItemGroupId, int $quantity): CartItemGroup
     {
-        $item = $this->currentCartItem($cartItemId);
-        $item->update(['quantity' => $quantity]);
+        $group = $this->currentCartItemGroup($cartItemGroupId);
+        $group->update(['bundle_quantity' => $quantity]);
 
-        return $item->refresh();
+        return $group->refresh()->load(['product', 'variants.productVariant']);
     }
 
-    public function removeItem(int $cartItemId): void
+    public function removeItem(int $cartItemGroupId): void
     {
-        $this->currentCartItem($cartItemId)->delete();
+        $this->currentCartItemGroup($cartItemGroupId)->delete();
     }
 
     public function getCurrentCart(): ?Cart
@@ -76,27 +72,27 @@ class CartService
     public function mergeGuestCartIntoCustomer(int $customerId): void
     {
         DB::transaction(function () use ($customerId) {
-            $guestCart = Cart::query()->with('items')->where('session_id', $this->sessionId())->first();
+            $guestCart = Cart::query()->with('itemGroups.variants')->where('session_id', $this->sessionId())->first();
 
             if (! $guestCart) {
                 return;
             }
 
             $customerCart = Cart::query()->firstOrCreate(['customer_id' => $customerId]);
-            $customerCart->load('items');
+            $customerCart->load('itemGroups.variants');
 
-            foreach ($guestCart->items as $guestItem) {
-                $matchingItem = $customerCart->items->first(fn (CartItem $item) => $this->itemsMatch($item, $guestItem));
+            foreach ($guestCart->itemGroups as $guestGroup) {
+                $matchingGroup = $customerCart->itemGroups->first(fn (CartItemGroup $group) => $this->groupsMatch($group, $guestGroup));
 
-                if ($matchingItem) {
-                    $matchingItem->increment('quantity', $guestItem->quantity);
+                if ($matchingGroup) {
+                    $matchingGroup->increment('bundle_quantity', $guestGroup->bundle_quantity);
 
                     continue;
                 }
 
-                $guestItem->cart_id = $customerCart->id;
-                $guestItem->save();
-                $customerCart->items->push($guestItem);
+                $guestGroup->cart_id = $customerCart->id;
+                $guestGroup->save();
+                $customerCart->itemGroups->push($guestGroup);
             }
 
             $guestCart->delete();
@@ -111,12 +107,12 @@ class CartService
             return 0;
         }
 
-        return (float) $cart->items()->selectRaw('COALESCE(SUM(quantity * unit_price), 0) as total')->value('total');
+        return $cart->loadMissing(['itemGroups.product', 'itemGroups.variants'])->itemGroups->sum(fn (CartItemGroup $group): float => $group->subtotal);
     }
 
     public function getItemCount(): int
     {
-        return (int) ($this->getCurrentCart()?->items()->sum('quantity') ?? 0);
+        return (int) ($this->getCurrentCart()?->itemGroups()->sum('bundle_quantity') ?? 0);
     }
 
     private function findOrCreateCurrentCart(): Cart
@@ -128,30 +124,46 @@ class CartService
         return Cart::query()->firstOrCreate(['session_id' => $this->sessionId()]);
     }
 
-    private function resolveVariant(Product $product, ?int $variantId): ?ProductVariant
+    private function resolveVariants(Product $product, array $selectedVariants): Collection
     {
-        $variants = $product->variants()->where('is_active', true);
+        $selectedVariants = collect($selectedVariants)->mapWithKeys(fn ($quantity, $variantId): array => [(int) $variantId => (int) $quantity]);
 
-        if ($variantId) {
-            return $variants->findOrFail($variantId);
+        if (! $product->allow_multiple_variants && $selectedVariants->count() > 1) {
+            throw ValidationException::withMessages(['selected_variants' => ['Produk ini hanya dapat menggunakan satu varian.']]);
         }
 
-        if ($variants->exists()) {
-            throw ValidationException::withMessages(['variant_id' => 'Pilih varian produk terlebih dahulu.']);
+        $variants = $product->variants()->where('is_active', true)->whereIn('id', $selectedVariants->keys())->get();
+
+        if ($variants->count() !== $selectedVariants->count()) {
+            throw ValidationException::withMessages(['selected_variants' => ['Salah satu varian yang dipilih tidak tersedia.']]);
         }
 
-        return null;
+        if ($product->variants()->where('is_active', true)->exists() && $variants->isEmpty()) {
+            throw ValidationException::withMessages(['selected_variants' => ['Pilih varian produk terlebih dahulu.']]);
+        }
+
+        foreach ($variants as $variant) {
+            if ($variant->is_quantity_based && $selectedVariants[$variant->id] <= 0) {
+                throw ValidationException::withMessages(['selected_variants' => ['Jumlah varian harus lebih dari nol.']]);
+            }
+
+            if (! $variant->is_quantity_based && $selectedVariants[$variant->id] !== 1) {
+                throw ValidationException::withMessages(['selected_variants' => ['Jumlah untuk varian ini harus satu per buket.']]);
+            }
+        }
+
+        return $variants;
     }
 
-    private function currentCartItem(int $cartItemId): CartItem
+    private function currentCartItemGroup(int $cartItemGroupId): CartItemGroup
     {
         $cart = $this->getCurrentCart();
 
         if (! $cart) {
-            throw (new ModelNotFoundException)->setModel(CartItem::class, [$cartItemId]);
+            throw (new ModelNotFoundException)->setModel(CartItemGroup::class, [$cartItemGroupId]);
         }
 
-        return $cart->items()->findOrFail($cartItemId);
+        return $cart->itemGroups()->findOrFail($cartItemGroupId);
     }
 
     private function customizationAttributes(array $customizations): array
@@ -167,12 +179,12 @@ class CartService
         return $this->request->user('customer')?->id;
     }
 
-    private function itemsMatch(CartItem $first, CartItem $second): bool
+    private function groupsMatch(CartItemGroup $first, CartItemGroup $second): bool
     {
         return $first->product_id === $second->product_id
-            && $first->product_variant_id === $second->product_variant_id
             && $first->card_message === $second->card_message
-            && $first->special_note === $second->special_note;
+            && $first->special_note === $second->special_note
+            && $first->variants->pluck('quantity_in_bundle', 'product_variant_id')->sortKeys()->all() === $second->variants->pluck('quantity_in_bundle', 'product_variant_id')->sortKeys()->all();
     }
 
     private function sessionId(): string

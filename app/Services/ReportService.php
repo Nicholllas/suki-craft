@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Enums\OrderStatus;
 use App\Models\Category;
 use App\Models\Order;
-use App\Models\OrderItem;
+use App\Models\OrderItemGroup;
 use App\Models\Product;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -46,16 +46,16 @@ class ReportService
 
     public function getTopProducts(Carbon $from, Carbon $to, int $limit = 10): Collection
     {
-        return OrderItem::query()->whereIn('order_id', $this->paidOrderIdsBetween($from, $to))->selectRaw('product_id, product_name, SUM(quantity) as quantity_sold, COALESCE(SUM(subtotal), 0) as revenue')->groupBy('product_id', 'product_name')->orderByDesc('quantity_sold')->orderByDesc('revenue')->limit($limit)->get();
+        return OrderItemGroup::query()->whereIn('order_id', $this->paidOrderIdsBetween($from, $to))->selectRaw('product_id, product_name, SUM(bundle_quantity) as quantity_sold, COALESCE(SUM(subtotal), 0) as revenue')->groupBy('product_id', 'product_name')->orderByDesc('quantity_sold')->orderByDesc('revenue')->limit($limit)->get();
     }
 
     public function getRevenueByCategory(Carbon $from, Carbon $to): Collection
     {
-        $orderItems = (new OrderItem)->getTable();
+        $orderItems = (new OrderItemGroup)->getTable();
         $products = (new Product)->getTable();
         $categories = (new Category)->getTable();
 
-        return OrderItem::query()->from($orderItems)->join($products, "{$products}.id", '=', "{$orderItems}.product_id")->leftJoin($categories, "{$categories}.id", '=', "{$products}.category_id")->whereIn("{$orderItems}.order_id", $this->paidOrderIdsBetween($from, $to))->selectRaw("COALESCE({$categories}.name, 'Tanpa kategori') as category_name, COALESCE(SUM({$orderItems}.subtotal), 0) as revenue")->groupBy("{$categories}.id", "{$categories}.name")->orderByDesc('revenue')->get();
+        return OrderItemGroup::query()->from($orderItems)->join($products, "{$products}.id", '=', "{$orderItems}.product_id")->leftJoin($categories, "{$categories}.id", '=', "{$products}.category_id")->whereIn("{$orderItems}.order_id", $this->paidOrderIdsBetween($from, $to))->selectRaw("COALESCE({$categories}.name, 'Tanpa kategori') as category_name, COALESCE(SUM({$orderItems}.subtotal), 0) as revenue")->groupBy("{$categories}.id", "{$categories}.name")->orderByDesc('revenue')->get();
     }
 
     private function paidOrderIdsBetween(Carbon $from, Carbon $to): Builder

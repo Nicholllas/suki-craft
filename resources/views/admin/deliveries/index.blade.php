@@ -24,8 +24,8 @@
                     <span class="sr-only">Slot waktu pengiriman</span>
                     <select name="time_slot" class="h-11 w-full rounded-xl border-stone-200 bg-white px-3 text-sm text-stone-700 focus:border-rose-300 focus:ring-rose-200">
                         <option value="">Semua slot waktu</option>
-                        @foreach ($timeSlots as $key => $label)
-                            <option value="{{ $key }}" @selected($timeSlot === $key)>{{ $label }}</option>
+                        @foreach ($timeSlots as $key => $slot)
+                            <option value="{{ $key }}" @selected($timeSlot === $key)>{{ $slot['label'] }}</option>
                         @endforeach
                     </select>
                 </label>
@@ -46,7 +46,7 @@
                             <p class="mt-1 text-xs text-stone-400">{{ $order->customer_phone }}</p>
                             <p class="mt-2 max-w-sm text-xs leading-5 text-stone-500">{{ $order->delivery_address }}</p>
                         </td>
-                        <td class="whitespace-nowrap px-5 py-4 text-sm text-stone-600">{{ $timeSlots[$order->delivery_time_slot] ?? $order->delivery_time_slot }}</td>
+                        <td class="whitespace-nowrap px-5 py-4 text-sm text-stone-600">{{ $timeSlots[$order->delivery_time_slot]['label'] ?? $order->delivery_time_slot }}</td>
                         <td class="whitespace-nowrap px-5 py-4">
                             @if ($order->courier)
                                 <p class="text-sm font-semibold text-stone-700">{{ $order->courier->name }}</p>

@@ -70,8 +70,23 @@
                 <section class="rounded-3xl border border-stone-200 bg-white p-5 sm:p-7">
                     <h2 class="font-serif text-2xl font-semibold text-stone-800">Detail buket</h2>
                     <div class="mt-5 divide-y divide-stone-100">
-                        @foreach ($order->items as $item)
-                            <article class="flex items-start justify-between gap-4 py-4 first:pt-0 last:pb-0"><div><h3 class="text-sm font-semibold text-stone-800">{{ $item->product_name }}</h3><p class="mt-1 text-xs text-stone-500">{{ $item->variant_label ?? 'Buket pilihan' }} · {{ $item->quantity }}×</p>@if ($item->card_message)<p class="mt-2 text-xs leading-5 text-stone-500"><span class="font-semibold text-stone-600">Pesan kartu:</span> {{ $item->card_message }}</p>@endif</div><p class="shrink-0 text-sm font-semibold text-stone-800">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</p></article>
+                        @foreach ($order->itemGroups as $item)
+                            <article class="flex items-start justify-between gap-4 py-4 first:pt-0 last:pb-0">
+                                <div>
+                                    <h3 class="text-sm font-semibold text-stone-800">{{ $item->product_name }} · {{ $item->bundle_quantity }} buket</h3>
+                                    @if ($item->variants->isNotEmpty())
+                                        <ul class="mt-1 text-xs text-stone-500">
+                                            @foreach ($item->variants as $variant)
+                                                <li>{{ $variant->variant_label }}@if ($variant->quantity_in_bundle > 1) · {{ $variant->quantity_in_bundle }}×@endif</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+                                    @if ($item->card_message)
+                                        <p class="mt-2 text-xs leading-5 text-stone-500"><span class="font-semibold text-stone-600">Pesan kartu:</span> {{ $item->card_message }}</p>
+                                    @endif
+                                </div>
+                                <p class="shrink-0 text-sm font-semibold text-stone-800">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</p>
+                            </article>
                         @endforeach
                     </div>
                 </section>
@@ -83,7 +98,7 @@
                     <p class="mt-3 text-sm font-semibold text-stone-800">{{ $order->customer_name }}</p>
                     <p class="mt-1 text-sm text-stone-500">{{ $order->customer_phone }}</p>
                     <p class="mt-4 text-sm font-semibold text-stone-800">{{ $order->delivery_date->translatedFormat('d F Y') }}</p>
-                    <p class="mt-1 text-sm text-stone-500">{{ config('delivery.time_slots.'.$order->delivery_time_slot, $order->delivery_time_slot) }}</p>
+                    <p class="mt-1 text-sm text-stone-500">{{ config('delivery.time_slots.'.$order->delivery_time_slot.'.label', $order->delivery_time_slot) }}</p>
                     <p class="mt-4 text-sm leading-6 text-stone-600">{{ $order->delivery_address }}</p>
                     @if ($order->notes)<p class="mt-4 rounded-xl bg-stone-50 px-3 py-2 text-xs leading-5 text-stone-500"><span class="font-semibold text-stone-600">Catatan:</span> {{ $order->notes }}</p>@endif
                 </section>

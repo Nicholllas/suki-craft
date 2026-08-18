@@ -6,14 +6,14 @@ use App\Enums\ReviewStatus;
 use App\Models\Admin;
 use App\Models\Customer;
 use App\Models\Order;
-use App\Models\OrderItem;
+use App\Models\OrderItemGroup;
 use App\Models\Review;
 use App\Services\ReviewService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
-function deliveredOrderItem(?Customer $customer = null): OrderItem
+function deliveredOrderItemGroup(?Customer $customer = null): OrderItemGroup
 {
     $order = Order::factory()->create([
         'customer_id' => $customer?->id,
@@ -21,13 +21,13 @@ function deliveredOrderItem(?Customer $customer = null): OrderItem
         'status' => OrderStatus::DELIVERED,
     ]);
 
-    return OrderItem::factory()->for($order)->create();
+    return OrderItemGroup::factory()->for($order)->create();
 }
 
-test('a delivered order item can receive one pending review with a bouquet photo', function () {
-    Storage::fake('public');
+test('a delivered order item group can receive one pending review with a bouquet photo', function () {
+    fakeStorageDisk('public');
     $customer = Customer::factory()->create();
-    $orderItem = deliveredOrderItem($customer);
+    $orderItem = deliveredOrderItemGroup($customer);
 
     $review = app(ReviewService::class)->submit($orderItem, [
         'comment' => 'Buketnya segar dan sangat cantik.',
@@ -46,14 +46,14 @@ test('a delivered order item can receive one pending review with a bouquet photo
 });
 
 test('a review requires a delivered order item', function () {
-    $orderItem = OrderItem::factory()->for(Order::factory()->state(['status' => OrderStatus::PROCESSING]))->create();
+    $orderItem = OrderItemGroup::factory()->for(Order::factory()->state(['status' => OrderStatus::PROCESSING]))->create();
 
     expect(app(ReviewService::class)->canReview($orderItem))->toBeFalse()
         ->and(fn () => app(ReviewService::class)->submit($orderItem, ['rating' => 5]))->toThrow(ValidationException::class);
 });
 
 test('a guest can submit a review only after tracking the matching order', function () {
-    $orderItem = deliveredOrderItem();
+    $orderItem = deliveredOrderItemGroup();
     $order = $orderItem->order;
 
     $this->post(route('tracking.store'), [
@@ -70,11 +70,11 @@ test('a guest can submit a review only after tracking the matching order', funct
     $review = Review::query()->sole();
 
     expect($review->customer_id)->toBeNull()
-        ->and($review->order_item_id)->toBe($orderItem->id);
+        ->and($review->order_item_group_id)->toBe($orderItem->id);
 });
 
 test('a customer cannot submit a review for another customers order', function () {
-    $orderItem = deliveredOrderItem(Customer::factory()->create());
+    $orderItem = deliveredOrderItemGroup(Customer::factory()->create());
     $customer = Customer::factory()->create();
 
     $this->actingAs($customer, 'customer')
@@ -90,8 +90,8 @@ test('an admin can approve or reject pending reviews and the storefront only sho
         'password' => 'password',
         'role' => AdminRole::ADMIN,
     ]);
-    $approvedItem = deliveredOrderItem();
-    $rejectedItem = deliveredOrderItem();
+    $approvedItem = deliveredOrderItemGroup();
+    $rejectedItem = deliveredOrderItemGroup();
     $reviewService = app(ReviewService::class);
     $approvedReview = $reviewService->submit($approvedItem, ['comment' => 'Sangat indah.', 'rating' => 5]);
     $rejectedReview = $reviewService->submit($rejectedItem, ['comment' => 'Komentar perlu ditinjau.', 'rating' => 2]);
@@ -122,7 +122,7 @@ test('the review moderation page defaults to pending reviews and validates rejec
         'password' => 'password',
         'role' => AdminRole::ADMIN,
     ]);
-    $pendingReview = app(ReviewService::class)->submit(deliveredOrderItem(), ['rating' => 5]);
+    $pendingReview = app(ReviewService::class)->submit(deliveredOrderItemGroup(), ['rating' => 5]);
 
     $this->actingAs($admin, 'admin')->get(route('admin.reviews.index'))
         ->assertSuccessful()

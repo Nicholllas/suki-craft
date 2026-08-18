@@ -34,7 +34,7 @@ Route::get('/lacak-pesanan', [TrackingController::class, 'create'])->name('track
 Route::post('/lacak-pesanan', [TrackingController::class, 'store'])->middleware('throttle:10,1')->name('tracking.store');
 Route::get('/lacak-pesanan/{order}', [TrackingController::class, 'show'])->name('tracking.show');
 Route::get('/lacak-pesanan/{order}/bukti-pengiriman', [TrackingController::class, 'deliveryProof'])->name('tracking.delivery-proofs.show');
-Route::post('/lacak-pesanan/{order}/items/{orderItem}/ulasan', [ReviewController::class, 'storeForTracking'])->middleware('throttle:10,1')->name('tracking.reviews.store');
+Route::post('/lacak-pesanan/{order}/items/{orderItemGroup}/ulasan', [ReviewController::class, 'storeForTracking'])->middleware('throttle:10,1')->name('tracking.reviews.store');
 
 Route::prefix('akun')->name('customer.')->group(function () {
     Route::middleware('guest:customer')->group(function () {
@@ -56,7 +56,7 @@ Route::prefix('akun')->name('customer.')->group(function () {
         Route::get('pesanan', [OrderHistoryController::class, 'index'])->name('orders.index');
         Route::get('pesanan/{order}', [OrderHistoryController::class, 'show'])->name('orders.show');
         Route::get('pesanan/{order}/bukti-pengiriman', [OrderHistoryController::class, 'deliveryProof'])->name('orders.delivery-proof');
-        Route::post('pesanan/{order}/items/{orderItem}/ulasan', [ReviewController::class, 'storeForCustomer'])->middleware('throttle:10,1')->name('orders.reviews.store');
+        Route::post('pesanan/{order}/items/{orderItemGroup}/ulasan', [ReviewController::class, 'storeForCustomer'])->middleware('throttle:10,1')->name('orders.reviews.store');
     });
 });
 

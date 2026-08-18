@@ -19,7 +19,7 @@ beforeEach(function () {
 });
 
 test('an admin can replace the QRIS image and dynamic payload', function () {
-    Storage::fake('public');
+    fakeStorageDisk('public');
 
     $this->actingAs($this->admin, 'admin')->put(route('admin.settings.update'), [
         'qris_image' => UploadedFile::fake()->createWithContent('qris-baru.png', (new PngWriter)->write(new QrCode(data: staticQrisPayload()))->getString()),

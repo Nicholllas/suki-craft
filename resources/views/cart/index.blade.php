@@ -3,7 +3,7 @@
 @section('title', 'Keranjang Belanja | Suki Craft')
 
 @section('content')
-    @php($items = $cart?->items ?? collect())
+    @php($items = $cart?->itemGroups ?? collect())
 
     <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
         <div class="flex items-end justify-between gap-4 border-b border-stone-200 pb-6">
@@ -37,16 +37,16 @@
                                 </a>
                                 <div class="min-w-0 flex-1">
                                     <div class="flex gap-3">
-                                        <div class="min-w-0 flex-1"><p class="text-xs font-semibold uppercase tracking-[0.13em] text-rose-500">{{ $item->product->category->name }}</p><h2 class="mt-1 truncate font-serif text-xl font-semibold text-stone-800">{{ $item->product->name }}</h2>@if($item->variant)<p class="mt-1 text-sm text-stone-500">{{ $item->variant->label }}</p>@endif</div>
+                                        <div class="min-w-0 flex-1"><p class="text-xs font-semibold uppercase tracking-[0.13em] text-rose-500">{{ $item->product->category->name }}</p><h2 class="mt-1 truncate font-serif text-xl font-semibold text-stone-800">{{ $item->product->name }}</h2>@if($item->variants->isNotEmpty())<ul class="mt-1 space-y-1 text-sm text-stone-500">@foreach($item->variants as $variant)<li>{{ $variant->productVariant->label }}@if($variant->quantity_in_bundle > 1) · {{ $variant->quantity_in_bundle }}×@endif</li>@endforeach</ul>@endif</div>
                                         <form method="POST" action="{{ route('cart.remove', $item->id) }}" data-confirm="Buket ini akan dihapus dari keranjang." data-confirm-button="Ya, hapus" data-confirm-title="Hapus buket dari keranjang?">@csrf @method('DELETE')<button class="grid h-9 w-9 place-items-center rounded-full text-stone-400 transition hover:bg-rose-50 hover:text-rose-600" aria-label="Hapus {{ $item->product->name }}"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m6 7 .75 12h10.5L18 7M9.5 10.5v5m5-5v5M9 7V4.5h6V7M4.5 7h15" /></svg></button></form>
                                     </div>
                                     @if($item->card_message || $item->special_note)
                                         <div class="mt-3 space-y-1 rounded-xl bg-stone-50 px-3 py-2 text-xs leading-5 text-stone-500">@if($item->card_message)<p><span class="font-semibold text-stone-600">Kartu:</span> {{ $item->card_message }}</p>@endif @if($item->special_note)<p><span class="font-semibold text-stone-600">Catatan:</span> {{ $item->special_note }}</p>@endif</div>
                                     @endif
                                     <div class="mt-4 flex flex-wrap items-end justify-between gap-4">
-                                        <div><p class="text-xs text-stone-400">Harga satuan</p><p class="mt-1 text-sm font-semibold text-stone-700">Rp{{ number_format($item->unit_price, 0, ',', '.') }}</p></div>
+                                        <div><p class="text-xs text-stone-400">Harga per buket</p><p class="mt-1 text-sm font-semibold text-stone-700">Rp{{ number_format($item->bundle_subtotal, 0, ',', '.') }}</p></div>
                                         <div class="flex items-center gap-4">
-                                            <div class="flex items-center rounded-xl border border-stone-200"><form method="POST" action="{{ route('cart.update', $item->id) }}">@csrf @method('PATCH')<input type="hidden" name="quantity" value="{{ max(1, $item->quantity - 1) }}"><button class="grid h-9 w-9 place-items-center text-lg text-stone-500 transition hover:text-rose-600 disabled:opacity-30" @disabled($item->quantity === 1) aria-label="Kurangi jumlah">−</button></form><span class="w-8 text-center text-sm font-semibold text-stone-800">{{ $item->quantity }}</span><form method="POST" action="{{ route('cart.update', $item->id) }}">@csrf @method('PATCH')<input type="hidden" name="quantity" value="{{ min(99, $item->quantity + 1) }}"><button class="grid h-9 w-9 place-items-center text-lg text-stone-500 transition hover:text-rose-600" aria-label="Tambah jumlah">+</button></form></div>
+                                            <div class="flex items-center rounded-xl border border-stone-200"><form method="POST" action="{{ route('cart.update', $item->id) }}">@csrf @method('PATCH')<input type="hidden" name="quantity" value="{{ max(1, $item->bundle_quantity - 1) }}"><button class="grid h-9 w-9 place-items-center text-lg text-stone-500 transition hover:text-rose-600 disabled:opacity-30" @disabled($item->bundle_quantity === 1) aria-label="Kurangi jumlah">−</button></form><span class="w-8 text-center text-sm font-semibold text-stone-800">{{ $item->bundle_quantity }}</span><form method="POST" action="{{ route('cart.update', $item->id) }}">@csrf @method('PATCH')<input type="hidden" name="quantity" value="{{ min(99, $item->bundle_quantity + 1) }}"><button class="grid h-9 w-9 place-items-center text-lg text-stone-500 transition hover:text-rose-600" aria-label="Tambah jumlah">+</button></form></div>
                                             <div class="text-right"><p class="text-xs text-stone-400">Subtotal</p><p class="mt-1 text-base font-semibold text-stone-800">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</p></div>
                                         </div>
                                     </div>
@@ -59,7 +59,7 @@
 
                 <aside class="sticky bottom-3 rounded-2xl border border-stone-200 bg-white p-5 shadow-xl shadow-stone-900/5 lg:bottom-auto lg:top-24">
                     <h2 class="font-serif text-2xl font-semibold text-stone-800">Ringkasan pesanan</h2>
-                    <div class="mt-5 flex items-center justify-between border-b border-stone-100 pb-4 text-sm text-stone-600"><span>Subtotal ({{ $items->sum('quantity') }} buket)</span><span class="font-semibold text-stone-800">Rp{{ number_format($total, 0, ',', '.') }}</span></div>
+                    <div class="mt-5 flex items-center justify-between border-b border-stone-100 pb-4 text-sm text-stone-600"><span>Subtotal ({{ $items->sum('bundle_quantity') }} buket)</span><span class="font-semibold text-stone-800">Rp{{ number_format($total, 0, ',', '.') }}</span></div>
                     <p class="mt-4 text-xs leading-5 text-stone-500">Biaya pengiriman dan pilihan waktu kirim akan dihitung pada tahap checkout.</p>
                     <div class="mt-5 flex items-end justify-between"><span class="text-sm font-semibold text-stone-800">Total sementara</span><span class="font-serif text-2xl font-semibold text-stone-800">Rp{{ number_format($total, 0, ',', '.') }}</span></div>
                     <a href="{{ route('checkout.index') }}" class="mt-6 inline-flex h-12 w-full items-center justify-center rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-600">Lanjut ke checkout</a>

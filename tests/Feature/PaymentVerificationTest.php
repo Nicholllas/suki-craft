@@ -5,6 +5,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentProofStatus;
 use App\Models\Admin;
 use App\Models\Order;
+use App\Models\OrderItemGroup;
 use App\Models\PaymentProof;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -25,7 +26,7 @@ afterEach(function () {
 });
 
 test('a customer can upload a payment proof for a pending order', function () {
-    Storage::fake('local');
+    fakeStorageDisk('local');
     $order = Order::factory()->create(['status' => OrderStatus::PENDING_PAYMENT]);
 
     $response = $this->post(route('orders.payment-proofs.store', [
@@ -48,7 +49,7 @@ test('a customer can upload a payment proof for a pending order', function () {
 });
 
 test('a customer cannot upload a payment proof after the delivery slot begins', function () {
-    Storage::fake('local');
+    fakeStorageDisk('local');
     Carbon::setTestNow('2026-08-18 12:00:00');
     $order = Order::factory()->create([
         'delivery_date' => '2026-08-18',
@@ -77,6 +78,29 @@ test('an admin can view orders awaiting payment verification', function () {
         ->assertSee($order->order_number);
 });
 
+test('an admin can view an order payment verification with item groups and variants', function () {
+    $order = Order::factory()->create(['status' => OrderStatus::AWAITING_VERIFICATION]);
+    $itemGroup = OrderItemGroup::factory()->for($order)->create([
+        'bundle_quantity' => 1,
+        'product_name' => 'Buket Uang Pilihan',
+        'subtotal' => 500000,
+    ]);
+    $itemGroup->variants()->create([
+        'variant_label' => 'Pecahan Rp20.000',
+        'unit_price' => 20000,
+        'quantity_in_bundle' => 20,
+        'line_subtotal' => 400000,
+    ]);
+    PaymentProof::factory()->for($order)->create();
+
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.payment-verifications.show', $order))
+        ->assertOk()
+        ->assertSee('Buket Uang Pilihan')
+        ->assertSee('Pecahan Rp20.000')
+        ->assertSee('20×');
+});
+
 test('an admin can approve a pending payment proof', function () {
     $order = Order::factory()->create(['status' => OrderStatus::AWAITING_VERIFICATION]);
     $proof = PaymentProof::factory()->for($order)->create();
@@ -93,7 +117,7 @@ test('an admin can approve a pending payment proof', function () {
 });
 
 test('a rejected payment proof lets a customer upload another proof', function () {
-    Storage::fake('local');
+    fakeStorageDisk('local');
     $order = Order::factory()->create(['status' => OrderStatus::AWAITING_VERIFICATION]);
     $proof = PaymentProof::factory()->for($order)->create();
 

@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class CheckoutRequest extends FormRequest
 {
@@ -19,7 +21,7 @@ class CheckoutRequest extends FormRequest
             'customer_name' => ['required', 'string', 'max:100'],
             'customer_phone' => ['required', 'string', 'regex:/^(?:08[1-9][0-9]{7,11}|\\+628[1-9][0-9]{7,11})$/'],
             'delivery_address' => ['required', 'string', 'max:1000'],
-            'delivery_date' => ['required', Rule::date()->format('Y-m-d')->afterOrEqual(today()->addDay())],
+            'delivery_date' => ['required', Rule::date()->format('Y-m-d')->afterOrEqual(Carbon::today('Asia/Jakarta'))],
             'delivery_time_slot' => ['required', 'string', Rule::in($this->deliveryTimeSlots())],
             'notes' => ['nullable', 'string', 'max:1000'],
             'promotion_code' => ['nullable', 'string', 'max:50'],
@@ -30,8 +32,24 @@ class CheckoutRequest extends FormRequest
     {
         return [
             'customer_phone.regex' => 'Gunakan nomor telepon Indonesia dengan format 08xx atau +628xx.',
-            'delivery_date.after_or_equal' => 'Tanggal pengiriman minimal H+1 dari hari ini.',
+            'delivery_date.after_or_equal' => 'Tanggal pengiriman tidak boleh sebelum hari ini.',
         ];
+    }
+
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            if ($validator->errors()->has('delivery_date') || $validator->errors()->has('delivery_time_slot')) {
+                return;
+            }
+
+            $deliveryDate = Carbon::createFromFormat('Y-m-d', (string) $this->input('delivery_date'), 'Asia/Jakarta')->startOfDay();
+            $slot = config('delivery.time_slots.'.$this->input('delivery_time_slot'));
+
+            if ($deliveryDate->isToday('Asia/Jakarta') && Carbon::now('Asia/Jakarta')->format('H:i') >= $slot['end_time']) {
+                $validator->errors()->add('delivery_time_slot', 'Slot waktu ini sudah tidak tersedia untuk hari ini, silakan pilih slot lain.');
+            }
+        }];
     }
 
     protected function prepareForValidation(): void

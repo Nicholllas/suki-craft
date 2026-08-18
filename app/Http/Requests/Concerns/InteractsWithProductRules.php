@@ -15,6 +15,7 @@ trait InteractsWithProductRules
             'description' => ['nullable', 'string', 'max:5000'],
             'is_active' => ['required', 'boolean'],
             'is_featured' => ['required', 'boolean'],
+            'allow_multiple_variants' => ['required', 'boolean'],
             'ingredients' => ['nullable', 'array'],
             'ingredients.*.ingredient_id' => ['required', 'integer', Rule::exists('ingredients', 'id')],
             'ingredients.*.product_variant_id' => ['nullable', 'integer', Rule::exists('product_variants', 'id')],
@@ -24,6 +25,7 @@ trait InteractsWithProductRules
             'variants' => ['nullable', 'array'],
             'variants.*.id' => ['nullable', 'integer'],
             'variants.*.is_active' => ['required', 'boolean'],
+            'variants.*.is_quantity_based' => ['required', 'boolean'],
             'variants.*.label' => ['required', 'string', 'max:100'],
             'variants.*.price_adjustment' => ['required', 'numeric'],
             'variants.*.sku' => ['nullable', 'string', 'max:100'],
@@ -35,9 +37,12 @@ trait InteractsWithProductRules
         $this->merge([
             'description' => filled($this->description) ? trim($this->description) : null,
             'is_active' => $this->boolean('is_active'),
+            'allow_multiple_variants' => $this->boolean('allow_multiple_variants'),
             'is_featured' => $this->boolean('is_featured'),
             'name' => trim((string) $this->name),
             'slug' => filled($this->slug) ? trim($this->slug) : null,
         ]);
+
+        $this->merge(['variants' => collect($this->input('variants', []))->map(fn (array $variant): array => [...$variant, 'is_quantity_based' => filter_var($variant['is_quantity_based'] ?? false, FILTER_VALIDATE_BOOLEAN), 'is_active' => filter_var($variant['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN)])->all()]);
     }
 }

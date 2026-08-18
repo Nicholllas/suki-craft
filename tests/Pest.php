@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /*
@@ -47,4 +49,12 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+function fakeStorageDisk(string $disk): void
+{
+    Storage::set($disk, Storage::build([
+        'driver' => 'local',
+        'root' => sys_get_temp_dir().'/suki-craft-tests/'.Str::uuid().'/'.$disk,
+    ]));
 }

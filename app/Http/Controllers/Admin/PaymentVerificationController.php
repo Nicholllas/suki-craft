@@ -42,7 +42,7 @@ class PaymentVerificationController extends Controller
     public function show(Order $order): View
     {
         $order->load([
-            'items',
+            'itemGroups.variants',
             'paymentProofs' => fn ($query) => $query->with('verifier')->latest('uploaded_at'),
         ]);
 
