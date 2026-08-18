@@ -86,6 +86,9 @@
                     <p class="mt-1 text-sm text-stone-500">{{ config('delivery.time_slots.'.$order->delivery_time_slot, $order->delivery_time_slot) }}</p>
                     <p class="mt-4 text-sm leading-6 text-stone-600">{{ $order->delivery_address }}</p>
                     @if ($order->notes)<p class="mt-4 rounded-xl bg-stone-50 px-3 py-2 text-xs leading-5 text-stone-500"><span class="font-semibold text-stone-600">Catatan:</span> {{ $order->notes }}</p>@endif
+                    @if ($order->biteship_order_id)
+                        <div class="mt-5 border-t border-stone-100 pt-5"><p class="text-xs font-bold uppercase tracking-[0.14em] text-rose-500">Ekspedisi</p><p class="mt-3 text-sm font-semibold text-stone-800">{{ config('biteship.courier_names.'.$order->courier_company, str($order->courier_company)->upper()) }} · {{ str($order->courier_service)->upper() }}</p>@if ($order->tracking_number)<p class="mt-2 text-xs text-stone-400">Nomor resi</p><p class="mt-1 font-mono text-sm font-bold text-stone-800">{{ $order->tracking_number }}</p>@endif @if ($order->tracking_url)<a href="{{ $order->tracking_url }}" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex text-sm font-semibold text-rose-600 transition hover:text-rose-700">Lacak di situs ekspedisi ↗</a>@endif</div>
+                    @endif
                 </section>
 
                 <section class="rounded-3xl border border-stone-200 bg-white p-5">

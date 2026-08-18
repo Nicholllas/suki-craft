@@ -12,6 +12,8 @@ class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $attributes = ['weight_grams' => 1000];
+
     protected $fillable = [
         'category_id',
         'name',
@@ -21,6 +23,7 @@ class Product extends Model
         'price',
         'cost_price',
         'stock',
+        'weight_grams',
         'is_active',
         'is_featured',
     ];
@@ -34,6 +37,7 @@ class Product extends Model
             'is_featured' => 'boolean',
             'price' => 'decimal:2',
             'stock' => 'integer',
+            'weight_grams' => 'integer',
         ];
     }
 

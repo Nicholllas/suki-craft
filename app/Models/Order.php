@@ -26,9 +26,17 @@ class Order extends Model
         'customer_phone',
         'customer_email',
         'delivery_address',
+        'destination_area_id',
+        'destination_postal_code',
         'delivery_date',
         'delivery_time_slot',
         'courier_id',
+        'courier_company',
+        'courier_service',
+        'biteship_order_id',
+        'biteship_tracking_id',
+        'tracking_number',
+        'tracking_url',
         'delivery_proof_path',
         'delivered_at',
         'cancellation_reason',
@@ -46,6 +54,7 @@ class Order extends Model
             'delivery_date' => 'date',
             'delivered_at' => 'datetime',
             'delivery_fee' => 'decimal:2',
+            'destination_postal_code' => 'integer',
             'discount_amount' => 'decimal:2',
             'status' => OrderStatus::class,
             'subtotal' => 'decimal:2',
@@ -96,6 +105,11 @@ class Order extends Model
     public function statusHistories(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class);
+    }
+
+    public function shipmentStatusLogs(): HasMany
+    {
+        return $this->hasMany(ShipmentStatusLog::class);
     }
 
     public function paymentDeadline(): Carbon

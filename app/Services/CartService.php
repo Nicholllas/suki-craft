@@ -73,6 +73,19 @@ class CartService
             ->first();
     }
 
+    public function getShipmentWeightGrams(): int
+    {
+        $cart = $this->getCurrentCart();
+
+        if (! $cart) {
+            return 0;
+        }
+
+        $cart->loadMissing('items.product:id,weight_grams');
+
+        return (int) $cart->items->sum(fn (CartItem $item): int => $item->quantity * ($item->product?->weight_grams ?? 1000));
+    }
+
     public function mergeGuestCartIntoCustomer(int $customerId): void
     {
         DB::transaction(function () use ($customerId) {

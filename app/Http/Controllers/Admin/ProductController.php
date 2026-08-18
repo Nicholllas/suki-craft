@@ -126,7 +126,7 @@ class ProductController extends Controller
 
     private function productData(array $data, ?Product $product = null): array
     {
-        $productData = Arr::only($data, ['base_price', 'category_id', 'description', 'is_active', 'is_featured', 'name']);
+        $productData = Arr::only($data, ['base_price', 'category_id', 'description', 'is_active', 'is_featured', 'name', 'weight_grams']);
         $productData['price'] = $data['base_price'];
 
         if (! $product) {

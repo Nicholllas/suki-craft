@@ -11,14 +11,16 @@ use App\Http\Requests\Admin\MarkDeliveredRequest;
 use App\Models\Admin;
 use App\Models\Courier;
 use App\Models\Order;
+use App\Services\BiteshipService;
 use App\Services\DeliveryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class DeliveryController extends Controller
 {
-    public function __construct(private DeliveryService $deliveryService) {}
+    public function __construct(private BiteshipService $biteshipService, private DeliveryService $deliveryService) {}
 
     public function index(DeliveryScheduleRequest $request): View
     {
@@ -77,6 +79,46 @@ class DeliveryController extends Controller
         return back()->with('success', 'Pesanan berhasil ditandai telah diterima.');
     }
 
+    public function bookBiteshipShipment(Order $order, Request $request): RedirectResponse
+    {
+        $this->ensureBiteshipCourier($order);
+        $admin = $this->adminFromRequest($request);
+
+        if ($order->status === OrderStatus::PAYMENT_CONFIRMED) {
+            $this->deliveryService->markProcessing($order, $admin);
+            $order->refresh();
+        }
+
+        $shipment = $this->biteshipService->createOrder($order, $order->courier_company, $order->courier_service);
+        $order->refresh();
+        $this->deliveryService->markOutForDelivery($order, $admin);
+
+        return back()->with('success', 'Pengiriman '.$this->courierName($order->courier_company).' berhasil dibooking.'.($shipment['tracking_number'] ? ' Resi: '.$shipment['tracking_number'].'.' : ' Resi akan diperbarui saat tersedia.'));
+    }
+
+    public function syncBiteshipShipment(Order $order, Request $request): RedirectResponse
+    {
+        if (blank($order->biteship_tracking_id)) {
+            throw ValidationException::withMessages(['delivery' => 'Tracking Biteship belum tersedia untuk pesanan ini.']);
+        }
+
+        $shipment = $this->biteshipService->trackOrder($order->biteship_tracking_id);
+        $order->refresh();
+
+        if ($shipment['status'] === 'delivered' && $order->status !== OrderStatus::DELIVERED) {
+            if ($order->status === OrderStatus::PROCESSING) {
+                $this->deliveryService->markOutForDelivery($order, $this->adminFromRequest($request));
+                $order->refresh();
+            }
+
+            if ($order->status === OrderStatus::OUT_FOR_DELIVERY) {
+                $this->deliveryService->markDelivered($order, changedBy: $this->adminFromRequest($request));
+            }
+        }
+
+        return back()->with('success', 'Status Biteship diperbarui: '.$shipment['status'].'.');
+    }
+
     public function cancel(Order $order, CancelDeliveryRequest $request): RedirectResponse
     {
         $this->deliveryService->markCancelled($order, $request->validated('reason'), $this->adminFromRequest($request));
@@ -91,5 +133,19 @@ class DeliveryController extends Controller
         abort_unless($admin instanceof Admin, 403);
 
         return $admin;
+    }
+
+    private function courierName(?string $courierCode): string
+    {
+        return (string) config('biteship.courier_names.'.$courierCode, str($courierCode)->upper());
+    }
+
+    private function ensureBiteshipCourier(Order $order): void
+    {
+        $eligibleStatuses = [OrderStatus::PAYMENT_CONFIRMED, OrderStatus::PROCESSING];
+
+        if (! in_array($order->status, $eligibleStatuses, true) || ! in_array($order->courier_company, config('biteship.couriers', []), true) || blank($order->courier_service)) {
+            throw ValidationException::withMessages(['delivery' => 'Pesanan ini belum siap dikirim melalui ekspedisi Biteship.']);
+        }
     }
 }

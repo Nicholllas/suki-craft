@@ -26,6 +26,9 @@ Route::delete('/cart/items/{cartItem}', [CartController::class, 'remove'])->name
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::post('/checkout/promotion', [CheckoutController::class, 'validatePromotion'])->middleware('throttle:10,1')->name('checkout.promotions.validate');
+Route::get('/checkout/shipping-areas', [CheckoutController::class, 'searchShippingAreas'])->middleware('throttle:biteship-area-search')->name('checkout.shipping-areas.search');
+Route::post('/checkout/shipping-rates', [CheckoutController::class, 'shippingRates'])->middleware('throttle:biteship-rate-check')->name('checkout.shipping-rates.index');
+Route::post('/checkout/shipping-option', [CheckoutController::class, 'selectShippingOption'])->middleware('throttle:biteship-shipping-selection')->name('checkout.shipping-option.store');
 Route::get('/orders/{orderNumber}/confirmation/{token}', [PaymentController::class, 'show'])->name('orders.confirmation');
 Route::get('/orders/{orderNumber}/confirmation/{token}/qris', [PaymentController::class, 'qris'])->name('orders.qris.show');
 Route::post('/orders/{orderNumber}/confirmation/{token}/payment-proofs', [PaymentController::class, 'store'])->middleware('throttle:10,1')->name('orders.payment-proofs.store');

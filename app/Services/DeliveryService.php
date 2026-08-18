@@ -48,11 +48,12 @@ class DeliveryService
             $lockedOrder = $this->lockedOrder($order->id);
             $this->ensureStatus($lockedOrder, [OrderStatus::PROCESSING]);
 
-            if (! $lockedOrder->courier_id) {
+            if (! $lockedOrder->courier_id && blank($lockedOrder->courier_company)) {
                 throw ValidationException::withMessages(['courier_id' => 'Tugaskan kurir sebelum menandai pesanan sedang dikirim.']);
             }
 
-            $this->updateOrderStatus($lockedOrder, OrderStatus::OUT_FOR_DELIVERY, 'Pesanan sedang diantar oleh kurir.', $changedBy);
+            $courierName = $lockedOrder->courier?->name ?? config('biteship.courier_names.'.$lockedOrder->courier_company, $lockedOrder->courier_company);
+            $this->updateOrderStatus($lockedOrder, OrderStatus::OUT_FOR_DELIVERY, 'Pesanan sedang diantar oleh '.$courierName.'.', $changedBy);
         });
     }
 

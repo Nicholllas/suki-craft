@@ -48,7 +48,10 @@
                         </td>
                         <td class="whitespace-nowrap px-5 py-4 text-sm text-stone-600">{{ $timeSlots[$order->delivery_time_slot] ?? $order->delivery_time_slot }}</td>
                         <td class="whitespace-nowrap px-5 py-4">
-                            @if ($order->courier)
+                            @if (in_array($order->courier_company, config('biteship.couriers', []), true))
+                                <p class="text-sm font-semibold text-stone-700">{{ config('biteship.courier_names.'.$order->courier_company, str($order->courier_company)->upper()) }}</p>
+                                <p class="mt-1 text-xs text-stone-400">{{ str($order->courier_service)->upper() }}{{ $order->tracking_number ? ' · '.$order->tracking_number : '' }}</p>
+                            @elseif ($order->courier)
                                 <p class="text-sm font-semibold text-stone-700">{{ $order->courier->name }}</p>
                                 <p class="mt-1 text-xs text-stone-400">{{ $order->courier->phone }}</p>
                             @else
@@ -66,6 +69,13 @@
                                     </form>
                                 @endif
 
+                                @if (in_array($order->status, [\App\Enums\OrderStatus::PAYMENT_CONFIRMED, \App\Enums\OrderStatus::PROCESSING], true) && in_array($order->courier_company, config('biteship.couriers', []), true) && filled($order->courier_service))
+                                    <form method="POST" action="{{ route('admin.deliveries.biteship.book', $order) }}" data-confirm="Pengiriman akan dibooking ke {{ config('biteship.courier_names.'.$order->courier_company, str($order->courier_company)->upper()) }}." data-confirm-button="Ya, booking" data-confirm-title="Kirim pesanan via ekspedisi?">
+                                        @csrf
+                                        <button type="submit" class="rounded-lg bg-rose-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-rose-600">Kirim via {{ config('biteship.courier_names.'.$order->courier_company, str($order->courier_company)->upper()) }}</button>
+                                    </form>
+                                @endif
+
                                 @if ($order->status === \App\Enums\OrderStatus::PROCESSING)
                                     <button type="button" x-on:click="$dispatch('open-modal', 'assign-courier-{{ $order->id }}')" class="rounded-lg bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 transition hover:bg-violet-100">{{ $order->courier ? 'Ganti kurir' : 'Tugaskan kurir' }}</button>
                                     @if ($order->courier)
@@ -79,6 +89,13 @@
 
                                 @if ($order->status === \App\Enums\OrderStatus::OUT_FOR_DELIVERY)
                                     <button type="button" x-on:click="$dispatch('open-modal', 'mark-delivered-{{ $order->id }}')" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700">Tandai terkirim</button>
+                                @endif
+
+                                @if ($order->biteship_tracking_id)
+                                    <form method="POST" action="{{ route('admin.deliveries.biteship.sync', $order) }}">
+                                        @csrf
+                                        <button type="submit" class="rounded-lg bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 transition hover:bg-sky-100">Cek status pengiriman</button>
+                                    </form>
                                 @endif
 
                                 <button type="button" x-on:click="$dispatch('open-modal', 'cancel-delivery-{{ $order->id }}')" class="rounded-lg px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50">Batalkan</button>

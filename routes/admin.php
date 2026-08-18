@@ -61,6 +61,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('deliveries/{order}/out-for-delivery', [DeliveryController::class, 'markOutForDelivery'])->name('deliveries.out_for_delivery');
         Route::patch('deliveries/{order}/delivered', [DeliveryController::class, 'markDelivered'])->name('deliveries.delivered');
         Route::patch('deliveries/{order}/cancel', [DeliveryController::class, 'cancel'])->name('deliveries.cancel');
+        Route::post('deliveries/{order}/biteship', [DeliveryController::class, 'bookBiteshipShipment'])->name('deliveries.biteship.book');
+        Route::post('deliveries/{order}/biteship/sync', [DeliveryController::class, 'syncBiteshipShipment'])->name('deliveries.biteship.sync');
         Route::resource('couriers', CourierController::class)->except(['create', 'destroy', 'edit', 'show']);
         Route::patch('couriers/{courier}/toggle', [CourierController::class, 'toggle'])->name('couriers.toggle');
         Route::view('customers', 'admin.customers.index')->name('customers.index');

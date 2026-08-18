@@ -14,9 +14,9 @@ class OrderService
 {
     public function __construct(private CartService $cartService, private PromotionService $promotionService) {}
 
-    public function createFromCart(array $checkoutData, ?string $promotionCode = null): Order
+    public function createFromCart(array $checkoutData, ?string $promotionCode = null, ?array $shippingSelection = null): Order
     {
-        return DB::transaction(function () use ($checkoutData, $promotionCode) {
+        return DB::transaction(function () use ($checkoutData, $promotionCode, $shippingSelection) {
             $cart = $this->cartService->getCurrentCart();
 
             if (! $cart) {
@@ -30,7 +30,8 @@ class OrderService
             }
 
             $subtotal = $cart->items->sum(fn (CartItem $item): float => $item->subtotal);
-            $deliveryFee = (float) config('delivery.flat_fee', 0);
+            $shippingSelection = $this->validatedShippingSelection($shippingSelection);
+            $deliveryFee = (float) $shippingSelection['delivery_fee'];
             $promotion = filled($promotionCode) ? $this->promotionService->validate($promotionCode, $subtotal, $checkoutData['customer_phone'], auth('customer')->id()) : null;
             $discountAmount = $promotion ? $this->promotionService->calculateDiscount($promotion, $subtotal) : 0;
             $order = Order::query()->create([
@@ -39,10 +40,14 @@ class OrderService
                 'customer_name' => $checkoutData['customer_name'],
                 'customer_phone' => $checkoutData['customer_phone'],
                 'delivery_address' => $checkoutData['delivery_address'],
+                'destination_area_id' => $shippingSelection['destination_area_id'],
+                'destination_postal_code' => $shippingSelection['destination_postal_code'],
                 'delivery_date' => $checkoutData['delivery_date'],
                 'delivery_fee' => $deliveryFee,
                 'discount_amount' => $discountAmount,
                 'delivery_time_slot' => $checkoutData['delivery_time_slot'],
+                'courier_company' => $shippingSelection['courier_company'],
+                'courier_service' => $shippingSelection['courier_service'],
                 'notes' => $checkoutData['notes'] ?? null,
                 'order_number' => $this->nextOrderNumber(),
                 'public_token' => (string) Str::uuid(),
@@ -106,6 +111,31 @@ class OrderService
     private function emptyCartException(): ValidationException
     {
         return ValidationException::withMessages(['cart' => 'Keranjang belanja Anda masih kosong.']);
+    }
+
+    private function validatedShippingSelection(?array $shippingSelection): array
+    {
+        $courierCompany = $shippingSelection['courier_company'] ?? null;
+        $courierService = $shippingSelection['courier_service'] ?? null;
+        $deliveryFee = $shippingSelection['delivery_fee'] ?? null;
+
+        if (! is_array($shippingSelection) || ! is_numeric($deliveryFee) || blank($courierCompany) || blank($courierService)) {
+            throw ValidationException::withMessages(['shipping' => 'Pilih layanan pengiriman sebelum membuat pesanan.']);
+        }
+
+        $validCourier = $courierCompany === 'flat_rate' || in_array($courierCompany, config('biteship.couriers', []), true);
+
+        if (! $validCourier || (float) $deliveryFee < 0) {
+            throw ValidationException::withMessages(['shipping' => 'Pilihan layanan pengiriman tidak valid. Silakan cek ongkir kembali.']);
+        }
+
+        return [
+            'courier_company' => $courierCompany,
+            'courier_service' => $courierService,
+            'delivery_fee' => (float) $deliveryFee,
+            'destination_area_id' => $shippingSelection['destination_area_id'] ?? null,
+            'destination_postal_code' => $shippingSelection['destination_postal_code'] ?? null,
+        ];
     }
 
     private function nextOrderNumber(): string

@@ -27,6 +27,7 @@ trait InteractsWithProductRules
             'variants.*.label' => ['required', 'string', 'max:100'],
             'variants.*.price_adjustment' => ['required', 'numeric'],
             'variants.*.sku' => ['nullable', 'string', 'max:100'],
+            'weight_grams' => ['required', 'integer', 'between:1,100000'],
         ];
     }
 

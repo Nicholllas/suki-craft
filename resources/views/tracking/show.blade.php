@@ -15,6 +15,9 @@
         </div>
 
         <div class="mt-6"><x-order-tracking-timeline :delivery-proof-url="$deliveryProofUrl" :order="$order" /></div>
+        @if ($order->biteship_order_id)
+            <section class="mt-6 rounded-3xl border border-stone-200 bg-white p-5 sm:p-7"><p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Tracking ekspedisi</p><div class="mt-3 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><h2 class="font-serif text-2xl font-semibold text-stone-800">{{ config('biteship.courier_names.'.$order->courier_company, str($order->courier_company)->upper()) }} · {{ str($order->courier_service)->upper() }}</h2>@if ($order->tracking_number)<p class="mt-2 text-sm text-stone-500">Nomor resi: <span class="font-mono font-semibold text-stone-800">{{ $order->tracking_number }}</span></p>@else<p class="mt-2 text-sm text-stone-500">Nomor resi akan diperbarui saat ekspedisi menerbitkannya.</p>@endif</div>@if ($order->tracking_url)<a href="{{ $order->tracking_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white transition hover:bg-rose-600">Lacak ekspedisi ↗</a>@endif</div></section>
+        @endif
         @if($order->status === \App\Enums\OrderStatus::DELIVERED)
             <section class="mt-6 rounded-3xl border border-stone-200 bg-white p-5 sm:p-7">
                 <p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Setelah pesanan diterima</p>

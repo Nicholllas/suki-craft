@@ -24,6 +24,7 @@ class ProductFactory extends Factory
             'price' => $basePrice,
             'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 999999),
             'stock' => fake()->numberBetween(1, 50),
+            'weight_grams' => fake()->numberBetween(500, 1500),
         ];
     }
 }

@@ -50,7 +50,7 @@ test('a customer can checkout with server-calculated snapshots and view the conf
         'variant_id' => $this->variant->id,
     ])->assertRedirect();
 
-    $response = $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData());
+    $response = $this->actingAs($this->customer, 'customer')->withSession(['checkout.shipping_selection' => shippingSelection()])->post(route('checkout.store'), checkoutData());
     $order = Order::query()->with(['items', 'statusHistories'])->sole();
 
     $response->assertRedirect(route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]));
@@ -106,7 +106,7 @@ test('a guest can checkout without attaching the order to a customer account', f
         'unit_price' => 175000,
     ]);
 
-    $order = app(OrderService::class)->createFromCart(checkoutData());
+    $order = app(OrderService::class)->createFromCart(checkoutData(), shippingSelection: shippingSelection());
 
     expect($order->customer_id)->toBeNull();
 });
@@ -141,6 +141,18 @@ function checkoutData(array $overrides = []): array
         'delivery_date' => today()->addDay()->toDateString(),
         'delivery_time_slot' => '12:00-15:00',
         'notes' => 'Hubungi sebelum tiba.',
+        ...$overrides,
+    ];
+}
+
+function shippingSelection(array $overrides = []): array
+{
+    return [
+        'courier_company' => 'flat_rate',
+        'courier_service' => 'flat',
+        'delivery_fee' => 20000,
+        'destination_area_id' => 'IDNP6IDNC148IDND843IDZ12250',
+        'destination_postal_code' => 12250,
         ...$overrides,
     ];
 }

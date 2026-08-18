@@ -35,6 +35,7 @@ test('an administrator can create a product', function () {
         ->get(route('admin.products.create'))
         ->assertOk()
         ->assertSee('name="base_price"', false)
+        ->assertSee('name="weight_grams"', false)
         ->assertSee('Resep / Bahan');
 
     $response = $this->actingAs($admin, 'admin')->post(route('admin.products.store'), [
@@ -44,6 +45,7 @@ test('an administrator can create a product', function () {
         'images' => [UploadedFile::fake()->image('buket.jpg')],
         'is_active' => true,
         'is_featured' => false,
+        'weight_grams' => 750,
     ]);
 
     $response->assertRedirect(route('admin.products.index'));
@@ -53,6 +55,7 @@ test('an administrator can create a product', function () {
         'slug' => 'buket-mawar',
         'base_price' => 150000,
         'is_active' => true,
+        'weight_grams' => 750,
     ]);
     $this->assertDatabaseCount('product_images', 1);
 
@@ -71,6 +74,7 @@ test('an administrator can create a product', function () {
             'ingredients' => [['ingredient_id' => $ingredient->id, 'quantity_needed' => 6]],
             'name' => 'Buket Mawar',
             'slug' => 'buket-mawar',
+            'weight_grams' => 900,
         ])
         ->assertRedirect(route('admin.products.edit', $product));
 
