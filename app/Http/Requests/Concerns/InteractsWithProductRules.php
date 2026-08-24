@@ -12,7 +12,15 @@ trait InteractsWithProductRules
     protected function productRules(): array
     {
         return [
-            'base_price' => ['required', 'numeric', 'min:0'],
+            'base_price' => ['required', 'integer', 'min:0'],
+            'bouquet_sizes' => ['nullable', 'array'],
+            'bouquet_sizes.*.code' => ['required', 'string', 'max:20'],
+            'bouquet_sizes.*.is_active' => ['required', 'boolean'],
+            'bouquet_sizes.*.is_custom' => ['required', 'boolean'],
+            'bouquet_sizes.*.label' => ['required', 'string', 'max:100'],
+            'bouquet_sizes.*.max_sheets' => ['nullable', 'integer', 'min:1'],
+            'bouquet_sizes.*.min_sheets' => ['required', 'integer', 'min:1'],
+            'bouquet_sizes.*.service_price' => ['required', 'integer', 'min:0'],
             'category_id' => ['required', Rule::exists('categories', 'id')],
             'description' => ['nullable', 'string', 'max:5000'],
             'is_active' => ['required', 'boolean'],
@@ -21,15 +29,15 @@ trait InteractsWithProductRules
             'ingredients' => ['nullable', 'array'],
             'ingredients.*.ingredient_id' => ['required', 'integer', Rule::exists('ingredients', 'id')],
             'ingredients.*.product_variant_id' => ['nullable', 'integer', Rule::exists('product_variants', 'id')],
-            'ingredients.*.quantity_needed' => ['nullable', 'numeric', 'gt:0'],
-            'ingredients.*.ratio_per_unit' => ['nullable', 'numeric', 'gt:0'],
+            'ingredients.*.quantity_needed' => ['nullable', 'integer', 'min:1'],
+            'ingredients.*.ratio_per_unit' => ['nullable', 'integer', 'min:1'],
             'name' => ['required', 'string', 'max:150'],
             'variants' => ['nullable', 'array'],
             'variants.*.id' => ['nullable', 'integer'],
             'variants.*.is_active' => ['required', 'boolean'],
             'variants.*.is_quantity_based' => ['required', 'boolean'],
             'variants.*.label' => ['required', 'string', 'max:100'],
-            'variants.*.price_adjustment' => ['required', 'numeric'],
+            'variants.*.price_adjustment' => ['required', 'integer'],
         ];
     }
 
@@ -37,6 +45,21 @@ trait InteractsWithProductRules
     {
         return [
             function (Validator $validator): void {
+                $sizes = collect($this->input('bouquet_sizes', []))->filter(fn (mixed $size): bool => is_array($size) && filter_var($size['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN))->sortBy('min_sheets')->values();
+                $previousMaximum = 0;
+
+                foreach ($sizes as $index => $size) {
+                    $minimum = (int) ($size['min_sheets'] ?? 0);
+                    $maximum = filled($size['max_sheets'] ?? null) ? (int) $size['max_sheets'] : null;
+                    $isCustom = filter_var($size['is_custom'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+                    if ($minimum <= $previousMaximum || (! $isCustom && ($maximum === null || $maximum < $minimum)) || ($isCustom && $maximum !== null)) {
+                        $validator->errors()->add("bouquet_sizes.{$index}.min_sheets", 'Rentang ukuran aktif tidak boleh tumpang tindih. Ukuran custom harus tanpa batas maksimum.');
+                    }
+
+                    $previousMaximum = $maximum ?? PHP_INT_MAX;
+                }
+
                 $ingredients = $this->input('ingredients', []);
                 $submittedVariants = collect($this->input('variants', []))->filter(fn (mixed $variant): bool => is_array($variant) && filled($variant['id'] ?? null))->keyBy(fn (array $variant): string => (string) $variant['id']);
                 $variantIds = collect(is_array($ingredients) ? $ingredients : [])->pluck('product_variant_id')->filter()->map(fn (mixed $variantId): int => (int) $variantId)->unique();
@@ -88,6 +111,8 @@ trait InteractsWithProductRules
             'is_featured' => $this->boolean('is_featured'),
             'name' => trim((string) $this->name),
         ]);
+
+        $this->merge(['bouquet_sizes' => collect($this->input('bouquet_sizes', []))->map(fn (array $size): array => [...$size, 'is_active' => filter_var($size['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN), 'is_custom' => filter_var($size['is_custom'] ?? false, FILTER_VALIDATE_BOOLEAN)])->all()]);
 
         $this->merge(['variants' => collect($this->input('variants', []))->map(fn (array $variant): array => [...$variant, 'is_quantity_based' => filter_var($variant['is_quantity_based'] ?? false, FILTER_VALIDATE_BOOLEAN), 'is_active' => filter_var($variant['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN)])->all()]);
     }

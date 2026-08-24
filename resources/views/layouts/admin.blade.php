@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Admin') · Suki Craft</title>
+    <title>@yield('title', 'Admin') · Sukicraft.id</title>
     <meta name="robots" content="noindex, nofollow">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -12,9 +12,9 @@
 
     <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-rose-100 bg-[#fffdf9] shadow-2xl shadow-stone-900/10 transition-transform duration-300 lg:translate-x-0" aria-label="Navigasi admin">
         <div class="flex h-20 items-center justify-between border-b border-rose-100 px-5">
-            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3" aria-label="Suki Craft admin dashboard">
+            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3" aria-label="Sukicraft.id admin dashboard">
                 <span class="grid h-10 w-10 place-items-center rounded-2xl bg-rose-100 text-rose-600"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.25a4.25 4.25 0 0 0-4.13 3.25A4.25 4.25 0 0 0 4.25 12c0 2.35 1.9 4.25 4.25 4.25.33 0 .65-.04.95-.11A4.25 4.25 0 0 0 12 21.75a4.25 4.25 0 0 0 2.55-5.61c.3.07.62.11.95.11a4.25 4.25 0 0 0 .38-8.48A4.25 4.25 0 0 0 12 2.25Zm0 4.25a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm-3.68 5.47a1.5 1.5 0 1 1 2.6 1.5 1.5 1.5 0 0 1-2.6-1.5Zm6.86 1.5a1.5 1.5 0 1 1 .5-2.05 1.5 1.5 0 0 1-.5 2.05Z" /></svg></span>
-                <span><span class="block font-serif text-xl font-semibold tracking-tight">Suki Craft</span><span class="block text-[9px] font-bold uppercase tracking-[0.2em] text-rose-500">Admin studio</span></span>
+                <span><span class="block font-serif text-xl font-semibold tracking-tight">Sukicraft.id</span><span class="block text-[9px] font-bold uppercase tracking-[0.2em] text-rose-500">Admin studio</span></span>
             </a>
             <button @click="sidebarOpen = false" class="grid h-10 w-10 place-items-center rounded-xl text-stone-500 hover:bg-rose-50 lg:hidden" aria-label="Tutup navigasi"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="m6 6 12 12M18 6 6 18" /></svg></button>
         </div>

@@ -1,0 +1,1 @@
+@props(['item'])@php($bouquetSizeCode = $item->relationLoaded('bouquetSize') ? ($item->bouquetSize?->code ?? $item->bouquet_size_label) : $item->bouquet_size_label)@if($bouquetSizeCode)&nbsp;· {{ $bouquetSizeCode }}@endif

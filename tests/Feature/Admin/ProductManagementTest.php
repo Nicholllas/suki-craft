@@ -39,6 +39,7 @@ test('an administrator can create a product', function () {
         ->assertDontSee('[sku]', false)
         ->assertSee('Slug dibuat otomatis dari nama produk.')
         ->assertSee('SKU dibuat otomatis dari nama produk dan label varian.')
+        ->assertSee('Aturan ukuran buket')
         ->assertSee('Resep / Bahan');
 
     $response = $this->actingAs($admin, 'admin')->post(route('admin.products.store'), [
@@ -50,6 +51,15 @@ test('an administrator can create a product', function () {
         'is_active' => true,
         'is_featured' => false,
         'slug' => 'slug-manual-yang-diabaikan',
+        'has_bouquet_sizes' => true,
+        'bouquet_sizes' => [
+            ['code' => 'S', 'is_active' => true, 'is_custom' => false, 'label' => 'Small', 'max_sheets' => 6, 'min_sheets' => 1, 'service_price' => 55000],
+            ['code' => 'M', 'is_active' => true, 'is_custom' => false, 'label' => 'Medium', 'max_sheets' => 15, 'min_sheets' => 7, 'service_price' => 100000],
+            ['code' => 'L', 'is_active' => true, 'is_custom' => false, 'label' => 'Large', 'max_sheets' => 29, 'min_sheets' => 16, 'service_price' => 165000],
+            ['code' => 'XL', 'is_active' => true, 'is_custom' => false, 'label' => 'Extra Large', 'max_sheets' => 40, 'min_sheets' => 30, 'service_price' => 180000],
+            ['code' => 'XXL', 'is_active' => true, 'is_custom' => false, 'label' => 'Extra Extra Large', 'max_sheets' => 45, 'min_sheets' => 41, 'service_price' => 250000],
+            ['code' => 'CUSTOM', 'is_active' => true, 'is_custom' => true, 'label' => 'Custom', 'max_sheets' => null, 'min_sheets' => 46, 'service_price' => 0],
+        ],
         'variants' => [[
             'is_active' => true,
             'is_quantity_based' => true,
@@ -69,6 +79,8 @@ test('an administrator can create a product', function () {
         'is_active' => true,
     ]);
     $this->assertDatabaseCount('product_images', 1);
+    $this->assertDatabaseHas('product_bouquet_sizes', ['code' => 'M', 'label' => 'Medium', 'max_sheets' => 15, 'min_sheets' => 7, 'service_price' => 100000]);
+    $this->assertDatabaseHas('product_bouquet_sizes', ['code' => 'CUSTOM', 'is_custom' => true, 'max_sheets' => null, 'min_sheets' => 46, 'service_price' => 0]);
     $this->assertDatabaseHas('product_variants', ['is_quantity_based' => true, 'price_adjustment' => 50000, 'sku' => 'BUKET-MAWAR-PECAHAN-RP50000']);
 
     $product = Product::query()->firstOrFail();
@@ -102,6 +114,7 @@ test('an administrator can create a product', function () {
     $newImagePaths = $product->fresh()->images()->pluck('path')->all();
 
     expect($product->fresh()->slug)->toBe('buket-mawar-premium')
+        ->and($product->fresh()->bouquetSizes()->count())->toBe(6)
         ->and($variant->refresh()->sku)->toBe('BUKET-MAWAR-PREMIUM-PECAHAN-RP100000');
 
     Storage::disk('public')->assertMissing($oldImagePath);
@@ -139,20 +152,20 @@ test('an administrator can save fixed and ratio based product recipes', function
     $this->actingAs($admin, 'admin')
         ->put(route('admin.products.update', $product), [
             'allow_multiple_variants' => true,
-            'base_price' => $product->base_price,
+            'base_price' => (int) $product->base_price,
             'category_id' => $product->category_id,
             'ingredients' => [
                 ['ingredient_id' => $defaultIngredient->id, 'quantity_needed' => 2],
                 ['ingredient_id' => $fixedVariantIngredient->id, 'product_variant_id' => $fixedVariant->id, 'quantity_needed' => 3],
-                ['ingredient_id' => $ratioIngredient->id, 'product_variant_id' => $quantityBasedVariant->id, 'ratio_per_unit' => 1.5],
+                ['ingredient_id' => $ratioIngredient->id, 'product_variant_id' => $quantityBasedVariant->id, 'ratio_per_unit' => 2],
             ],
             'is_active' => true,
             'is_featured' => false,
             'name' => $product->name,
             'slug' => $product->slug,
             'variants' => [
-                ['id' => $fixedVariant->id, 'is_active' => true, 'is_quantity_based' => false, 'label' => $fixedVariant->label, 'price_adjustment' => $fixedVariant->price_adjustment, 'sku' => null],
-                ['id' => $quantityBasedVariant->id, 'is_active' => true, 'is_quantity_based' => true, 'label' => $quantityBasedVariant->label, 'price_adjustment' => $quantityBasedVariant->price_adjustment, 'sku' => null],
+                ['id' => $fixedVariant->id, 'is_active' => true, 'is_quantity_based' => false, 'label' => $fixedVariant->label, 'price_adjustment' => (int) $fixedVariant->price_adjustment, 'sku' => null],
+                ['id' => $quantityBasedVariant->id, 'is_active' => true, 'is_quantity_based' => true, 'label' => $quantityBasedVariant->label, 'price_adjustment' => (int) $quantityBasedVariant->price_adjustment, 'sku' => null],
             ],
         ])
         ->assertRedirect(route('admin.products.edit', $product));
@@ -164,7 +177,7 @@ test('an administrator can save fixed and ratio based product recipes', function
         ->and($recipes->get($fixedVariantIngredient->id)->quantity_needed)->toBe('3.000')
         ->and($recipes->get($fixedVariantIngredient->id)->ratio_per_unit)->toBeNull()
         ->and($recipes->get($ratioIngredient->id)->quantity_needed)->toBeNull()
-        ->and($recipes->get($ratioIngredient->id)->ratio_per_unit)->toBe('1.500');
+        ->and($recipes->get($ratioIngredient->id)->ratio_per_unit)->toBe('2.000');
 
     $this->actingAs($admin, 'admin')
         ->get(route('admin.products.edit', $product))
@@ -182,7 +195,7 @@ test('product recipe validation requires the value matching the selected variant
     $variant = $product->variants()->create(['is_active' => true, 'is_quantity_based' => true, 'label' => 'Pecahan Rp5.000', 'price_adjustment' => 5000]);
     $basePayload = [
         'allow_multiple_variants' => true,
-        'base_price' => $product->base_price,
+        'base_price' => (int) $product->base_price,
         'category_id' => $product->category_id,
         'is_active' => true,
         'is_featured' => false,

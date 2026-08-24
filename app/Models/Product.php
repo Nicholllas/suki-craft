@@ -66,6 +66,11 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class)->orderBy('label');
     }
 
+    public function bouquetSizes(): HasMany
+    {
+        return $this->hasMany(ProductBouquetSize::class)->orderBy('min_sheets');
+    }
+
     public function getPrimaryImageAttribute(): ?ProductImage
     {
         $images = $this->relationLoaded('images') ? $this->images : $this->images()->get();
@@ -75,10 +80,13 @@ class Product extends Model
 
     public function getFinalPriceAttribute(): float
     {
+        $bouquetSizePrice = $this->relationLoaded('bouquetSizes')
+            ? $this->bouquetSizes->where('is_active', true)->where('is_custom', false)->min('service_price')
+            : $this->bouquetSizes()->where('is_active', true)->where('is_custom', false)->min('service_price');
         $adjustment = $this->relationLoaded('variants')
             ? $this->variants->where('is_active', true)->min('price_adjustment')
             : $this->variants()->where('is_active', true)->min('price_adjustment');
 
-        return (float) $this->base_price + (float) ($adjustment ?? 0);
+        return (float) ($bouquetSizePrice ?? $this->base_price) + (float) ($adjustment ?? 0);
     }
 }

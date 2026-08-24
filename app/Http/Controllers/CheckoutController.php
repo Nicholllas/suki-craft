@@ -27,7 +27,7 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Tambahkan buket ke keranjang sebelum checkout.');
         }
 
-        $cart->load(['itemGroups.product.category', 'itemGroups.product.images', 'itemGroups.variants.productVariant']);
+        $cart->load(['itemGroups.bouquetSize', 'itemGroups.product.category', 'itemGroups.product.images', 'itemGroups.variants.productVariant']);
 
         return view('checkout.index', [
             'cart' => $cart,

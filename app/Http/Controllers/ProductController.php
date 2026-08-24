@@ -20,7 +20,7 @@ class ProductController extends Controller
             ->get();
 
         $products = Product::query()
-            ->with(['category', 'images', 'variants'])
+            ->with(['bouquetSizes', 'category', 'images', 'variants'])
             ->where('is_active', true)
             ->whereHas('category', function ($query) {
                 $query->where('is_active', true);
@@ -61,7 +61,7 @@ class ProductController extends Controller
             404
         );
 
-        $product->load(['category', 'images', 'variants']);
+        $product->load(['bouquetSizes', 'category', 'images', 'variants']);
 
         $reviews = $this->reviewService->getApprovedForProduct($product);
 

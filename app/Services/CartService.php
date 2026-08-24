@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Cart;
 use App\Models\CartItemGroup;
 use App\Models\Product;
+use App\Models\ProductBouquetSize;
 use App\Models\ProductVariant;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -27,12 +28,17 @@ class CartService
         return DB::transaction(function () use ($bundleQuantity, $customizations, $product, $selectedVariants): CartItemGroup {
             $product = Product::query()->where('is_active', true)->whereHas('category', fn ($query) => $query->where('is_active', true))->findOrFail($product->id);
             $variants = $this->resolveVariants($product, $selectedVariants);
+            $bouquetSize = $this->resolveBouquetSize($product, $variants, $selectedVariants);
             $cart = $this->findOrCreateCurrentCart();
             $attributes = $this->customizationAttributes($customizations);
             $group = $cart->itemGroups()->create([
                 ...$attributes,
-                'product_id' => $product->id,
+                'bouquet_size_id' => $bouquetSize?->id,
+                'bouquet_size_label' => $bouquetSize?->label,
                 'bundle_quantity' => $bundleQuantity,
+                'product_id' => $product->id,
+                'requires_quote' => $bouquetSize?->is_custom ?? false,
+                'service_price' => $bouquetSize?->is_custom ? 0 : ($bouquetSize?->service_price ?? $product->base_price),
             ]);
 
             $group->variants()->createMany($variants->map(fn (ProductVariant $variant): array => [
@@ -41,7 +47,7 @@ class CartService
                 'unit_price' => $variant->price_adjustment,
             ])->all());
 
-            return $group->load(['product', 'variants.productVariant']);
+            return $group->load(['bouquetSize', 'product', 'variants.productVariant']);
         });
     }
 
@@ -50,7 +56,7 @@ class CartService
         $group = $this->currentCartItemGroup($cartItemGroupId);
         $group->update(['bundle_quantity' => $quantity]);
 
-        return $group->refresh()->load(['product', 'variants.productVariant']);
+        return $group->refresh()->load(['bouquetSize', 'product', 'variants.productVariant']);
     }
 
     public function removeItem(int $cartItemGroupId): void
@@ -60,13 +66,7 @@ class CartService
 
     public function getCurrentCart(): ?Cart
     {
-        return Cart::query()
-            ->when(
-                $this->customerId(),
-                fn ($query, $customerId) => $query->where('customer_id', $customerId),
-                fn ($query) => $query->where('session_id', $this->sessionId())
-            )
-            ->first();
+        return Cart::query()->when($this->customerId(), fn ($query, $customerId) => $query->where('customer_id', $customerId), fn ($query) => $query->where('session_id', $this->sessionId()))->first();
     }
 
     public function mergeGuestCartIntoCustomer(int $customerId): void
@@ -103,11 +103,7 @@ class CartService
     {
         $cart = $this->getCurrentCart();
 
-        if (! $cart) {
-            return 0;
-        }
-
-        return $cart->loadMissing(['itemGroups.product', 'itemGroups.variants'])->itemGroups->sum(fn (CartItemGroup $group): float => $group->subtotal);
+        return $cart ? $cart->loadMissing(['itemGroups.product', 'itemGroups.variants'])->itemGroups->sum(fn (CartItemGroup $group): float => $group->subtotal) : 0;
     }
 
     public function getItemCount(): int
@@ -117,11 +113,7 @@ class CartService
 
     private function findOrCreateCurrentCart(): Cart
     {
-        if ($customerId = $this->customerId()) {
-            return Cart::query()->firstOrCreate(['customer_id' => $customerId]);
-        }
-
-        return Cart::query()->firstOrCreate(['session_id' => $this->sessionId()]);
+        return $this->customerId() ? Cart::query()->firstOrCreate(['customer_id' => $this->customerId()]) : Cart::query()->firstOrCreate(['session_id' => $this->sessionId()]);
     }
 
     private function resolveVariants(Product $product, array $selectedVariants): Collection
@@ -155,6 +147,24 @@ class CartService
         return $variants;
     }
 
+    private function resolveBouquetSize(Product $product, Collection $variants, array $selectedVariants): ?ProductBouquetSize
+    {
+        $sizes = $product->bouquetSizes()->where('is_active', true)->orderBy('min_sheets')->get();
+
+        if ($sizes->isEmpty()) {
+            return null;
+        }
+
+        $sheetCount = $variants->where('is_quantity_based', true)->sum(fn (ProductVariant $variant): int => $selectedVariants[$variant->id]);
+        $bouquetSize = $sizes->first(fn (ProductBouquetSize $size): bool => $size->appliesToSheetCount($sheetCount));
+
+        if (! $bouquetSize) {
+            throw ValidationException::withMessages(['selected_variants' => ['Jumlah lembar uang belum sesuai dengan ukuran buket yang tersedia.']]);
+        }
+
+        return $bouquetSize;
+    }
+
     private function currentCartItemGroup(int $cartItemGroupId): CartItemGroup
     {
         $cart = $this->getCurrentCart();
@@ -182,8 +192,10 @@ class CartService
     private function groupsMatch(CartItemGroup $first, CartItemGroup $second): bool
     {
         return $first->product_id === $second->product_id
+            && $first->bouquet_size_id === $second->bouquet_size_id
             && $first->card_message === $second->card_message
             && $first->special_note === $second->special_note
+            && (float) $first->service_price === (float) $second->service_price
             && $first->variants->pluck('quantity_in_bundle', 'product_variant_id')->sortKeys()->all() === $second->variants->pluck('quantity_in_bundle', 'product_variant_id')->sortKeys()->all();
     }
 

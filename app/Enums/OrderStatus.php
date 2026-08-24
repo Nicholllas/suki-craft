@@ -4,6 +4,8 @@ namespace App\Enums;
 
 enum OrderStatus: string
 {
+    case AWAITING_QUOTE = 'awaiting_quote';
+    case AWAITING_APPROVAL = 'awaiting_approval';
     case PENDING_PAYMENT = 'pending_payment';
     case AWAITING_VERIFICATION = 'awaiting_verification';
     case PAYMENT_CONFIRMED = 'payment_confirmed';
@@ -15,6 +17,8 @@ enum OrderStatus: string
     public function label(): string
     {
         return match ($this) {
+            self::AWAITING_QUOTE => 'Menunggu penawaran',
+            self::AWAITING_APPROVAL => 'Menunggu persetujuan harga',
             self::PENDING_PAYMENT => 'Menunggu pembayaran',
             self::AWAITING_VERIFICATION => 'Menunggu verifikasi',
             self::PAYMENT_CONFIRMED => 'Pembayaran dikonfirmasi',

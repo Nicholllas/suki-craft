@@ -29,9 +29,14 @@ class OrderService
                 throw $this->emptyCartException();
             }
 
+            $containsCustomBouquet = $cart->itemGroups->contains('requires_quote', true);
             $subtotal = $cart->itemGroups->sum(fn (CartItemGroup $group): float => $group->subtotal);
             $deliveryFee = (float) config('delivery.flat_fee', 0);
-            $promotion = filled($promotionCode) ? $this->promotionService->validate($promotionCode, $subtotal, $checkoutData['customer_phone'], auth('customer')->id()) : null;
+            if ($containsCustomBouquet && filled($promotionCode)) {
+                throw ValidationException::withMessages(['promotion_code' => 'Promo belum dapat digunakan untuk pesanan custom.']);
+            }
+
+            $promotion = ! $containsCustomBouquet && filled($promotionCode) ? $this->promotionService->validate($promotionCode, $subtotal, $checkoutData['customer_phone'], auth('customer')->id()) : null;
             $discountAmount = $promotion ? $this->promotionService->calculateDiscount($promotion, $subtotal) : 0;
             $order = Order::query()->create([
                 'customer_id' => auth('customer')->id(),
@@ -46,7 +51,7 @@ class OrderService
                 'notes' => $checkoutData['notes'] ?? null,
                 'order_number' => $this->nextOrderNumber(),
                 'public_token' => (string) Str::uuid(),
-                'status' => OrderStatus::PENDING_PAYMENT,
+                'status' => $containsCustomBouquet ? OrderStatus::AWAITING_QUOTE : OrderStatus::PENDING_PAYMENT,
                 'subtotal' => $subtotal,
                 'total' => $subtotal + $deliveryFee - $discountAmount,
             ]);
@@ -57,10 +62,14 @@ class OrderService
 
             foreach ($cart->itemGroups as $cartItemGroup) {
                 $orderItemGroup = $order->itemGroups()->create([
+                    'bouquet_size_id' => $cartItemGroup->bouquet_size_id,
+                    'bouquet_size_label' => $cartItemGroup->bouquet_size_label,
                     'bundle_quantity' => $cartItemGroup->bundle_quantity,
                     'card_message' => $cartItemGroup->card_message,
                     'product_id' => $cartItemGroup->product_id,
                     'product_name' => $cartItemGroup->product->name,
+                    'requires_quote' => $cartItemGroup->requires_quote,
+                    'service_price' => $cartItemGroup->service_price,
                     'special_note' => $cartItemGroup->special_note,
                     'subtotal' => $cartItemGroup->subtotal,
                 ]);
@@ -75,8 +84,8 @@ class OrderService
             }
 
             $order->statusHistories()->create([
-                'note' => 'Pesanan dibuat dan menunggu pembayaran.',
-                'status' => OrderStatus::PENDING_PAYMENT,
+                'note' => $containsCustomBouquet ? 'Pesanan custom dibuat dan menunggu penawaran admin.' : 'Pesanan dibuat dan menunggu pembayaran.',
+                'status' => $containsCustomBouquet ? OrderStatus::AWAITING_QUOTE : OrderStatus::PENDING_PAYMENT,
             ]);
 
             $cart->itemGroups()->delete();

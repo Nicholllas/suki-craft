@@ -5,20 +5,23 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\OrderIndexRequest;
+use App\Http\Requests\Admin\QuoteOrderRequest;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Models\Admin;
 use App\Models\Order;
 use App\Services\OrderService;
+use App\Services\QuoteService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OrderController extends Controller
 {
-    public function __construct(private OrderService $orderService) {}
+    public function __construct(private OrderService $orderService, private QuoteService $quoteService) {}
 
     public function index(OrderIndexRequest $request): View
     {
@@ -51,6 +54,7 @@ class OrderController extends Controller
     {
         $order->load([
             'courier:id,name,phone',
+            'itemGroups.bouquetSize',
             'itemGroups.variants',
             'paymentProofs' => fn ($query) => $query->with('verifier:id,name')->latest('uploaded_at'),
             'statusHistories' => fn ($query) => $query->with('changedBy:id,name')->orderBy('created_at')->orderBy('id'),
@@ -58,6 +62,7 @@ class OrderController extends Controller
 
         return view('admin.all-orders.show', [
             'order' => $order,
+            'quoteWhatsAppUrl' => $this->quoteWhatsAppUrl($order),
             'statusOptions' => OrderStatus::cases(),
         ]);
     }
@@ -74,6 +79,13 @@ class OrderController extends Controller
         return redirect()->route('admin.orders.show', $order)->with('success', 'Status pesanan berhasil diperbarui secara manual.');
     }
 
+    public function quote(Order $order, QuoteOrderRequest $request): RedirectResponse
+    {
+        $this->quoteService->quote($order, $request->validated(), $this->adminFromRequest($request));
+
+        return redirect()->route('admin.orders.show', $order)->with('success', 'Penawaran harga berhasil disimpan. Bagikan link penawaran kepada pelanggan melalui WhatsApp.');
+    }
+
     public function deliveryProof(Order $order): StreamedResponse
     {
         abort_unless($order->delivery_proof_path, 404);
@@ -88,6 +100,29 @@ class OrderController extends Controller
         abort_unless($admin instanceof Admin, 403);
 
         return $admin;
+    }
+
+    private function quoteWhatsAppUrl(Order $order): ?string
+    {
+        if ($order->status !== OrderStatus::AWAITING_APPROVAL) {
+            return null;
+        }
+
+        $phone = Str::of((string) $order->customer_phone)->replaceMatches('/\D+/', '')->toString();
+
+        if (blank($phone)) {
+            return null;
+        }
+
+        if (str_starts_with($phone, '0')) {
+            $phone = '62'.substr($phone, 1);
+        }
+
+        $approvalUrl = route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]);
+        $expiresAt = $order->quote_expires_at?->locale('id')->translatedFormat('d M Y, H.i').' WIB';
+        $message = "Halo {$order->customer_name}, penawaran untuk pesanan {$order->order_number} sudah tersedia.\n\nTotal penawaran: Rp".number_format((int) $order->total, 0, ',', '.')."\nBerlaku sampai: {$expiresAt}\n\nSetujui penawaran dan lanjutkan pembayaran melalui link ini:\n{$approvalUrl}";
+
+        return 'https://wa.me/'.$phone.'?text='.urlencode($message);
     }
 
     private function summaries(): array

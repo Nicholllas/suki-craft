@@ -12,12 +12,22 @@
             'isQuantityBased' => $variant->is_quantity_based,
             'price' => (float) $variant->price_adjustment,
         ])->values();
+        $bouquetSizes = $product->bouquetSizes->where('is_active', true)->values();
+        $bouquetSizeOptions = $bouquetSizes->map(fn ($size) => [
+            'isCustom' => $size->is_custom,
+            'label' => $size->label,
+            'maxSheets' => $size->max_sheets,
+            'minSheets' => $size->min_sheets,
+            'rangeLabel' => $size->range_label,
+            'servicePrice' => (float) $size->service_price,
+        ])->all();
     @endphp
 
     <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8" x-data="{
         activeImage: @js($imagePath ? Storage::url($imagePath) : null),
         allowMultipleVariants: @js($product->allow_multiple_variants),
         basePrice: {{ (float) $product->base_price }},
+        bouquetSizes: @js($bouquetSizeOptions),
         cardMessage: '',
         quantity: 1,
         selectedVariants: @js($activeVariants->isNotEmpty() && ! $product->allow_multiple_variants ? [$activeVariants->first()->id => 1] : []),
@@ -27,9 +37,13 @@
         toastType: 'success',
         variants: @js($variantPrices),
         formatPrice(value) { return new Intl.NumberFormat('id-ID').format(value); },
+        hasCustomBouquetSize() { return this.selectedBouquetSize()?.isCustom ?? false; },
         isSelected(variantId) { return Object.hasOwn(this.selectedVariants, variantId); },
         cartPayload(form) { const payload = new FormData(form); [...payload.keys()].filter((key) => key.startsWith('selected_variants[')).forEach((key) => payload.delete(key)); Object.entries(this.selectedVariants).forEach(([variantId, variantQuantity]) => payload.set(`selected_variants[${variantId}]`, variantQuantity)); return payload; },
-        selectedPrice() { return this.basePrice + this.variants.reduce((total, variant) => total + (this.selectedVariants[variant.id] ?? 0) * variant.price, 0); },
+        moneySheetCount() { return this.variants.filter((variant) => variant.isQuantityBased).reduce((total, variant) => total + Number(this.selectedVariants[variant.id] ?? 0), 0); },
+        selectedBouquetSize() { const sheets = this.moneySheetCount(); return this.bouquetSizes.find((size) => sheets >= size.minSheets && (size.maxSheets === null || sheets <= size.maxSheets)) ?? null; },
+        selectedPrice() { return this.servicePrice() + this.variants.reduce((total, variant) => total + (this.selectedVariants[variant.id] ?? 0) * variant.price, 0); },
+        servicePrice() { const size = this.selectedBouquetSize(); return size ? (size.isCustom ? 0 : size.servicePrice) : this.basePrice; },
         setVariantQuantity(variantId, value) { const quantity = Number.parseInt(value, 10); if (Number.isInteger(quantity) && quantity > 0) { this.selectedVariants[variantId] = Math.min(999, quantity); } else { delete this.selectedVariants[variantId]; } },
         totalPrice() { return this.selectedPrice() * this.quantity; },
         toggleVariant(variantId) { if (this.isSelected(variantId)) { delete this.selectedVariants[variantId]; } else { this.selectedVariants[variantId] = 1; } },
@@ -102,9 +116,40 @@
 
                 <div class="mt-7 border-y border-stone-200 py-5">
                     <p class="text-sm text-stone-500">Harga untuk pilihanmu</p>
-                    <p class="mt-1 font-serif text-3xl font-semibold text-stone-800">Rp<span x-text="formatPrice(totalPrice())"></span></p>
+                    <p x-show="!hasCustomBouquetSize()" class="mt-1 font-serif text-3xl font-semibold text-stone-800">Rp<span x-text="formatPrice(totalPrice())"></span></p>
+                    <p x-cloak x-show="hasCustomBouquetSize()" class="mt-1 font-serif text-2xl font-semibold text-stone-800">Harga jasa custom dikonfirmasi admin</p>
                 </div>
 
+                @if($bouquetSizes->isNotEmpty())
+                    <section class="mt-7 rounded-2xl border border-rose-100 bg-rose-50/60 p-4">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-sm font-semibold text-stone-800">Ukuran buket otomatis</p>
+                                <p class="mt-1 text-xs leading-5 text-stone-500">Ukuran dan harga jasa mengikuti total lembar uang yang dipilih.</p>
+                            </div>
+                            <template x-if="selectedBouquetSize()">
+                                <div class="rounded-xl bg-white px-3 py-2 text-right shadow-sm">
+                                    <p class="text-xs font-semibold text-rose-600" x-text="`${selectedBouquetSize().label} · ${moneySheetCount()} lembar`"></p>
+                                    <p x-show="!hasCustomBouquetSize()" class="mt-1 text-xs text-stone-600">Jasa Rp<span x-text="formatPrice(servicePrice())"></span></p>
+                                    <p x-show="hasCustomBouquetSize()" class="mt-1 text-xs text-rose-600">Perlu penawaran admin</p>
+                                </div>
+                            </template>
+                        </div>
+                        <p x-cloak x-show="!selectedBouquetSize()" class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">Pilih jumlah lembar uang sesuai rentang yang tersedia.</p>
+                        <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                            @foreach($bouquetSizes as $size)
+                                <div :class="selectedBouquetSize()?.label === @js($size->label) ? 'border-rose-300 bg-white ring-1 ring-rose-200' : 'border-transparent bg-white/70'" class="rounded-xl border px-3 py-2 text-xs text-stone-600">
+                                    <span class="font-semibold text-stone-800">{{ $size->label }}</span> · {{ $size->range_label }}
+                                    @if($size->is_custom)
+                                        <span class="text-rose-600">· harga dikonfirmasi admin</span>
+                                    @else
+                                        <span>· jasa Rp{{ number_format($size->service_price, 0, ',', '.') }}</span>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
                 <form method="POST" action="{{ route('cart.add') }}" class="mt-7 space-y-7" @submit.prevent="addToCart($event)">
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $product->id }}">

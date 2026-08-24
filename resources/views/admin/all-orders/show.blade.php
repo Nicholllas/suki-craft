@@ -32,7 +32,7 @@
                             <div class="py-5 first:pt-0 last:pb-0">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
-                                        <p class="text-base font-semibold text-stone-800">{{ $item->product_name }}</p>
+                                        <p class="text-base font-semibold text-stone-800">{{ $item->product_name }}<x-bouquet-size-label :item="$item" /></p>
                                         <p class="mt-1 text-sm text-stone-500">{{ $item->bundle_quantity }} buket</p>
                                         @if ($item->variants->isNotEmpty())<ul class="mt-1 text-sm text-stone-500">@foreach ($item->variants as $variant)<li>{{ $variant->variant_label }}@if ($variant->quantity_in_bundle > 1) · {{ $variant->quantity_in_bundle }}×@endif</li>@endforeach</ul>@endif
                                     </div>
@@ -91,7 +91,39 @@
             </div>
 
             <aside class="space-y-6">
-                <x-card padding="p-5">
+                @if (in_array($order->status, [\App\Enums\OrderStatus::AWAITING_QUOTE, \App\Enums\OrderStatus::AWAITING_APPROVAL], true))
+                    <x-card padding="p-5">
+                        <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Penawaran custom</p>
+                        <form method="POST" action="{{ route('admin.orders.quote', $order) }}" class="mt-4 space-y-3">
+                            @csrf
+                            @method('PATCH')
+                            <div>
+                                <label class="text-xs font-semibold text-stone-600">Harga buket (belum ongkir)</label>
+                                <input name="quote_subtotal" type="number" min="1" step="1" inputmode="numeric" value="{{ old('quote_subtotal', (int) $order->subtotal) }}" required class="mt-1 h-11 w-full rounded-xl border-stone-200 px-3 text-sm">
+                                <x-input-error :messages="$errors->get('quote_subtotal')" class="mt-2" />
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-stone-600">Berlaku sampai</label>
+                                <input name="quote_expires_at" type="datetime-local" value="{{ old('quote_expires_at', optional($order->quote_expires_at)->format('Y-m-d\TH:i')) }}" required class="mt-1 h-11 w-full rounded-xl border-stone-200 px-3 text-sm">
+                                <x-input-error :messages="$errors->get('quote_expires_at')" class="mt-2" />
+                            </div>
+                            <div>
+                                <textarea name="quote_note" rows="3" placeholder="Catatan untuk pelanggan" class="w-full rounded-xl border-stone-200 px-3 py-2 text-sm">{{ old('quote_note', $order->quote_note) }}</textarea>
+                                <x-input-error :messages="$errors->get('quote_note')" class="mt-2" />
+                            </div>
+                            <button type="submit" class="h-11 w-full rounded-xl bg-rose-500 text-sm font-semibold text-white">Simpan penawaran</button>
+                        </form>
+
+                        @if ($order->status === \App\Enums\OrderStatus::AWAITING_APPROVAL)
+                            <div class="mt-3 space-y-2">
+                                <a href="{{ route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]) }}" target="_blank" rel="noopener noreferrer" class="block text-center text-xs font-semibold text-rose-600">Buka link pelanggan</a>
+                                @if ($quoteWhatsAppUrl)
+                                    <a href="{{ $quoteWhatsAppUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex h-11 w-full items-center justify-center rounded-xl bg-emerald-500 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600">Kirim penawaran via WhatsApp</a>
+                                @endif
+                            </div>
+                        @endif
+                    </x-card>
+                @endif                <x-card padding="p-5">
                     <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Aksi cepat</p>
                     <div class="mt-4 space-y-3">
                         @if ($order->status === \App\Enums\OrderStatus::AWAITING_VERIFICATION)

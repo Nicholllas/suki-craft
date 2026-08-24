@@ -112,3 +112,26 @@ test('a single-variant product rejects a forged multi-variant selection', functi
         'selected_variants' => [$this->variant->id => 1, $secondVariant->id => 1],
     ])->assertUnprocessable()->assertJsonValidationErrors('selected_variants');
 });
+test('cart shows the selected bouquet size code in the product title', function () {
+    $this->variant->update(['is_quantity_based' => true]);
+    $this->product->bouquetSizes()->create([
+        'code' => 'XL',
+        'is_active' => true,
+        'is_custom' => false,
+        'label' => 'Extra Large',
+        'max_sheets' => 40,
+        'min_sheets' => 30,
+        'service_price' => 180000,
+    ]);
+    $customer = Customer::factory()->create();
+
+    $this->actingAs($customer, 'customer')->post(route('cart.add'), [
+        'bundle_quantity' => 1,
+        'product_id' => $this->product->id,
+        'selected_variants' => [$this->variant->id => 30],
+    ])->assertRedirect();
+
+    $this->actingAs($customer, 'customer')->get(route('cart.index'))
+        ->assertOk()
+        ->assertSee('Buket Mawar&nbsp;· XL', false);
+});

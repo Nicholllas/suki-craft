@@ -107,7 +107,7 @@
                                     <div class="grid h-full place-items-center text-xl text-rose-300">✿</div>
                                 @endif
                             </div>
-                            <div class="min-w-0 flex-1"><p class="truncate text-sm font-semibold text-stone-800">{{ $item->product->name }}</p>@if($item->variants->isNotEmpty())<ul class="mt-0.5 text-xs text-stone-500">@foreach($item->variants as $variant)<li>{{ $variant->productVariant->label }}@if($variant->quantity_in_bundle > 1) · {{ $variant->quantity_in_bundle }}×@endif</li>@endforeach</ul>@endif<p class="mt-1 text-xs text-stone-500">{{ $item->bundle_quantity }} buket</p><p class="mt-1 text-xs font-semibold text-stone-700">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</p></div>
+                            <div class="min-w-0 flex-1"><p class="truncate text-sm font-semibold text-stone-800">{{ $item->product->name }}<x-bouquet-size-label :item="$item" /></p>@if($item->variants->isNotEmpty())<ul class="mt-0.5 text-xs text-stone-500">@foreach($item->variants as $variant)<li>{{ $variant->productVariant->label }}@if($variant->quantity_in_bundle > 1) · {{ $variant->quantity_in_bundle }}×@endif</li>@endforeach</ul>@endif<p class="mt-1 text-xs text-stone-500">{{ $item->bundle_quantity }} buket</p><p class="mt-1 text-xs font-semibold text-stone-700">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</p></div>
                         </div>
                     @endforeach
                 </div>

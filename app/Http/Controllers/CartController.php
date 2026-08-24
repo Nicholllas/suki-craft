@@ -17,7 +17,7 @@ class CartController extends Controller
     public function index(): View
     {
         $cart = $this->cartService->getCurrentCart();
-        $cart?->load(['itemGroups.product.category', 'itemGroups.product.images', 'itemGroups.variants.productVariant']);
+        $cart?->load(['itemGroups.bouquetSize', 'itemGroups.product.category', 'itemGroups.product.images', 'itemGroups.variants.productVariant']);
 
         return view('cart.index', ['cart' => $cart, 'total' => $this->cartService->getTotal()]);
     }

@@ -1,7 +1,7 @@
 @extends('layouts.store')
 
-@section('title', 'Tentang Suki Craft | Cerita di Balik Setiap Rangkaian')
-@section('description', 'Kenali cerita, nilai, tim, dan cara Suki Craft merangkai bunga untuk setiap momen istimewa.')
+@section('title', 'Tentang Sukicraft.id | Cerita di Balik Setiap Rangkaian')
+@section('description', 'Kenali cerita, nilai, tim, dan cara Sukicraft.id merangkai bunga untuk setiap momen istimewa.')
 
 @section('content')
     <section class="relative isolate overflow-hidden bg-[#fff8f3]">
@@ -12,7 +12,7 @@
             <div class="max-w-2xl">
                 <p class="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-rose-600 shadow-sm"><span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span>Di balik setiap tangkai</p>
                 <h1 class="mt-6 font-serif text-5xl font-semibold leading-[1.05] tracking-tight text-stone-800 sm:text-6xl">Kami merangkai <span class="italic text-rose-500">perasaan</span>, bukan sekadar bunga.</h1>
-                <p class="mt-6 max-w-xl text-base leading-7 text-stone-600 sm:text-lg">Suki Craft adalah ruang kecil untuk membantu setiap orang menyampaikan cerita, rasa sayang, dan perhatian melalui rangkaian yang dibuat dengan penuh ketelitian.</p>
+                <p class="mt-6 max-w-xl text-base leading-7 text-stone-600 sm:text-lg">Sukicraft.id adalah ruang kecil untuk membantu setiap orang menyampaikan cerita, rasa sayang, dan perhatian melalui rangkaian yang dibuat dengan penuh ketelitian.</p>
                 <div class="mt-8 flex flex-col gap-3 sm:flex-row">
                     <a href="{{ route('products.index') }}" class="inline-flex items-center justify-center gap-2 rounded-full bg-rose-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-rose-200 transition hover:-translate-y-0.5 hover:bg-rose-600">Lihat Koleksi Buket <span aria-hidden="true">→</span></a>
                     <a href="#kontak" class="inline-flex items-center justify-center rounded-full border border-stone-200 bg-white px-6 py-3.5 text-sm font-semibold text-stone-700 transition hover:border-rose-200 hover:text-rose-600">Hubungi Kami</a>
@@ -34,7 +34,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="absolute -bottom-5 -left-3 rounded-2xl bg-white px-4 py-3 shadow-xl shadow-stone-300/40 sm:-left-7 sm:px-5"><p class="text-xs text-stone-500">Dirangkai dengan sepenuh hati</p><p class="mt-0.5 font-serif text-lg font-semibold text-stone-800">Suki Craft ✿</p></div>
+                <div class="absolute -bottom-5 -left-3 rounded-2xl bg-white px-4 py-3 shadow-xl shadow-stone-300/40 sm:-left-7 sm:px-5"><p class="text-xs text-stone-500">Dirangkai dengan sepenuh hati</p><p class="mt-0.5 font-serif text-lg font-semibold text-stone-800">Sukicraft.id ✿</p></div>
             </div>
         </div>
     </section>
@@ -54,7 +54,7 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="max-w-2xl"><p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">02 · Sejarah kami</p><h2 class="mt-3 font-serif text-4xl font-semibold tracking-tight text-stone-800 sm:text-5xl">Tumbuh dari keinginan sederhana untuk membuat hari seseorang lebih indah.</h2></div>
             <ol class="relative mt-12 grid gap-8 md:grid-cols-3">
-                @foreach ([['year' => '2021', 'title' => 'Berawal dari meja kecil', 'description' => 'Suki Craft dimulai dari pesanan buket untuk orang-orang terdekat.'], ['year' => '2023', 'title' => 'Menjadi bagian banyak cerita', 'description' => 'Kami mulai membantu lebih banyak momen, dari kejutan kecil hingga perayaan besar.'], ['year' => 'Hari ini', 'title' => 'Terus merangkai dengan hangat', 'description' => 'Kami terus belajar, mendengar, dan menciptakan pengalaman kirim bunga yang lebih personal.']] as $milestone)
+                @foreach ([['year' => '2021', 'title' => 'Berawal dari meja kecil', 'description' => 'Sukicraft.id dimulai dari pesanan buket untuk orang-orang terdekat.'], ['year' => '2023', 'title' => 'Menjadi bagian banyak cerita', 'description' => 'Kami mulai membantu lebih banyak momen, dari kejutan kecil hingga perayaan besar.'], ['year' => 'Hari ini', 'title' => 'Terus merangkai dengan hangat', 'description' => 'Kami terus belajar, mendengar, dan menciptakan pengalaman kirim bunga yang lebih personal.']] as $milestone)
                     <li class="relative rounded-3xl bg-white p-6 shadow-sm"><span class="inline-flex rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-600">{{ $milestone['year'] }}</span><h3 class="mt-5 text-xl font-semibold text-stone-800">{{ $milestone['title'] }}</h3><p class="mt-2 text-sm leading-6 text-stone-500">{{ $milestone['description'] }}</p></li>
                 @endforeach
             </ol>
@@ -63,7 +63,7 @@
 
     <section class="bg-white py-20 sm:py-24">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div class="max-w-2xl"><p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">03 · Portofolio</p><h2 class="mt-3 font-serif text-4xl font-semibold tracking-tight text-stone-800 sm:text-5xl">Cerita yang pernah kami bantu sampaikan.</h2></div><p class="max-w-sm text-sm leading-6 text-stone-500">Contoh portofolio ini dapat diganti dengan dokumentasi proyek, acara, atau rangkaian unggulan Suki Craft.</p></div>
+            <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div class="max-w-2xl"><p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">03 · Portofolio</p><h2 class="mt-3 font-serif text-4xl font-semibold tracking-tight text-stone-800 sm:text-5xl">Cerita yang pernah kami bantu sampaikan.</h2></div><p class="max-w-sm text-sm leading-6 text-stone-500">Contoh portofolio ini dapat diganti dengan dokumentasi proyek, acara, atau rangkaian unggulan Sukicraft.id.</p></div>
             <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ([['title' => 'Birthday Surprise', 'tone' => 'from-rose-200 via-rose-100 to-amber-50'], ['title' => 'Graduation Day', 'tone' => 'from-amber-200 via-amber-100 to-stone-50'], ['title' => 'Intimate Wedding', 'tone' => 'from-pink-200 via-pink-100 to-rose-50'], ['title' => 'Corporate Gifting', 'tone' => 'from-violet-200 via-violet-100 to-rose-50']] as $portfolio)
                     <article class="group overflow-hidden rounded-3xl border border-stone-100 bg-white shadow-sm"><div class="flex aspect-[4/5] items-end bg-gradient-to-br {{ $portfolio['tone'] }} p-5"><span class="grid h-16 w-16 place-items-center rounded-full border border-white/70 bg-white/40 text-3xl shadow-sm backdrop-blur">✿</span></div><div class="p-5"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-rose-500">Contoh proyek</p><h3 class="mt-2 text-lg font-semibold text-stone-800">{{ $portfolio['title'] }}</h3></div></article>
@@ -96,7 +96,7 @@
 
     <section class="bg-white py-20 sm:py-24">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="max-w-2xl"><p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">06 · Penghargaan</p><h2 class="mt-3 font-serif text-4xl font-semibold tracking-tight text-stone-800 sm:text-5xl">Hal kecil yang membuat kami terus melangkah.</h2><p class="mt-4 text-sm leading-6 text-stone-500">Bagian ini adalah placeholder untuk penghargaan, sertifikasi, atau pencapaian Suki Craft di masa mendatang.</p></div>
+            <div class="max-w-2xl"><p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">06 · Penghargaan</p><h2 class="mt-3 font-serif text-4xl font-semibold tracking-tight text-stone-800 sm:text-5xl">Hal kecil yang membuat kami terus melangkah.</h2><p class="mt-4 text-sm leading-6 text-stone-500">Bagian ini adalah placeholder untuk penghargaan, sertifikasi, atau pencapaian Sukicraft.id di masa mendatang.</p></div>
             <div class="mt-10 grid gap-4 md:grid-cols-3">
                 @foreach (['Pilihan Pelanggan 2024', 'Kreasi Lokal Favorit', 'Komitmen Pelayanan'] as $award)
                     <div class="flex items-center gap-4 rounded-3xl border border-amber-100 bg-amber-50/60 p-6"><span class="grid h-12 w-12 place-items-center rounded-2xl bg-amber-200 text-xl text-amber-800">★</span><p class="font-semibold text-stone-800">{{ $award }}</p></div>

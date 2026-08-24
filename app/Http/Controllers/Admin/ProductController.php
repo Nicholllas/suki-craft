@@ -45,6 +45,9 @@ class ProductController extends Controller
             $data = $request->validated();
             $product = Product::create($this->productData($data));
 
+            if ($request->boolean('has_bouquet_sizes')) {
+                $this->syncBouquetSizes($product, $data['bouquet_sizes'] ?? []);
+            }
             $this->syncVariants($product, $data['variants'] ?? []);
             $this->syncIngredients($product, $data['ingredients'] ?? []);
             $this->storeImages($product, $request->file('images', []));
@@ -55,7 +58,7 @@ class ProductController extends Controller
 
     public function edit(Product $product): View
     {
-        $product->load(['images', 'ingredients', 'variants']);
+        $product->load(['bouquetSizes', 'images', 'ingredients', 'variants']);
 
         return view('admin.products.edit', ['categories' => $this->categories($product), 'ingredients' => $this->ingredients(), 'product' => $product]);
     }
@@ -66,6 +69,9 @@ class ProductController extends Controller
             $data = $request->validated();
             $product->update($this->productData($data, $product));
 
+            if ($request->boolean('has_bouquet_sizes')) {
+                $this->syncBouquetSizes($product, $data['bouquet_sizes'] ?? []);
+            }
             $this->syncVariants($product, $data['variants'] ?? []);
             $this->syncIngredients($product, $data['ingredients'] ?? []);
 
@@ -173,6 +179,15 @@ class ProductController extends Controller
 
         $product->images()->update(['is_primary' => false]);
         $product->images()->whereKey($imageId)->update(['is_primary' => true]);
+    }
+
+    private function syncBouquetSizes(Product $product, array $sizes): void
+    {
+        $product->bouquetSizes()->delete();
+
+        foreach ($sizes as $size) {
+            $product->bouquetSizes()->create(Arr::only($size, ['code', 'is_active', 'is_custom', 'label', 'max_sheets', 'min_sheets', 'service_price']));
+        }
     }
 
     private function syncVariants(Product $product, array $variants): void

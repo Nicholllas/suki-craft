@@ -9,7 +9,7 @@
     <div x-cloak x-show="open" x-transition.opacity class="fixed inset-0 z-50 flex items-end bg-stone-900/50 p-4 sm:items-center sm:justify-center" @keydown.escape.window="open = false">
         <div @click.outside="open = false" class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-7">
             <div class="flex items-start justify-between gap-4">
-                <div><p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Ulasan produk</p><h3 class="mt-2 font-serif text-2xl font-semibold text-stone-800">Bagikan pengalamanmu</h3><p class="mt-2 text-sm leading-6 text-stone-500">{{ $orderItem->product_name }}</p></div>
+                <div><p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Ulasan produk</p><h3 class="mt-2 font-serif text-2xl font-semibold text-stone-800">Bagikan pengalamanmu</h3><p class="mt-2 text-sm leading-6 text-stone-500">{{ $orderItem->product_name }}<x-bouquet-size-label :item="$orderItem" /></p></div>
                 <button type="button" @click="open = false" class="grid h-9 w-9 place-items-center rounded-xl text-stone-400 transition hover:bg-stone-100 hover:text-stone-700" aria-label="Tutup form ulasan">×</button>
             </div>
 

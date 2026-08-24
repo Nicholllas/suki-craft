@@ -13,11 +13,11 @@ class CartItemGroup extends Model
 
     protected $attributes = ['bundle_quantity' => 1];
 
-    protected $fillable = ['product_id', 'bundle_quantity', 'card_message', 'special_note'];
+    protected $fillable = ['bouquet_size_id', 'bouquet_size_label', 'bundle_quantity', 'card_message', 'product_id', 'requires_quote', 'service_price', 'special_note'];
 
     protected function casts(): array
     {
-        return ['bundle_quantity' => 'integer'];
+        return ['bundle_quantity' => 'integer', 'requires_quote' => 'boolean', 'service_price' => 'decimal:2'];
     }
 
     public function cart(): BelongsTo
@@ -30,6 +30,11 @@ class CartItemGroup extends Model
         return $this->belongsTo(Product::class);
     }
 
+    public function bouquetSize(): BelongsTo
+    {
+        return $this->belongsTo(ProductBouquetSize::class);
+    }
+
     public function variants(): HasMany
     {
         return $this->hasMany(CartItemVariant::class);
@@ -37,7 +42,7 @@ class CartItemGroup extends Model
 
     public function getBundleSubtotalAttribute(): float
     {
-        return (float) $this->product->base_price + $this->variants->sum(fn (CartItemVariant $variant): float => $variant->lineSubtotal);
+        return (float) ($this->service_price ?? $this->product->base_price) + $this->variants->sum(fn (CartItemVariant $variant): float => $variant->lineSubtotal);
     }
 
     public function getSubtotalAttribute(): float

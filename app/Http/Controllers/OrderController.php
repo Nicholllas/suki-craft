@@ -10,7 +10,7 @@ class OrderController extends Controller
     public function confirmation(string $orderNumber, string $token): View
     {
         $order = Order::query()
-            ->with('itemGroups.variants')
+            ->with(['itemGroups.bouquetSize', 'itemGroups.variants'])
             ->where('order_number', $orderNumber)
             ->where('public_token', $token)
             ->firstOrFail();

@@ -1,7 +1,7 @@
 @extends('layouts.store')
 
-@section('title', 'Cara Pesan | Suki Craft')
-@section('description', 'Panduan mudah memesan buket Suki Craft, dari memilih rangkaian hingga melacak pengiriman.')
+@section('title', 'Cara Pesan | Sukicraft.id')
+@section('description', 'Panduan mudah memesan buket Sukicraft.id, dari memilih rangkaian hingga melacak pengiriman.')
 
 @section('content')
     <section class="relative isolate overflow-hidden bg-[#fff8f3]">

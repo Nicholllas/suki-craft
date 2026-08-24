@@ -13,6 +13,6 @@ class StockInRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['quantity' => ['required', 'numeric', 'gt:0'], 'reason' => ['required', 'string', 'max:255']];
+        return ['quantity' => ['required', 'integer', 'min:1'], 'reason' => ['required', 'string', 'max:255']];
     }
 }

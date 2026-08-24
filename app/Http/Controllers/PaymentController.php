@@ -6,6 +6,7 @@ use App\Http\Requests\UploadPaymentProofRequest;
 use App\Models\Order;
 use App\Services\PaymentService;
 use App\Services\QrisDynamicPayloadService;
+use App\Services\QuoteService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
@@ -18,19 +19,21 @@ class PaymentController extends Controller
     public function __construct(
         private PaymentService $paymentService,
         private QrisDynamicPayloadService $qrisDynamicPayloadService,
+        private QuoteService $quoteService,
     ) {}
 
     public function show(string $orderNumber, string $token): View
     {
         $order = $this->orderFromToken($orderNumber, $token);
 
-        if ($this->paymentService->expireIfPaymentDeadlinePassed($order)) {
+        if ($this->quoteService->expireIfQuoteExpired($order) || $this->paymentService->expireIfPaymentDeadlinePassed($order)) {
             $order->refresh();
         }
 
         $payment = $this->qrisDynamicPayloadService->paymentConfiguration();
         $order->load([
             'courier:id,name,phone',
+            'itemGroups.bouquetSize',
             'itemGroups.variants',
             'latestPaymentProof',
             'statusHistories' => fn ($query) => $query->orderBy('created_at')->orderBy('id'),
@@ -45,6 +48,14 @@ class PaymentController extends Controller
                 : null,
             'whatsAppUrl' => $this->whatsAppUrl($order),
         ]);
+    }
+
+    public function approveQuote(string $orderNumber, string $token): RedirectResponse
+    {
+        $order = $this->orderFromToken($orderNumber, $token);
+        $this->quoteService->approve($order);
+
+        return redirect()->route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token])->with('success', 'Harga telah disetujui. Silakan lanjutkan pembayaran.');
     }
 
     public function qris(string $orderNumber, string $token): Response

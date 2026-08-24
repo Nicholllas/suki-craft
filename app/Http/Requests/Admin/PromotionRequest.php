@@ -14,7 +14,7 @@ class PromotionRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['code' => ['required', 'string', 'max:50', Rule::unique('promotions', 'code')->ignore($this->route('promotion'))], 'type' => ['required', Rule::in(['percentage', 'fixed'])], 'value' => ['required', 'numeric', 'gt:0'], 'min_purchase' => ['nullable', 'numeric', 'min:0'], 'max_discount' => ['nullable', 'numeric', 'gt:0'], 'usage_limit' => ['nullable', 'integer', 'min:1'], 'usage_limit_per_customer' => ['nullable', 'integer', 'min:1'], 'starts_at' => ['required', Rule::date()->format('Y-m-d\\TH:i')], 'expires_at' => ['required', Rule::date()->format('Y-m-d\\TH:i')->after('starts_at')], 'is_active' => ['nullable', 'boolean']];
+        return ['code' => ['required', 'string', 'max:50', Rule::unique('promotions', 'code')->ignore($this->route('promotion'))], 'type' => ['required', Rule::in(['percentage', 'fixed'])], 'value' => ['required', 'numeric', 'gt:0', Rule::when($this->input('type') === 'fixed', ['integer'])], 'min_purchase' => ['nullable', 'integer', 'min:0'], 'max_discount' => ['nullable', 'integer', 'gt:0'], 'usage_limit' => ['nullable', 'integer', 'min:1'], 'usage_limit_per_customer' => ['nullable', 'integer', 'min:1'], 'starts_at' => ['required', Rule::date()->format('Y-m-d\\TH:i')], 'expires_at' => ['required', Rule::date()->format('Y-m-d\\TH:i')->after('starts_at')], 'is_active' => ['nullable', 'boolean']];
     }
 
     protected function prepareForValidation(): void

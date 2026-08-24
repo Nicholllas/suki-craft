@@ -37,6 +37,10 @@ class Order extends Model
         'total',
         'status',
         'notes',
+        'quote_approved_at',
+        'quote_expires_at',
+        'quote_note',
+        'quoted_at',
     ];
 
     protected function casts(): array
@@ -46,6 +50,9 @@ class Order extends Model
             'delivered_at' => 'datetime',
             'delivery_fee' => 'decimal:2',
             'discount_amount' => 'decimal:2',
+            'quote_approved_at' => 'datetime',
+            'quote_expires_at' => 'datetime',
+            'quoted_at' => 'datetime',
             'status' => OrderStatus::class,
             'subtotal' => 'decimal:2',
             'total' => 'decimal:2',

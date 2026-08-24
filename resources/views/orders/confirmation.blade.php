@@ -23,6 +23,11 @@
                 <section class="rounded-3xl border border-stone-200 bg-white p-5 sm:p-7">
                     <div class="flex items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Status pesanan</p><h2 class="mt-2 font-serif text-2xl font-semibold text-stone-800">{{ $order->status->label() }}</h2></div><x-status-badge :status="$order->status->label()" /></div>
 
+                    @if ($order->status === \App\Enums\OrderStatus::AWAITING_QUOTE)
+                        <div class="mt-6 rounded-2xl bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-800"><p class="font-semibold">Pesanan custom sudah kami terima.</p><p class="mt-1">Admin akan menghitung harga lalu mengirimkan link persetujuan melalui WhatsApp.</p></div>
+                    @elseif ($order->status === \App\Enums\OrderStatus::AWAITING_APPROVAL)
+                        <div class="mt-6 border-t border-stone-100 pt-6"><p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Penawaran custom</p><h3 class="mt-2 font-serif text-xl font-semibold text-stone-800">Total Rp{{ number_format($order->total, 0, ',', '.') }}</h3>@if($order->quote_note)<p class="mt-2 text-sm text-stone-600">{{ $order->quote_note }}</p>@endif<p class="mt-2 text-xs text-stone-500">Berlaku sampai {{ $order->quote_expires_at->locale('id')->translatedFormat('d F Y, H.i') }} WIB.</p><form method="POST" action="{{ route('orders.quotes.approve', ['orderNumber' => $order->order_number, 'token' => $order->public_token]) }}" class="mt-4">@csrf<button type="submit" class="inline-flex h-11 items-center rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white">Setujui harga & lanjut bayar</button></form></div>
+                    @endif
                     @if (in_array($order->status, [\App\Enums\OrderStatus::PENDING_PAYMENT, \App\Enums\OrderStatus::AWAITING_VERIFICATION], true))
                         <div class="mt-6 border-t border-stone-100 pt-6">
                             <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Instruksi pembayaran</p>
@@ -73,7 +78,7 @@
                         @foreach ($order->itemGroups as $item)
                             <article class="flex items-start justify-between gap-4 py-4 first:pt-0 last:pb-0">
                                 <div>
-                                    <h3 class="text-sm font-semibold text-stone-800">{{ $item->product_name }} · {{ $item->bundle_quantity }} buket</h3>
+                                    <h3 class="text-sm font-semibold text-stone-800">{{ $item->product_name }}<x-bouquet-size-label :item="$item" /> · {{ $item->bundle_quantity }} buket</h3>
                                     @if ($item->variants->isNotEmpty())
                                         <ul class="mt-1 text-xs text-stone-500">
                                             @foreach ($item->variants as $variant)

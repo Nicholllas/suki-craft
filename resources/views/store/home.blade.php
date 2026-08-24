@@ -1,6 +1,6 @@
 @extends('layouts.store')
 
-@section('title', 'Suki Craft | Buket Bunga untuk Setiap Cerita')
+@section('title', 'Sukicraft.id | Buket Bunga untuk Setiap Cerita')
 @section('description', 'Temukan buket bunga pilihan yang dirangkai dengan penuh cinta untuk setiap momen spesial Anda.')
 
 @section('content')
@@ -70,7 +70,7 @@
     </section>
 
     <section class="bg-[#fdf5ef] py-20 sm:py-24">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div class="max-w-xl"><p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">Pilihan Suki Craft</p><h2 class="mt-3 font-serif text-4xl font-semibold tracking-tight text-stone-800 sm:text-5xl">Buket yang sedang menanti untuk dipilih.</h2></div><a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-rose-600 transition hover:text-rose-700">Jelajahi katalog <span aria-hidden="true">→</span></a></div>
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div class="max-w-xl"><p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">Pilihan Sukicraft.id</p><h2 class="mt-3 font-serif text-4xl font-semibold tracking-tight text-stone-800 sm:text-5xl">Buket yang sedang menanti untuk dipilih.</h2></div><a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-rose-600 transition hover:text-rose-700">Jelajahi katalog <span aria-hidden="true">→</span></a></div>
             @forelse ($featuredProducts as $product)
                 @if ($loop->first)<div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">@endif
                 @php($imagePath = $product->primary_image?->path)
@@ -85,7 +85,7 @@
     <section id="tentang" class="scroll-mt-20 bg-[#fdf5ef] py-20 sm:py-24">
         <div class="mx-auto grid max-w-7xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-20 lg:px-8">
             <div class="relative order-2 grid grid-cols-2 gap-4 lg:order-1"><img src="https://images.unsplash.com/photo-1487070183336-b863922373d4?auto=format&fit=crop&w=700&q=80" alt="Detail bunga segar" class="mt-10 h-64 w-full rounded-t-[5rem] rounded-bl-3xl object-cover sm:h-80"><img src="https://images.unsplash.com/photo-1526047932273-341f2a7631f9?auto=format&fit=crop&w=700&q=80" alt="Bunga yang dirangkai dengan hati-hati" class="h-64 w-full rounded-b-[5rem] rounded-tr-3xl object-cover sm:h-80"><div class="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-stone-800 px-4 py-2 text-center text-xs font-medium text-white shadow-lg">Made with love ✿</div></div>
-            <div class="order-1 max-w-xl lg:order-2"><p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">Dari hati, untuk hati</p><h2 class="mt-3 font-serif text-4xl font-semibold leading-tight tracking-tight text-stone-800 sm:text-5xl">Setiap tangkai punya cara sendiri untuk bicara.</h2><p class="mt-6 leading-7 text-stone-600">Kami percaya bunga bukan hanya hadiah. Ia adalah pengingat, pelukan, dan perayaan kecil yang bisa tinggal lebih lama di hati. Karena itu, setiap rangkaian Suki Craft dibuat satu per satu dengan perhatian pada setiap detailnya.</p>
+            <div class="order-1 max-w-xl lg:order-2"><p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">Dari hati, untuk hati</p><h2 class="mt-3 font-serif text-4xl font-semibold leading-tight tracking-tight text-stone-800 sm:text-5xl">Setiap tangkai punya cara sendiri untuk bicara.</h2><p class="mt-6 leading-7 text-stone-600">Kami percaya bunga bukan hanya hadiah. Ia adalah pengingat, pelukan, dan perayaan kecil yang bisa tinggal lebih lama di hati. Karena itu, setiap rangkaian Sukicraft.id dibuat satu per satu dengan perhatian pada setiap detailnya.</p>
                 <div class="mt-8 grid gap-5 sm:grid-cols-2"><div class="rounded-2xl bg-white/70 p-5"><svg class="h-6 w-6 text-rose-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35 10.55 20C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.51L12 21.35Z" /></svg><h3 class="mt-3 font-semibold text-stone-800">Bunga pilihan</h3><p class="mt-1 text-sm leading-5 text-stone-500">Dipilih dalam kondisi terbaik untuk momen Anda.</p></div><div class="rounded-2xl bg-white/70 p-5"><svg class="h-6 w-6 text-rose-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.75a4.5 4.5 0 0 0-4.5 4.5c0 5.25 4.5 12 4.5 12s4.5-6.75 4.5-12a4.5 4.5 0 0 0-4.5-4.5Zm0 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z" /></svg><h3 class="mt-3 font-semibold text-stone-800">Sentuhan personal</h3><p class="mt-1 text-sm leading-5 text-stone-500">Tambahkan pesan manis pada kartu ucapan Anda.</p></div></div>
             </div>
         </div>

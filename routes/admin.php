@@ -40,6 +40,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+        Route::patch('orders/{order}/quote', [OrderController::class, 'quote'])->name('orders.quote');
         Route::get('orders/{order}/delivery-proof', [OrderController::class, 'deliveryProof'])->name('orders.delivery-proof');
         Route::get('payment-verifications', [PaymentVerificationController::class, 'index'])->name('payment-verifications.index');
         Route::get('payment-verifications/{order}', [PaymentVerificationController::class, 'show'])->name('payment-verifications.show');

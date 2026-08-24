@@ -14,9 +14,9 @@ class IngredientRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'current_stock' => ['required', 'numeric'],
+            'current_stock' => ['required', 'integer', 'min:0'],
             'is_active' => ['required', 'boolean'],
-            'minimum_stock' => ['required', 'numeric'],
+            'minimum_stock' => ['required', 'integer', 'min:0'],
             'name' => ['required', 'string', 'max:150'],
             'unit' => ['required', 'string', 'max:30'],
         ];
