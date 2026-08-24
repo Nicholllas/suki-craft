@@ -64,7 +64,12 @@ test('a customer can update and remove only items in their current cart', functi
     $this->actingAs($customer, 'customer')->patch(route('cart.update', $item), ['quantity' => 3])->assertRedirect();
     $this->assertDatabaseHas('cart_item_groups', ['id' => $item->id, 'bundle_quantity' => 3]);
 
-    $this->actingAs($customer, 'customer')->get(route('cart.index'))->assertOk()->assertSee('Buket Mawar');
+    $this->actingAs($customer, 'customer')->get(route('cart.index'))
+        ->assertOk()
+        ->assertSee('Buket Mawar')
+        ->assertSee('data-cart-summary', false)
+        ->assertSee('lg:sticky', false)
+        ->assertDontSee('sticky bottom-3', false);
     $this->actingAs($customer, 'customer')->delete(route('cart.remove', $item))->assertRedirect();
     $this->assertDatabaseMissing('cart_item_groups', ['id' => $item->id]);
 });

@@ -55,6 +55,12 @@ test('a customer can checkout with server-calculated snapshots and view the conf
         'unit_price' => 1,
     ])->assertRedirect();
 
+    $this->actingAs($this->customer, 'customer')->get(route('checkout.index'))
+        ->assertOk()
+        ->assertSee('data-checkout-summary', false)
+        ->assertSee('lg:sticky', false)
+        ->assertDontSee('sticky bottom-3', false);
+
     $response = $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData());
     $order = Order::query()->with(['itemGroups.variants', 'statusHistories'])->sole();
 

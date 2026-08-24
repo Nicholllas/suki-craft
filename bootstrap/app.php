@@ -21,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+
+        // Trust reverse proxy seperti ngrok, Nginx, Cloudflare, load balancer, dll.
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'admin.active' => EnsureAdminIsActive::class,
             'admin.role' => EnsureAdminHasRole::class,
@@ -28,11 +32,29 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
-        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('admin/*') ? route('admin.login') : ($request->is('akun/*') ? route('customer.login') : route('login')));
-        $middleware->redirectUsersTo(fn (Request $request) => $request->is('admin/*') && auth('admin')->check() ? route('admin.dashboard') : route('home'));
+
+        $middleware->redirectGuestsTo(
+            fn (Request $request) =>
+                $request->is('admin/*')
+                    ? route('admin.login')
+                    : (
+                        $request->is('akun/*')
+                            ? route('customer.login')
+                            : route('login')
+                    )
+        );
+
+        $middleware->redirectUsersTo(
+            fn (Request $request) =>
+                $request->is('admin/*') && auth('admin')->check()
+                    ? route('admin.dashboard')
+                    : route('home')
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
+            fn (Request $request) =>
+                $request->is('api/*') || $request->expectsJson(),
         );
-    })->create();
+    })
+    ->create();

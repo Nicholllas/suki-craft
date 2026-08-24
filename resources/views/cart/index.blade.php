@@ -57,7 +57,7 @@
                     <a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-rose-600 hover:text-rose-700"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19 12H5m5-5-5 5 5 5" /></svg>Tambah buket lain</a>
                 </div>
 
-                <aside class="sticky bottom-3 rounded-2xl border border-stone-200 bg-white p-5 shadow-xl shadow-stone-900/5 lg:bottom-auto lg:top-24">
+                <aside data-cart-summary class="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm lg:sticky lg:top-24 lg:shadow-xl lg:shadow-stone-900/5">
                     <h2 class="font-serif text-2xl font-semibold text-stone-800">Ringkasan pesanan</h2>
                     <div class="mt-5 flex items-center justify-between border-b border-stone-100 pb-4 text-sm text-stone-600"><span>Subtotal ({{ $items->sum('bundle_quantity') }} buket)</span><span class="font-semibold text-stone-800">Rp{{ number_format($total, 0, ',', '.') }}</span></div>
                     <p class="mt-4 text-xs leading-5 text-stone-500">Biaya pengiriman dan pilihan waktu kirim akan dihitung pada tahap checkout.</p>
