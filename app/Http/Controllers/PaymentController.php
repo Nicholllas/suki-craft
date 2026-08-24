@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UploadPaymentProofRequest;
 use App\Models\Order;
+use App\Services\OrderWhatsAppService;
 use App\Services\PaymentService;
 use App\Services\QrisDynamicPayloadService;
 use App\Services\QuoteService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -18,6 +18,7 @@ class PaymentController extends Controller
 {
     public function __construct(
         private PaymentService $paymentService,
+        private OrderWhatsAppService $orderWhatsAppService,
         private QrisDynamicPayloadService $qrisDynamicPayloadService,
         private QuoteService $quoteService,
     ) {}
@@ -46,7 +47,7 @@ class PaymentController extends Controller
             'qrisImageUrl' => $this->qrisDynamicPayloadService->isEnabled($payment)
                 ? route('orders.qris.show', ['orderNumber' => $order->order_number, 'token' => $order->public_token])
                 : null,
-            'whatsAppUrl' => $this->whatsAppUrl($order),
+            'whatsAppUrl' => $this->orderWhatsAppService->followUpUrl($order),
         ]);
     }
 
@@ -95,18 +96,5 @@ class PaymentController extends Controller
             ->where('order_number', $orderNumber)
             ->where('public_token', $token)
             ->firstOrFail();
-    }
-
-    private function whatsAppUrl(Order $order): ?string
-    {
-        $number = Str::of((string) config('payment.whatsapp_number'))->replaceMatches('/\D+/', '')->toString();
-
-        if (blank($number)) {
-            return null;
-        }
-
-        $message = 'Halo Suki Craft, saya sudah melakukan pembayaran untuk pesanan '.$order->order_number.' dengan total Rp'.number_format($order->total, 0, ',', '.').'.';
-
-        return 'https://wa.me/'.$number.'?text='.urlencode($message);
     }
 }

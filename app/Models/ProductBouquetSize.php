@@ -47,7 +47,7 @@ class ProductBouquetSize extends Model
     public function getRangeLabelAttribute(): string
     {
         return $this->max_sheets === null
-            ? $this->min_sheets.' lembar ke atas'
-            : $this->min_sheets.'–'.$this->max_sheets.' lembar';
+            ? $this->min_sheets.' Lembar ke atas'
+            : $this->min_sheets.'-'.$this->max_sheets.' Lembar';
     }
 }

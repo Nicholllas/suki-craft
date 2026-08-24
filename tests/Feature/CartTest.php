@@ -133,5 +133,10 @@ test('cart shows the selected bouquet size code in the product title', function 
 
     $this->actingAs($customer, 'customer')->get(route('cart.index'))
         ->assertOk()
-        ->assertSee('Buket Mawar&nbsp;· XL', false);
+        ->assertSee('Buket Mawar&nbsp;· XL', false)
+        ->assertSee('Biaya jasa merangkai')
+        ->assertSee('Varian terpilih')
+        ->assertSee('Rp25.000 × 30')
+        ->assertSee('Harga 1 buket')
+        ->assertSee('Rp930.000');
 });

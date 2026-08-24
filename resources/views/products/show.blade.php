@@ -129,7 +129,7 @@
                             </div>
                             <template x-if="selectedBouquetSize()">
                                 <div class="rounded-xl bg-white px-3 py-2 text-right shadow-sm">
-                                    <p class="text-xs font-semibold text-rose-600" x-text="`${selectedBouquetSize().label} · ${moneySheetCount()} lembar`"></p>
+                                    <p class="text-xs font-semibold text-rose-600" x-text="`${selectedBouquetSize().label} · ${moneySheetCount()} Lembar`"></p>
                                     <p x-show="!hasCustomBouquetSize()" class="mt-1 text-xs text-stone-600">Jasa Rp<span x-text="formatPrice(servicePrice())"></span></p>
                                     <p x-show="hasCustomBouquetSize()" class="mt-1 text-xs text-rose-600">Perlu penawaran admin</p>
                                 </div>
@@ -143,7 +143,7 @@
                                     @if($size->is_custom)
                                         <span class="text-rose-600">· harga dikonfirmasi admin</span>
                                     @else
-                                        <span>· jasa Rp{{ number_format($size->service_price, 0, ',', '.') }}</span>
+                                        <span>· Jasa Rp{{ number_format($size->service_price, 0, ',', '.') }}</span>
                                     @endif
                                 </div>
                             @endforeach

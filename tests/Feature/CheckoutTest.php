@@ -44,8 +44,9 @@ afterEach(function () {
 });
 
 test('a customer can checkout with server-calculated snapshots and view the confirmation', function () {
-    config(['delivery.flat_fee' => 20000]);
+    config(['delivery.flat_fee' => 20000, 'payment.whatsapp_number' => '6281234567890']);
 
+    $this->customer->update(['address' => 'Jl. Melati No. 12, Jakarta Selatan 12110']);
     $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
         'card_message' => 'Selamat ulang tahun!',
         'product_id' => $this->product->id,
@@ -58,8 +59,12 @@ test('a customer can checkout with server-calculated snapshots and view the conf
     $this->actingAs($this->customer, 'customer')->get(route('checkout.index'))
         ->assertOk()
         ->assertSee('data-checkout-summary', false)
+        ->assertSee('Jl. Melati No. 12, Jakarta Selatan 12110')
         ->assertSee('lg:sticky', false)
-        ->assertDontSee('sticky bottom-3', false);
+        ->assertDontSee('sticky bottom-3', false)
+        ->assertSee('Biaya jasa merangkai')
+        ->assertSee('Varian terpilih')
+        ->assertSee('Total = subtotal buket + biaya pengiriman − potongan promo.');
 
     $response = $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData());
     $order = Order::query()->with(['itemGroups.variants', 'statusHistories'])->sole();
@@ -89,7 +94,11 @@ test('a customer can checkout with server-calculated snapshots and view the conf
         ->assertOk()
         ->assertSee($order->order_number)
         ->assertSee('Menunggu pembayaran')
-        ->assertSee('Selesaikan pembayaran sebelum');
+        ->assertSee('Selesaikan pembayaran sebelum')
+        ->assertSee('Detail buket')
+        ->assertSee('Biaya jasa merangkai')
+        ->assertSee('Total pembayaran')
+        ->assertSee('Konfirmasi via WhatsApp');
     $this->get(route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => fake()->uuid()]))->assertNotFound();
 });
 

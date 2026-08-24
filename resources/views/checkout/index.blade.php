@@ -78,7 +78,7 @@
                         </div>
                         <div class="sm:col-span-2">
                             <label for="delivery-address" class="text-sm font-semibold text-stone-700">Alamat lengkap pengiriman</label>
-                            <textarea id="delivery-address" name="delivery_address" rows="4" required class="mt-2 w-full rounded-xl border-stone-200 px-4 py-3 text-sm leading-6 text-stone-800 placeholder:text-stone-400 focus:border-rose-300 focus:ring-rose-200 @error('delivery_address') border-rose-400 @enderror" placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan, dan patokan bila ada">{{ old('delivery_address') }}</textarea>
+                            <textarea id="delivery-address" name="delivery_address" rows="4" required class="mt-2 w-full rounded-xl border-stone-200 px-4 py-3 text-sm leading-6 text-stone-800 placeholder:text-stone-400 focus:border-rose-300 focus:ring-rose-200 @error('delivery_address') border-rose-400 @enderror" placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan, dan patokan bila ada">{{ old('delivery_address', $customer?->address) }}</textarea>
                             @error('delivery_address')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
                         </div>
                         <div class="sm:col-span-2">
@@ -107,18 +107,22 @@
                                     <div class="grid h-full place-items-center text-xl text-rose-300">✿</div>
                                 @endif
                             </div>
-                            <div class="min-w-0 flex-1"><p class="truncate text-sm font-semibold text-stone-800">{{ $item->product->name }}<x-bouquet-size-label :item="$item" /></p>@if($item->variants->isNotEmpty())<ul class="mt-0.5 text-xs text-stone-500">@foreach($item->variants as $variant)<li>{{ $variant->productVariant->label }}@if($variant->quantity_in_bundle > 1) · {{ $variant->quantity_in_bundle }}×@endif</li>@endforeach</ul>@endif<p class="mt-1 text-xs text-stone-500">{{ $item->bundle_quantity }} buket</p><p class="mt-1 text-xs font-semibold text-stone-700">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</p></div>
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-semibold text-stone-800">{{ $item->product->name }}<x-bouquet-size-label :item="$item" /></p>
+                                <x-order-item-price-breakdown :item="$item" />
+                            </div>
                         </div>
                     @endforeach
                 </div>
 
                 <dl class="mt-5 space-y-3 text-sm">
-                    <div class="flex items-center justify-between text-stone-500"><dt>Subtotal</dt><dd class="font-medium text-stone-800">Rp{{ number_format($subtotal, 0, ',', '.') }}</dd></div>
+                    <div class="flex items-center justify-between text-stone-500"><dt>Subtotal buket</dt><dd class="font-medium text-stone-800">Rp{{ number_format($subtotal, 0, ',', '.') }}</dd></div>
                     <div class="flex items-center justify-between text-stone-500"><dt>Biaya pengiriman</dt><dd class="font-medium text-stone-800">Rp{{ number_format($deliveryFee, 0, ',', '.') }}</dd></div>
                     <div class="rounded-xl bg-rose-50 p-3"><label for="promotion-code" class="text-xs font-semibold text-stone-700">Kode promo</label><div class="mt-2 flex gap-2"><input id="promotion-code" name="promotion_code" x-model="code" class="min-w-0 flex-1 rounded-lg border-stone-200 px-3 py-2 text-sm uppercase focus:border-rose-300 focus:ring-rose-200" placeholder="PROMO2026"><button type="button" @click="applyPromotion" :disabled="loading" class="rounded-lg bg-stone-800 px-3 text-xs font-semibold text-white disabled:opacity-60" x-text="loading ? '...' : 'Terapkan'"></button></div><p x-show="error" x-text="error" class="mt-2 text-xs text-rose-600"></p>@error('promotion_code')<p class="mt-2 text-xs text-rose-600">{{ $message }}</p>@enderror</div>
                     <div x-show="discount > 0" class="flex items-center justify-between text-emerald-600"><dt>Potongan promo</dt><dd class="font-semibold">-Rp<span x-text="format(discount)"></span></dd></div>
                     <div class="flex items-end justify-between border-t border-stone-100 pt-4"><dt class="font-semibold text-stone-800">Total pembayaran</dt><dd class="font-serif text-2xl font-semibold text-stone-800">Rp<span x-text="format({{ $subtotal + $deliveryFee }} - discount)">{{ number_format($subtotal + $deliveryFee, 0, ',', '.') }}</span></dd></div>
                 </dl>
+                <p class="mt-3 text-xs leading-5 text-stone-500">Total = subtotal buket + biaya pengiriman − potongan promo.</p>
 
                 <button type="submit" class="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white shadow-lg shadow-rose-200 transition hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2">
                     Buat pesanan

@@ -74,23 +74,18 @@
 
                 <section class="rounded-3xl border border-stone-200 bg-white p-5 sm:p-7">
                     <h2 class="font-serif text-2xl font-semibold text-stone-800">Detail buket</h2>
+                    <p class="mt-2 text-sm leading-6 text-stone-500">Berikut rincian biaya jasa dan setiap varian yang membentuk harga pesananmu.</p>
                     <div class="mt-5 divide-y divide-stone-100">
                         @foreach ($order->itemGroups as $item)
-                            <article class="flex items-start justify-between gap-4 py-4 first:pt-0 last:pb-0">
-                                <div>
-                                    <h3 class="text-sm font-semibold text-stone-800">{{ $item->product_name }}<x-bouquet-size-label :item="$item" /> · {{ $item->bundle_quantity }} buket</h3>
-                                    @if ($item->variants->isNotEmpty())
-                                        <ul class="mt-1 text-xs text-stone-500">
-                                            @foreach ($item->variants as $variant)
-                                                <li>{{ $variant->variant_label }}@if ($variant->quantity_in_bundle > 1) · {{ $variant->quantity_in_bundle }}×@endif</li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
-                                    @if ($item->card_message)
-                                        <p class="mt-2 text-xs leading-5 text-stone-500"><span class="font-semibold text-stone-600">Pesan kartu:</span> {{ $item->card_message }}</p>
-                                    @endif
-                                </div>
-                                <p class="shrink-0 text-sm font-semibold text-stone-800">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</p>
+                            <article class="py-4 first:pt-0 last:pb-0">
+                                <h3 class="text-sm font-semibold text-stone-800">{{ $item->product_name }}<x-bouquet-size-label :item="$item" /></h3>
+                                <x-order-item-price-breakdown :item="$item" />
+                                @if ($item->card_message)
+                                    <p class="mt-2 text-xs leading-5 text-stone-500"><span class="font-semibold text-stone-600">Pesan kartu:</span> {{ $item->card_message }}</p>
+                                @endif
+                                @if ($item->special_note)
+                                    <p class="mt-1 text-xs leading-5 text-stone-500"><span class="font-semibold text-stone-600">Catatan:</span> {{ $item->special_note }}</p>
+                                @endif
                             </article>
                         @endforeach
                     </div>
@@ -110,7 +105,18 @@
 
                 <section class="rounded-3xl border border-stone-200 bg-white p-5">
                     <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Ringkasan pembayaran</p>
-                    <dl class="mt-4 space-y-3 text-sm"><div class="flex justify-between gap-4 text-stone-500"><dt>Subtotal</dt><dd>Rp{{ number_format($order->subtotal, 0, ',', '.') }}</dd></div><div class="flex justify-between gap-4 text-stone-500"><dt>Pengiriman</dt><dd>Rp{{ number_format($order->delivery_fee, 0, ',', '.') }}</dd></div><div class="flex justify-between gap-4 border-t border-stone-100 pt-4 font-semibold text-stone-800"><dt>Total</dt><dd>Rp{{ number_format($order->total, 0, ',', '.') }}</dd></div></dl>
+                    <dl class="mt-4 space-y-3 text-sm">
+                        <div class="flex justify-between gap-4 text-stone-500"><dt>Subtotal buket</dt><dd>Rp{{ number_format($order->subtotal, 0, ',', '.') }}</dd></div>
+                        <div class="flex justify-between gap-4 text-stone-500"><dt>Biaya pengiriman</dt><dd>Rp{{ number_format($order->delivery_fee, 0, ',', '.') }}</dd></div>
+                        @if ((float) $order->discount_amount > 0)
+                            <div class="flex justify-between gap-4 text-emerald-600"><dt>Potongan promo</dt><dd>-Rp{{ number_format($order->discount_amount, 0, ',', '.') }}</dd></div>
+                        @endif
+                        <div class="flex justify-between gap-4 border-t border-stone-100 pt-4 font-semibold text-stone-800"><dt>Total pembayaran</dt><dd>Rp{{ number_format($order->total, 0, ',', '.') }}</dd></div>
+                    </dl>
+                    <p class="mt-3 text-xs leading-5 text-stone-500">Total = subtotal buket + biaya pengiriman − potongan promo.</p>
+                    @if ($order->itemGroups->contains('requires_quote', true))
+                        <p class="mt-2 text-xs leading-5 text-stone-500">Untuk buket custom, subtotal mengikuti penawaran harga dari admin.</p>
+                    @endif
                 </section>
             </aside>
         </div>

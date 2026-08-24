@@ -16,7 +16,10 @@ class CustomerProfileUpdateRequest extends FormRequest
 
     public function rules(): array
     {
-        return $this->accountRules($this->user('customer'));
+        return [
+            ...$this->accountRules($this->user('customer')),
+            'address' => ['nullable', 'string', 'max:1000'],
+        ];
     }
 
     public function messages(): array
@@ -28,6 +31,7 @@ class CustomerProfileUpdateRequest extends FormRequest
     {
         $this->merge([
             'email' => filled($this->email) ? trim((string) $this->email) : null,
+            'address' => filled($this->address) ? trim((string) $this->address) : null,
             'name' => filled($this->name) ? trim((string) $this->name) : null,
             'phone' => filled($this->phone) ? trim((string) $this->phone) : null,
         ]);

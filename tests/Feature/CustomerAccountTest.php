@@ -72,6 +72,7 @@ test('a customer can update their profile and password', function () {
         'email' => 'baru@example.com',
         'name' => 'Nadia Baru',
         'phone' => '081234567891',
+        'address' => 'Jl. Melati No. 12, Jakarta Selatan 12110',
     ])->assertSessionHas('success');
     $this->actingAs($customer, 'customer')->put(route('customer.profile.password.update'), [
         'current_password' => 'password',
@@ -83,23 +84,52 @@ test('a customer can update their profile and password', function () {
 
     expect($customer->email)->toBe('baru@example.com')
         ->and($customer->name)->toBe('Nadia Baru')
+        ->and($customer->address)->toBe('Jl. Melati No. 12, Jakarta Selatan 12110')
         ->and(Hash::check('password-baru', $customer->password))->toBeTrue();
 });
 
 test('a customer only sees and opens their own orders', function () {
     $customer = Customer::factory()->create();
     $otherCustomer = Customer::factory()->create();
-    $order = Order::factory()->create(['customer_id' => $customer->id]);
+    config(['payment.whatsapp_number' => '6281234567890']);
+
+    $order = Order::factory()->create([
+        'customer_id' => $customer->id,
+        'delivery_fee' => 15000,
+        'subtotal' => 170000,
+        'total' => 185000,
+    ]);
+    $orderItem = $order->itemGroups()->create([
+        'bundle_quantity' => 1,
+        'product_id' => $this->product->id,
+        'product_name' => 'Buket Mawar',
+        'service_price' => 150000,
+        'subtotal' => 170000,
+    ]);
+    $orderItem->variants()->create([
+        'line_subtotal' => 20000,
+        'quantity_in_bundle' => 1,
+        'unit_price' => 20000,
+        'variant_label' => 'Pecahan Rp20.000',
+    ]);
     $otherOrder = Order::factory()->create(['customer_id' => $otherCustomer->id]);
     $paymentUrl = route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]);
 
     $this->actingAs($customer, 'customer')->get(route('customer.orders.index'))
         ->assertSuccessful()
         ->assertSee($order->order_number)
+        ->assertSee('Total pembayaran')
+        ->assertSee('Rp185.000')
+        ->assertDontSee('Buket Mawar')
+        ->assertDontSee('Biaya jasa merangkai')
+        ->assertSee('Hubungi admin via WhatsApp')
         ->assertDontSee($otherOrder->order_number);
     $this->actingAs($customer, 'customer')->get(route('customer.orders.show', $order))
         ->assertSuccessful()
         ->assertSee('Lanjutkan pembayaran')
+        ->assertSee('Rincian pesanan')
+        ->assertSee('Total pembayaran')
+        ->assertSee('Hubungi admin')
         ->assertSee($paymentUrl);
     $this->actingAs($customer, 'customer')->get(route('customer.orders.show', $otherOrder))->assertNotFound();
 });
