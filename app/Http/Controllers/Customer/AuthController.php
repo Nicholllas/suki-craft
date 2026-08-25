@@ -30,12 +30,13 @@ class AuthController extends Controller
 
     public function register(CustomerRegistrationRequest $request): RedirectResponse
     {
+        $guestCartSessionId = $request->session()->getId();
         $customer = Customer::query()->create($request->validated());
         Auth::guard('customer')->login($customer);
-        $this->cartService->mergeGuestCartIntoCustomer($customer->id);
+        $this->cartService->mergeGuestCartIntoCustomer($customer->id, $guestCartSessionId);
         $request->session()->regenerate();
 
-        return redirect()->route('customer.profile.edit')->with('success', 'Akun berhasil dibuat. Selamat datang di Sukicraft.id!');
+        return redirect()->intended(route('customer.profile.edit'))->with('success', 'Akun berhasil dibuat. Selamat datang di Sukicraft.id!');
     }
 
     public function createLogin(): View|RedirectResponse
@@ -49,12 +50,12 @@ class AuthController extends Controller
 
     public function login(CustomerLoginRequest $request): RedirectResponse
     {
+        $guestCartSessionId = $request->session()->getId();
         $request->authenticate();
-        $this->cartService->mergeGuestCartIntoCustomer($request->user('customer')->id);
+        $this->cartService->mergeGuestCartIntoCustomer($request->user('customer')->id, $guestCartSessionId);
         $request->session()->regenerate();
-        $intendedUrl = $request->session()->pull('url.intended');
 
-        return redirect()->to(Str::startsWith((string) $intendedUrl, url('/akun')) ? $intendedUrl : route('customer.profile.edit'));
+        return redirect()->intended(route('customer.profile.edit'));
     }
 
     public function logout(Request $request): RedirectResponse

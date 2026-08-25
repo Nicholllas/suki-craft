@@ -69,10 +69,10 @@ class CartService
         return Cart::query()->when($this->customerId(), fn ($query, $customerId) => $query->where('customer_id', $customerId), fn ($query) => $query->where('session_id', $this->sessionId()))->first();
     }
 
-    public function mergeGuestCartIntoCustomer(int $customerId): void
+    public function mergeGuestCartIntoCustomer(int $customerId, string $guestCartSessionId): void
     {
-        DB::transaction(function () use ($customerId) {
-            $guestCart = Cart::query()->with('itemGroups.variants')->where('session_id', $this->sessionId())->first();
+        DB::transaction(function () use ($customerId, $guestCartSessionId) {
+            $guestCart = Cart::query()->with('itemGroups.variants')->where('session_id', $guestCartSessionId)->first();
 
             if (! $guestCart) {
                 return;

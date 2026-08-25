@@ -8,9 +8,7 @@ use App\Models\Order;
 use App\Models\OrderItemGroup;
 use App\Models\OrderStatusHistory;
 use App\Models\Product;
-use App\Services\OrderService;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 
 beforeEach(function () {
     $this->category = Category::create([
@@ -164,22 +162,25 @@ test('checkout rejects a delivery slot that has already ended today in Jakarta t
     expect(Order::query()->doesntExist())->toBeTrue();
 });
 
-test('a guest can checkout without attaching the order to a customer account', function () {
-    $session = app('session')->driver();
-    $session->start();
-    $request = Request::create('/');
-    $request->setLaravelSession($session);
-    app()->instance('request', $request);
-    $cart = Cart::query()->create(['session_id' => $session->getId()]);
-    $group = $cart->itemGroups()->create([
-        'product_id' => $this->product->id,
-        'bundle_quantity' => 1,
-    ]);
-    $group->variants()->create(['product_variant_id' => $this->variant->id, 'quantity_in_bundle' => 1, 'unit_price' => 25000]);
+test('guests are directed to create or sign in before checkout', function () {
 
-    $order = app(OrderService::class)->createFromCart(checkoutData());
+    $this->get(route('checkout.index'))
+        ->assertRedirect(route('checkout.require-account', absolute: false))
+        ->assertSessionHas('url.intended', route('checkout.index'));
 
-    expect($order->customer_id)->toBeNull();
+    $this->get(route('checkout.require-account'))
+        ->assertSuccessful()
+        ->assertSee('Cart kamu aman kok')
+        ->assertSee('0 buket')
+        ->assertSee('Rp0')
+        ->assertSee('Daftar Akun Baru')
+        ->assertSee('Sudah Punya Akun? Masuk');
+
+    $this->post(route('checkout.store'), checkoutData())
+        ->assertRedirect(route('checkout.require-account', absolute: false))
+        ->assertSessionHas('url.intended', route('checkout.index'));
+
+    expect(Order::query()->doesntExist())->toBeTrue();
 });
 
 test('an empty cart redirects customers back to their cart', function () {

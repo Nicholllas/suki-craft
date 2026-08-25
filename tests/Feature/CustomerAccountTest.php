@@ -25,14 +25,18 @@ test('guests are redirected to customer login for account pages', function () {
     $this->get(route('customer.orders.index'))->assertRedirect(route('customer.login'));
 });
 
-test('a guest can register a customer account', function () {
-    $this->post(route('customer.register.store'), [
+test('a guest can register a customer account and return to their intended checkout', function () {
+    $cartService = Mockery::mock(CartService::class);
+    $cartService->shouldReceive('mergeGuestCartIntoCustomer')->once()->with(Mockery::type('int'), Mockery::type('string'));
+    $this->app->instance(CartService::class, $cartService);
+
+    $this->withSession(['url.intended' => route('checkout.index')])->post(route('customer.register.store'), [
         'email' => 'nadia@example.com',
         'name' => 'Nadia Putri',
         'password' => 'password',
         'password_confirmation' => 'password',
         'phone' => '081234567890',
-    ])->assertRedirect(route('customer.profile.edit', absolute: false));
+    ])->assertRedirect(route('checkout.index'));
 
     $customer = Customer::query()->sole();
 
@@ -44,24 +48,30 @@ test('a guest can register a customer account', function () {
 
 test('a customer can sign in with email or WhatsApp number', function (string $login) {
     $customer = Customer::factory()->create(['email' => 'nadia@example.com', 'phone' => '081234567890']);
+    $cartService = Mockery::mock(CartService::class);
+    $cartService->shouldReceive('mergeGuestCartIntoCustomer')->once()->with($customer->id, Mockery::type('string'));
+    $this->app->instance(CartService::class, $cartService);
 
-    $this->post(route('customer.login.store'), ['login' => $login, 'password' => 'password'])
-        ->assertRedirect(route('customer.profile.edit', absolute: false));
+    $this->withSession(['url.intended' => route('checkout.index')])
+        ->post(route('customer.login.store'), ['login' => $login, 'password' => 'password'])
+        ->assertRedirect(route('checkout.index'));
 
     $this->assertAuthenticatedAs($customer, 'customer');
 })->with(['email' => 'nadia@example.com', 'WhatsApp number' => '081234567890']);
 
-test('a guest cart is merged into the customer cart after authentication', function () {
+test('a guest cart is merged after the session ID is regenerated', function () {
     $customer = Customer::factory()->create();
     $session = app('session')->driver();
     $session->start();
+    $guestCartSessionId = $session->getId();
     $request = Request::create('/');
     $request->setLaravelSession($session);
     app()->instance('request', $request);
     $cartService = app(CartService::class);
 
     $cartService->addToCart($this->product, [], 1);
-    $cartService->mergeGuestCartIntoCustomer($customer->id);
+    $session->regenerate(true);
+    $cartService->mergeGuestCartIntoCustomer($customer->id, $guestCartSessionId);
 
     $cart = Cart::query()->whereBelongsTo($customer)->sole();
 

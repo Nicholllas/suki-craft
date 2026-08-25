@@ -21,6 +21,10 @@ class CheckoutController extends Controller
 
     public function index(Request $request): View|RedirectResponse
     {
+        if (! auth('customer')->check()) {
+            return $this->redirectToAccountRequirement();
+        }
+
         $cart = $this->cartService->getCurrentCart();
 
         if (! $cart || $cart->itemGroups()->doesntExist()) {
@@ -39,8 +43,22 @@ class CheckoutController extends Controller
         ]);
     }
 
+    public function requireAccount(): View
+    {
+        $cart = $this->cartService->getCurrentCart();
+
+        return view('checkout.require-account', [
+            'itemCount' => (int) ($cart?->itemGroups()->sum('bundle_quantity') ?? 0),
+            'subtotal' => $this->cartService->getTotal(),
+        ]);
+    }
+
     public function store(CheckoutRequest $request): RedirectResponse
     {
+        if (! auth('customer')->check()) {
+            return $this->redirectToAccountRequirement();
+        }
+
         $order = $this->orderService->createFromCart($request->validated(), $request->validated('promotion_code') ?: $request->session()->get('checkout.promotion_code'));
         $request->session()->forget('checkout.promotion_code');
 
@@ -64,5 +82,12 @@ class CheckoutController extends Controller
         $request->session()->put('checkout.promotion_code', $promotion->code);
 
         return response()->json(['code' => $promotion->code, 'discount_amount' => $discountAmount, 'total' => $subtotal + (float) config('delivery.flat_fee', 0) - $discountAmount]);
+    }
+
+    private function redirectToAccountRequirement(): RedirectResponse
+    {
+        redirect()->setIntendedUrl(route('checkout.index'));
+
+        return redirect()->route('checkout.require-account');
     }
 }

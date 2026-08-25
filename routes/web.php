@@ -24,6 +24,7 @@ Route::post('/cart/items', [CartController::class, 'add'])->name('cart.add');
 Route::patch('/cart/items/{cartItem}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/items/{cartItem}', [CartController::class, 'remove'])->name('cart.remove');
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+Route::get('/checkout/require-account', [CheckoutController::class, 'requireAccount'])->name('checkout.require-account');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::post('/checkout/promotion', [CheckoutController::class, 'validatePromotion'])->middleware('throttle:10,1')->name('checkout.promotions.validate');
 Route::get('/orders/{orderNumber}/confirmation/{token}', [PaymentController::class, 'show'])->name('orders.confirmation');
