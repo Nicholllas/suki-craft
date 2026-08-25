@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class AuthController extends Controller
 {
@@ -34,7 +35,7 @@ class AuthController extends Controller
         $this->cartService->mergeGuestCartIntoCustomer($customer->id);
         $request->session()->regenerate();
 
-        return redirect()->route('customer.profile.edit')->with('success', 'Akun berhasil dibuat. Selamat datang di Suki Craft!');
+        return redirect()->route('customer.profile.edit')->with('success', 'Akun berhasil dibuat. Selamat datang di Sukicraft.id!');
     }
 
     public function createLogin(): View|RedirectResponse
@@ -72,7 +73,15 @@ class AuthController extends Controller
 
     public function sendPasswordResetLink(CustomerForgotPasswordRequest $request): RedirectResponse
     {
-        $status = Password::broker('customers')->sendResetLink($request->only('email'));
+        try {
+            $status = Password::broker('customers')->sendResetLink($request->only('email'));
+        } catch (TransportExceptionInterface $exception) {
+            report($exception);
+
+            return back()->withInput($request->only('email'))->withErrors([
+                'email' => 'Kami belum dapat mengirim tautan reset password. Silakan coba lagi nanti.',
+            ]);
+        }
 
         return $status === Password::RESET_LINK_SENT
             ? back()->with('status', 'Jika email terdaftar, tautan reset password telah dikirim.')

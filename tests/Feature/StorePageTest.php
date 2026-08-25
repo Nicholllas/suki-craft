@@ -9,7 +9,8 @@ test('guests can view the about page and access storefront navigation', function
         ->assertViewIs('store.about')
         ->assertSee('Apa yang kami lakukan')
         ->assertSee('Lihat Koleksi Buket')
-        ->assertSee(route('products.index'), false);
+        ->assertSee(route('products.index'), false)
+        ->assertSee(asset('favicon.ico'), false);
 });
 
 test('guests can understand the ordering flow from the how to order page', function () {

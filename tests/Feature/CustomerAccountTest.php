@@ -7,10 +7,13 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Notifications\CustomerResetPassword;
 use App\Services\CartService;
+use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use Symfony\Component\Mailer\Exception\TransportException;
 
 beforeEach(function () {
     $category = Category::factory()->create(['is_active' => true]);
@@ -139,7 +142,10 @@ test('a customer can reset their password through the customer password broker',
     $customer = Customer::factory()->create(['email' => 'nadia@example.com']);
 
     $this->post(route('customer.password.email'), ['email' => $customer->email])->assertSessionHas('status');
-    Notification::assertSentTo($customer, CustomerResetPassword::class);
+    Notification::assertSentTo($customer, CustomerResetPassword::class, function (CustomerResetPassword $notification, array $channels) use ($customer): bool {
+        return $channels === ['mail']
+            && $customer->routeNotificationFor('mail', $notification) === $customer->email;
+    });
 
     $this->post(route('customer.password.store'), [
         'email' => $customer->email,
@@ -149,4 +155,14 @@ test('a customer can reset their password through the customer password broker',
     ])->assertRedirect(route('customer.login', absolute: false));
 
     expect(Hash::check('password-baru', $customer->fresh()->password))->toBeTrue();
+});
+
+test('a customer sees an error when the reset email cannot be delivered', function () {
+    $customer = Customer::factory()->create();
+    $mailer = Mockery::mock(Mailer::class);
+    $mailer->shouldReceive('send')->once()->andThrow(new TransportException('SMTP server unavailable.'));
+    Mail::shouldReceive('mailer')->once()->with(null)->andReturn($mailer);
+
+    $this->post(route('customer.password.email'), ['email' => $customer->email])
+        ->assertSessionHasErrors('email');
 });

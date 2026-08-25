@@ -13,7 +13,7 @@ class AdminResetPassword extends ResetPassword
         $url = url(route('admin.password.reset', ['token' => $this->token, 'email' => $notifiable->getEmailForPasswordReset()], false));
 
         return (new MailMessage)
-            ->subject('Reset Password Admin Suki Craft')
+            ->subject('Reset Password Admin Sukicraft.id')
             ->line('Kami menerima permintaan reset password untuk akun admin Anda.')
             ->action('Reset Password Admin', $url)
             ->line(Lang::get('Tautan reset password ini akan kedaluwarsa dalam :count menit.', ['count' => config('auth.passwords.admins.expire')]))

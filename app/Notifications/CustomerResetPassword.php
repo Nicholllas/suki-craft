@@ -13,8 +13,8 @@ class CustomerResetPassword extends ResetPassword
         $url = url(route('customer.password.reset', ['token' => $this->token, 'email' => $notifiable->getEmailForPasswordReset()], false));
 
         return (new MailMessage)
-            ->subject('Reset Password Akun Suki Craft')
-            ->line('Kami menerima permintaan reset password untuk akun Suki Craft Anda.')
+            ->subject('Reset Password Akun Sukicraft.id')
+            ->line('Kami menerima permintaan reset password untuk akun Anda.')
             ->action('Reset Password', $url)
             ->line(Lang::get('Tautan reset password ini akan kedaluwarsa dalam :count menit.', ['count' => config('auth.passwords.customers.expire')]))
             ->line('Jika Anda tidak meminta reset password, Anda tidak perlu melakukan tindakan apa pun.');
