@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\CustomRequestStatus;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\DashboardRequest;
+use App\Models\CustomRequest;
 use App\Models\Order;
 use App\Services\InventoryService;
 use Carbon\CarbonInterface;
@@ -24,6 +26,11 @@ class DashboardController extends Controller
         $revenue = $this->revenue($paidStatuses);
         $statusCounts = $this->statusCounts();
         $lowStockIngredients = $this->inventoryService->getLowStockIngredients();
+        $urgentBouquetQuery = Order::query()
+            ->where('status', OrderStatus::PAYMENT_CONFIRMED)
+            ->whereDate('delivery_date', '<=', today('Asia/Jakarta'))
+            ->orderBy('delivery_date')
+            ->orderBy('delivery_time_slot');
 
         return view('admin.dashboard', [
             'awaitingVerificationCount' => (int) $statusCounts->get(OrderStatus::AWAITING_VERIFICATION->value, 0),
@@ -31,6 +38,9 @@ class DashboardController extends Controller
             'lowStockIngredientCount' => $lowStockIngredients->count(),
             'lowStockIngredients' => $lowStockIngredients->take(5),
             'newOrderCount' => Order::query()->whereBetween('created_at', [$periodStart, now()])->count(),
+            'pendingCustomRequestCount' => CustomRequest::query()
+                ->whereIn('status', [CustomRequestStatus::WAITING_REVIEW, CustomRequestStatus::REVISION_REQUESTED])
+                ->count(),
             'period' => $period,
             'periodLabel' => $this->periodLabel($period),
             'revenueMonth' => (float) $revenue->month_revenue,
@@ -38,6 +48,8 @@ class DashboardController extends Controller
             'statusSummaries' => $this->statusSummaries($statusCounts),
             'totalOrderCount' => $statusCounts->sum(),
             'trend' => $this->trend($periodStart, now(), $paidStatuses),
+            'urgentBouquetCount' => (clone $urgentBouquetQuery)->count(),
+            'urgentBouquets' => $urgentBouquetQuery->limit(5)->get(),
         ]);
     }
 

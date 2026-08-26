@@ -1,8 +1,10 @@
 <?php
 
 use App\Enums\AdminRole;
+use App\Enums\CustomRequestStatus;
 use App\Enums\OrderStatus;
 use App\Models\Admin;
+use App\Models\CustomRequest;
 use App\Models\Ingredient;
 use App\Models\Order;
 
@@ -32,6 +34,20 @@ test('an administrator sees dynamic dashboard metrics and low-stock ingredients'
         'status' => OrderStatus::PENDING_PAYMENT,
         'total' => 150000,
     ]);
+    $urgentBouquet = Order::factory()->create([
+        'delivery_date' => today('Asia/Jakarta'),
+        'status' => OrderStatus::PAYMENT_CONFIRMED,
+        'total' => 100000,
+    ]);
+    Order::factory()->create([
+        'created_at' => now()->addDay(),
+        'delivery_date' => today('Asia/Jakarta')->addDay(),
+        'status' => OrderStatus::PAYMENT_CONFIRMED,
+        'total' => 50000,
+    ]);
+    CustomRequest::factory()->create(['status' => CustomRequestStatus::WAITING_REVIEW]);
+    CustomRequest::factory()->create(['status' => CustomRequestStatus::REVISION_REQUESTED]);
+    CustomRequest::factory()->create(['status' => CustomRequestStatus::QUOTATION_SENT]);
     Order::factory()->create([
         'created_at' => now()->subMonth(),
         'status' => OrderStatus::DELIVERED,
@@ -42,18 +58,23 @@ test('an administrator sees dynamic dashboard metrics and low-stock ingredients'
 
     $this->actingAs($this->admin, 'admin')->get(route('admin.dashboard', ['period' => 'week']))
         ->assertSuccessful()
-        ->assertSee('Rp200.000')
-        ->assertSee('Rp500.000')
+        ->assertSee('Rp350.000')
+        ->assertSee('Rp650.000')
         ->assertSee($todayPaidOrder->order_number)
         ->assertSee($monthPaidOrder->order_number)
         ->assertSee($pendingOrder->order_number)
+        ->assertSee($urgentBouquet->order_number)
+        ->assertSee('2 Custom Bouquet menunggu')
+        ->assertSee('Buket perlu segera dirangkai')
         ->assertSee('Stok bahan menipis')
         ->assertSee($lowStockIngredient->name)
         ->assertViewHas('awaitingVerificationCount', 0)
         ->assertViewHas('lowStockIngredientCount', 1)
-        ->assertViewHas('newOrderCount', 2)
-        ->assertViewHas('revenueMonth', 500000.0)
-        ->assertViewHas('revenueToday', 200000.0);
+        ->assertViewHas('pendingCustomRequestCount', 2)
+        ->assertViewHas('urgentBouquetCount', 1)
+        ->assertViewHas('newOrderCount', 3)
+        ->assertViewHas('revenueMonth', 650000.0)
+        ->assertViewHas('revenueToday', 350000.0);
 });
 
 test('an administrator can choose a dashboard period', function () {
