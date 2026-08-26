@@ -72,8 +72,13 @@
 
                     <div class="mt-5 flex items-end justify-between gap-3">
                         <div>
-                            <p class="text-xs text-stone-400">Mulai dari</p>
-                            <p class="mt-0.5 text-lg font-semibold text-stone-800">Rp{{ number_format($product->final_price, 0, ',', '.') }}</p>
+                            @if ($product->is_custom_request)
+                                <p class="text-xs text-stone-400">Harga</p>
+                                <p class="mt-0.5 text-sm font-semibold text-rose-600">Sesuai penawaran</p>
+                            @else
+                                <p class="text-xs text-stone-400">Mulai dari</p>
+                                <p class="mt-0.5 text-lg font-semibold text-stone-800">Rp{{ number_format($product->final_price, 0, ',', '.') }}</p>
+                            @endif
                         </div>
                         <a href="{{ route('products.show', $product->slug) }}" class="grid h-10 w-10 place-items-center rounded-full bg-rose-50 text-rose-600 transition group-hover:bg-rose-500 group-hover:text-white" aria-label="Lihat {{ $product->name }}">
                             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-5-5 5 5-5 5" /></svg>

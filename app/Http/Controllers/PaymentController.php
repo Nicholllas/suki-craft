@@ -35,6 +35,7 @@ class PaymentController extends Controller
         $order->load([
             'courier:id,name,phone',
             'itemGroups.bouquetSize',
+            'itemGroups.customRequest',
             'itemGroups.variants',
             'latestPaymentProof',
             'statusHistories' => fn ($query) => $query->orderBy('created_at')->orderBy('id'),

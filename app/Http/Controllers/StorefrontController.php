@@ -14,7 +14,7 @@ class StorefrontController extends Controller
         return view('store.home', [
             'categories' => Category::query()->where('is_active', true)->orderBy('name')->get(),
             'featuredProducts' => Product::query()
-                ->select(['id', 'category_id', 'name', 'slug', 'description', 'base_price', 'is_featured', 'created_at'])
+                ->select(['id', 'category_id', 'name', 'slug', 'description', 'base_price', 'is_custom_request', 'is_featured', 'created_at'])
                 ->with([
                     'category:id,name,slug',
                     'images:id,product_id,path,is_primary,sort_order',

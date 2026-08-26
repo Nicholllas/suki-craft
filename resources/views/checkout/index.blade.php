@@ -108,7 +108,7 @@
                                 @endif
                             </div>
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-semibold text-stone-800">{{ $item->product->name }}<x-bouquet-size-label :item="$item" /></p>
+                                <p class="truncate text-sm font-semibold text-stone-800">{{ $item->custom_request_id ? 'Custom Bouquet #'.($item->customRequest?->request_number ?? '') : $item->product->name }}<x-bouquet-size-label :item="$item" /></p>
                                 <x-order-item-price-breakdown :item="$item" />
                             </div>
                         </div>

@@ -44,6 +44,7 @@ class OrderHistoryController extends Controller
         $order->load([
             'courier:id,name,phone',
             'itemGroups.bouquetSize',
+            'itemGroups.customRequest',
             'itemGroups.review',
             'itemGroups.variants',
             'statusHistories' => fn ($query) => $query->orderBy('created_at')->orderBy('id'),

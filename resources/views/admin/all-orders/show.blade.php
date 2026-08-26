@@ -32,7 +32,10 @@
                             <div class="py-5 first:pt-0 last:pb-0">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
-                                        <p class="text-base font-semibold text-stone-800">{{ $item->product_name }}<x-bouquet-size-label :item="$item" /></p>
+                                        <p class="text-base font-semibold text-stone-800">{{ $item->custom_request_id ? 'Custom Bouquet #'.($item->customRequest?->request_number ?? '') : $item->product_name }}<x-bouquet-size-label :item="$item" /></p>
+                                        @if ($item->custom_request_id)
+                                            <a href="{{ route('admin.custom-requests.show', $item->customRequest) }}" class="mt-1 inline-flex text-xs font-semibold text-rose-600 hover:text-rose-700">Lihat Detail Custom</a>
+                                        @endif
                                         <p class="mt-1 text-sm text-stone-500">{{ $item->bundle_quantity }} buket</p>
                                         @if ($item->variants->isNotEmpty())<ul class="mt-1 text-sm text-stone-500">@foreach ($item->variants as $variant)<li>{{ $variant->variant_label }}@if ($variant->quantity_in_bundle > 1) · {{ $variant->quantity_in_bundle }}×@endif</li>@endforeach</ul>@endif
                                     </div>

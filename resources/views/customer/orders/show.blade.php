@@ -33,7 +33,7 @@
             <div class="mt-5 divide-y divide-stone-100">
                 @foreach ($order->itemGroups as $item)
                     <article class="py-4 first:pt-0 last:pb-0">
-                        <h3 class="text-sm font-semibold text-stone-800">{{ $item->product_name }}<x-bouquet-size-label :item="$item" /></h3>
+                        <h3 class="text-sm font-semibold text-stone-800">{{ $item->custom_request_id ? 'Custom Bouquet #'.($item->customRequest?->request_number ?? '') : $item->product_name }}<x-bouquet-size-label :item="$item" /></h3>
                         <x-order-item-price-breakdown :item="$item" />
                         @if ($item->card_message)
                             <p class="mt-2 text-xs leading-5 text-stone-500"><span class="font-semibold text-stone-600">Pesan kartu:</span> {{ $item->card_message }}</p>
@@ -84,7 +84,7 @@
                     @foreach ($order->itemGroups as $item)
                         <div class="flex flex-col gap-4 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <p class="font-semibold text-stone-800">{{ $item->product_name }}<x-bouquet-size-label :item="$item" /></p>
+                                <p class="font-semibold text-stone-800">{{ $item->custom_request_id ? 'Custom Bouquet #'.($item->customRequest?->request_number ?? '') : $item->product_name }}<x-bouquet-size-label :item="$item" /></p>
                                 @if ($item->variants->isNotEmpty())
                                     <ul class="mt-1 text-sm text-stone-500">
                                         @foreach ($item->variants as $variant)

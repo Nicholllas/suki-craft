@@ -47,7 +47,7 @@
                                     <div class="flex gap-3">
                                         <div class="min-w-0 flex-1">
                                             <p class="text-xs font-semibold uppercase tracking-[0.13em] text-rose-500">{{ $item->product->category->name }}</p>
-                                            <h2 class="mt-1 truncate font-serif text-xl font-semibold text-stone-800">{{ $item->product->name }}<x-bouquet-size-label :item="$item" /></h2>
+                                            <h2 class="mt-1 truncate font-serif text-xl font-semibold text-stone-800">{{ $item->custom_request_id ? 'Custom Bouquet #'.($item->customRequest?->request_number ?? '') : $item->product->name }}<x-bouquet-size-label :item="$item" /></h2>
                                             <x-order-item-price-breakdown :item="$item" />
                                         </div>
                                         <form method="POST" action="{{ route('cart.remove', $item->id) }}" data-confirm="Buket ini akan dihapus dari keranjang." data-confirm-button="Ya, hapus" data-confirm-title="Hapus buket dari keranjang?">
@@ -71,21 +71,25 @@
                                     @endif
 
                                     <div class="mt-4 flex justify-end">
-                                        <div class="flex items-center rounded-xl border border-stone-200">
-                                            <form method="POST" action="{{ route('cart.update', $item->id) }}">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="quantity" value="{{ max(1, $item->bundle_quantity - 1) }}">
-                                                <button class="grid h-9 w-9 place-items-center text-lg text-stone-500 transition hover:text-rose-600 disabled:opacity-30" @disabled($item->bundle_quantity === 1) aria-label="Kurangi jumlah">−</button>
-                                            </form>
-                                            <span class="w-8 text-center text-sm font-semibold text-stone-800">{{ $item->bundle_quantity }}</span>
-                                            <form method="POST" action="{{ route('cart.update', $item->id) }}">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="quantity" value="{{ min(99, $item->bundle_quantity + 1) }}">
-                                                <button class="grid h-9 w-9 place-items-center text-lg text-stone-500 transition hover:text-rose-600" aria-label="Tambah jumlah">+</button>
-                                            </form>
-                                        </div>
+                                        @if ($item->custom_request_id)
+                                            <p class="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">1 buket · jumlah sesuai penawaran</p>
+                                        @else
+                                            <div class="flex items-center rounded-xl border border-stone-200">
+                                                <form method="POST" action="{{ route('cart.update', $item->id) }}">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="quantity" value="{{ max(1, $item->bundle_quantity - 1) }}">
+                                                    <button class="grid h-9 w-9 place-items-center text-lg text-stone-500 transition hover:text-rose-600 disabled:opacity-30" @disabled($item->bundle_quantity === 1) aria-label="Kurangi jumlah">−</button>
+                                                </form>
+                                                <span class="w-8 text-center text-sm font-semibold text-stone-800">{{ $item->bundle_quantity }}</span>
+                                                <form method="POST" action="{{ route('cart.update', $item->id) }}">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="quantity" value="{{ min(99, $item->bundle_quantity + 1) }}">
+                                                    <button class="grid h-9 w-9 place-items-center text-lg text-stone-500 transition hover:text-rose-600" aria-label="Tambah jumlah">+</button>
+                                                </form>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
