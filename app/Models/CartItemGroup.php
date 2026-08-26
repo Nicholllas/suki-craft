@@ -13,7 +13,7 @@ class CartItemGroup extends Model
 
     protected $attributes = ['bundle_quantity' => 1];
 
-    protected $fillable = ['bouquet_size_id', 'bouquet_size_label', 'bundle_quantity', 'card_message', 'product_id', 'requires_quote', 'service_price', 'special_note'];
+    protected $fillable = ['bouquet_size_id', 'bouquet_size_label', 'bundle_quantity', 'card_message', 'custom_request_id', 'product_id', 'requires_quote', 'service_price', 'special_note'];
 
     protected function casts(): array
     {
@@ -33,6 +33,11 @@ class CartItemGroup extends Model
     public function bouquetSize(): BelongsTo
     {
         return $this->belongsTo(ProductBouquetSize::class);
+    }
+
+    public function customRequest(): BelongsTo
+    {
+        return $this->belongsTo(CustomRequest::class);
     }
 
     public function variants(): HasMany

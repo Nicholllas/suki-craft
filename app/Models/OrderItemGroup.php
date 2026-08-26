@@ -12,7 +12,7 @@ class OrderItemGroup extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['bouquet_size_id', 'bouquet_size_label', 'bundle_quantity', 'card_message', 'order_id', 'product_id', 'product_name', 'requires_quote', 'service_price', 'special_note', 'subtotal'];
+    protected $fillable = ['bouquet_size_id', 'bouquet_size_label', 'bundle_quantity', 'card_message', 'custom_request_id', 'order_id', 'product_id', 'product_name', 'requires_quote', 'service_price', 'special_note', 'subtotal'];
 
     protected function casts(): array
     {
@@ -32,6 +32,11 @@ class OrderItemGroup extends Model
     public function bouquetSize(): BelongsTo
     {
         return $this->belongsTo(ProductBouquetSize::class);
+    }
+
+    public function customRequest(): BelongsTo
+    {
+        return $this->belongsTo(CustomRequest::class);
     }
 
     public function review(): HasOne

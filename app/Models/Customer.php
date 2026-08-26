@@ -39,6 +39,11 @@ class Customer extends Authenticatable
         return $this->hasMany(Review::class);
     }
 
+    public function customRequests(): HasMany
+    {
+        return $this->hasMany(CustomRequest::class);
+    }
+
     public function sendPasswordResetNotification($token): void
     {
         $this->notify(new CustomerResetPassword($token));

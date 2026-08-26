@@ -3,6 +3,7 @@
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Customer\AuthController as CustomerAuthController;
+use App\Http\Controllers\Customer\CustomRequestController as CustomerCustomRequestController;
 use App\Http\Controllers\Customer\OrderHistoryController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 use App\Http\Controllers\Customer\ReviewController;
@@ -19,6 +20,7 @@ Route::view('/tentang-kami', 'store.about')->name('about');
 Route::view('/cara-pesan', 'store.how-to-order')->name('how_to_order');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
+Route::post('/products/{product:slug}/custom-requests', [CustomerCustomRequestController::class, 'store'])->middleware('auth:customer')->name('custom-requests.store');
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/items', [CartController::class, 'add'])->name('cart.add');
 Route::patch('/cart/items/{cartItem}', [CartController::class, 'update'])->name('cart.update');
@@ -55,6 +57,11 @@ Route::prefix('akun')->name('customer.')->group(function () {
         Route::get('profil', [CustomerProfileController::class, 'edit'])->name('profile.edit');
         Route::put('profil', [CustomerProfileController::class, 'update'])->name('profile.update');
         Route::put('profil/password', [CustomerProfileController::class, 'updatePassword'])->name('profile.password.update');
+        Route::get('custom-requests', [CustomerCustomRequestController::class, 'index'])->name('custom-requests.index');
+        Route::get('custom-requests/{customRequest}', [CustomerCustomRequestController::class, 'show'])->name('custom-requests.show');
+        Route::post('custom-requests/{customRequest}/revision', [CustomerCustomRequestController::class, 'requestRevision'])->name('custom-requests.revision');
+        Route::post('custom-requests/{customRequest}/approve', [CustomerCustomRequestController::class, 'approve'])->name('custom-requests.approve');
+        Route::get('custom-requests/{customRequest}/reference', [CustomerCustomRequestController::class, 'referenceImage'])->name('custom-requests.reference');
         Route::get('pesanan', [OrderHistoryController::class, 'index'])->name('orders.index');
         Route::get('pesanan/{order}', [OrderHistoryController::class, 'show'])->name('orders.show');
         Route::get('pesanan/{order}/bukti-pengiriman', [OrderHistoryController::class, 'deliveryProof'])->name('orders.delivery-proof');

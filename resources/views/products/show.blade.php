@@ -6,6 +6,83 @@
 @section('content')
     @php
         $imagePath = $product->primary_image?->path ?? $product->image;
+    @endphp
+
+    @if ($product->is_custom_request)
+        <section class="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+            <a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-stone-500 transition hover:text-rose-600">← Kembali ke koleksi</a>
+
+            <div class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,.85fr)_minmax(24rem,1.15fr)] lg:items-start">
+                <div class="overflow-hidden rounded-3xl bg-gradient-to-br from-rose-100 via-orange-50 to-amber-100">
+                    @if ($imagePath)
+                        <img src="{{ Storage::url($imagePath) }}" alt="{{ $product->name }}" class="aspect-[4/5] h-full w-full object-cover">
+                    @else
+                        <div class="grid aspect-[4/5] place-items-center text-7xl text-rose-300">✿</div>
+                    @endif
+                </div>
+
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">Custom Bouquet</p>
+                    <h1 class="mt-3 font-serif text-4xl font-semibold tracking-tight text-stone-800 sm:text-5xl">Buat Buket Sesukamu 🌷</h1>
+                    <p class="mt-5 max-w-2xl text-base leading-7 text-stone-600">Punya ide sendiri? Ceritakan isi, konsep, dan tanggal kebutuhanmu. Tim Suki Craft akan meninjau detailnya lalu mengirimkan penawaran harga final sebelum kamu melanjutkan ke checkout.</p>
+
+                    <div class="mt-6 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
+                        <p class="font-semibold">Harga final akan dikonfirmasi terlebih dahulu.</p>
+                        <p class="mt-1 text-amber-800">Permintaan ini belum menjadi pesanan dan tidak langsung masuk ke pembayaran.</p>
+                    </div>
+
+                    @auth('customer')
+                        <form method="POST" action="{{ route('custom-requests.store', $product) }}" enctype="multipart/form-data" x-data="{ items: @js(old('items', [['name' => '', 'quantity' => 1, 'notes' => '']])), addItem() { if (this.items.length < 10) this.items.push({ name: '', quantity: 1, notes: '' }); }, removeItem(index) { if (this.items.length > 1) this.items.splice(index, 1); } }" class="mt-8 space-y-6">
+                            @csrf
+
+                            @if ($errors->any())
+                                <div class="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">Periksa kembali detail permintaan yang ditandai.</div>
+                            @endif
+
+                            <section class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div><h2 class="font-serif text-2xl font-semibold text-stone-800">Isi buket yang diinginkan</h2><p class="mt-1 text-sm leading-6 text-stone-500">Tambahkan bunga, snack, uang, boneka, atau isi lain yang ingin dirangkai.</p></div>
+                                    <button type="button" @click="addItem" :disabled="items.length >= 10" class="shrink-0 rounded-xl bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-600 disabled:opacity-50">+ Tambah isi</button>
+                                </div>
+                                @error('items')<p class="mt-3 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
+
+                                <div class="mt-5 space-y-3">
+                                    <template x-for="(item, index) in items" :key="index">
+                                        <div class="rounded-2xl border border-stone-100 bg-stone-50 p-4">
+                                            <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_7rem_auto]">
+                                                <div><label class="text-xs font-semibold text-stone-600">Nama isi</label><input :name="`items[${index}][name]`" x-model="item.name" required maxlength="255" class="mt-1.5 h-11 w-full rounded-xl border-stone-200 bg-white px-3 text-sm focus:border-rose-300 focus:ring-rose-200" placeholder="Contoh: Cokelat Kinder"></div>
+                                                <div><label class="text-xs font-semibold text-stone-600">Jumlah</label><input :name="`items[${index}][quantity]`" x-model="item.quantity" required min="1" max="99" type="number" inputmode="numeric" class="mt-1.5 h-11 w-full rounded-xl border-stone-200 bg-white px-3 text-sm focus:border-rose-300 focus:ring-rose-200"></div>
+                                                <button type="button" @click="removeItem(index)" :disabled="items.length === 1" class="self-end rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-100 disabled:cursor-not-allowed disabled:text-stone-300">Hapus</button>
+                                            </div>
+                                            <div class="mt-3"><label class="text-xs font-semibold text-stone-600">Catatan untuk isi ini <span class="font-normal text-stone-400">(opsional)</span></label><textarea :name="`items[${index}][notes]`" x-model="item.notes" rows="2" maxlength="1000" class="mt-1.5 w-full rounded-xl border-stone-200 bg-white px-3 py-2 text-sm focus:border-rose-300 focus:ring-rose-200" placeholder="Contoh: warna biru pastel"></textarea></div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </section>
+
+                            <section class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+                                <h2 class="font-serif text-2xl font-semibold text-stone-800">Preferensi rangkaian</h2>
+                                <div class="mt-5 grid gap-5 sm:grid-cols-2">
+                                    <div class="sm:col-span-2"><p class="text-sm font-semibold text-stone-700">Rentang anggaran</p><div class="mt-3 grid gap-2 sm:grid-cols-2">@foreach (\App\Services\CustomRequestService::budgetRanges() as $value => $range)<label class="flex cursor-pointer items-center gap-3 rounded-xl border border-stone-200 px-3 py-3 text-sm text-stone-700 transition hover:border-rose-200"><input type="radio" name="budget_range" value="{{ $value }}" @checked(old('budget_range') === $value) required class="border-stone-300 text-rose-500 focus:ring-rose-300"><span>{{ $range['label'] }}</span></label>@endforeach</div>@error('budget_range')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror</div>
+                                    <div><label for="wrapping_preference" class="text-sm font-semibold text-stone-700">Preferensi wrapping <span class="font-normal text-stone-400">(opsional)</span></label><input id="wrapping_preference" name="wrapping_preference" value="{{ old('wrapping_preference') }}" maxlength="255" class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm focus:border-rose-300 focus:ring-rose-200" placeholder="Contoh: putih, pink, elegan"></div>
+                                    <div><label for="needed_date" class="text-sm font-semibold text-stone-700">Dibutuhkan tanggal</label><input id="needed_date" name="needed_date" type="date" min="{{ now('Asia/Jakarta')->toDateString() }}" value="{{ old('needed_date') }}" required class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm focus:border-rose-300 focus:ring-rose-200">@error('needed_date')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror</div>
+                                    <div class="sm:col-span-2"><p class="text-sm font-semibold text-stone-700">Sumber isi buket</p><div class="mt-3 grid gap-2 sm:grid-cols-2"><label class="flex cursor-pointer items-center gap-3 rounded-xl border border-stone-200 px-3 py-3 text-sm text-stone-700"><input type="radio" name="item_source" value="sukicraft_purchases" @checked(old('item_source', 'sukicraft_purchases') === 'sukicraft_purchases') class="border-stone-300 text-rose-500 focus:ring-rose-300"><span>Suki Craft yang belikan</span></label><label class="flex cursor-pointer items-center gap-3 rounded-xl border border-stone-200 px-3 py-3 text-sm text-stone-700"><input type="radio" name="item_source" value="customer_provides" @checked(old('item_source') === 'customer_provides') class="border-stone-300 text-rose-500 focus:ring-rose-300"><span>Saya bawa sendiri</span></label></div>@error('item_source')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror</div>
+                                    <div class="sm:col-span-2"><label for="additional_notes" class="text-sm font-semibold text-stone-700">Catatan tambahan <span class="font-normal text-stone-400">(opsional)</span></label><textarea id="additional_notes" name="additional_notes" rows="4" maxlength="1000" class="mt-2 w-full rounded-xl border-stone-200 px-4 py-3 text-sm focus:border-rose-300 focus:ring-rose-200" placeholder="Contoh: nuansa warna, ukuran, atau acara khusus">{{ old('additional_notes') }}</textarea></div>
+                                    <div class="sm:col-span-2"><label for="reference_image" class="text-sm font-semibold text-stone-700">Foto referensi <span class="font-normal text-stone-400">(opsional)</span></label><input id="reference_image" name="reference_image" type="file" accept=".jpg,.jpeg,.png,.webp" class="mt-2 block w-full rounded-xl border border-dashed border-rose-200 bg-rose-50/50 px-4 py-4 text-sm text-stone-600 file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-xs file:font-semibold file:text-rose-700">@error('reference_image')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror<p class="mt-2 text-xs text-stone-400">JPG, PNG, atau WebP maksimal 2 MB.</p></div>
+                                </div>
+                            </section>
+
+                            <button type="submit" class="inline-flex h-12 w-full items-center justify-center rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white shadow-lg shadow-rose-200 transition hover:bg-rose-600 sm:w-auto">Kirim Permintaan Custom</button>
+                        </form>
+                    @else
+                        <div class="mt-8 rounded-3xl border border-rose-100 bg-rose-50 p-5"><h2 class="font-serif text-2xl font-semibold text-stone-800">Siap mewujudkan idemu?</h2><p class="mt-2 text-sm leading-6 text-stone-600">Masuk atau daftar terlebih dahulu untuk mengirim permintaan Custom Bouquet dan menerima penawaran dari admin.</p><a href="{{ route('customer.login') }}" class="mt-5 inline-flex h-11 items-center rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white transition hover:bg-rose-600">Masuk untuk mulai custom</a></div>
+                    @endauth
+                </div>
+            </div>
+        </section>
+    @else
+    @php
+        $imagePath = $product->primary_image?->path ?? $product->image;
         $activeVariants = $product->variants->where('is_active', true)->values();
         $variantPrices = $activeVariants->map(fn ($variant) => [
             'id' => $variant->id,
@@ -218,4 +295,5 @@
             @if($reviews->hasPages())<div class="mt-7">{{ $reviews->links() }}</div>@endif
         </div>
     </section>
+    @endif
 @endsection

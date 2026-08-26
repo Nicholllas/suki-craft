@@ -23,7 +23,7 @@ class OrderService
                 throw $this->emptyCartException();
             }
 
-            $cart->load(['itemGroups.product', 'itemGroups.variants.productVariant']);
+            $cart->load(['itemGroups.customRequest.items', 'itemGroups.product', 'itemGroups.variants.productVariant']);
 
             if ($cart->itemGroups->isEmpty()) {
                 throw $this->emptyCartException();
@@ -66,6 +66,7 @@ class OrderService
                     'bouquet_size_label' => $cartItemGroup->bouquet_size_label,
                     'bundle_quantity' => $cartItemGroup->bundle_quantity,
                     'card_message' => $cartItemGroup->card_message,
+                    'custom_request_id' => $cartItemGroup->custom_request_id,
                     'product_id' => $cartItemGroup->product_id,
                     'product_name' => $cartItemGroup->product->name,
                     'requires_quote' => $cartItemGroup->requires_quote,

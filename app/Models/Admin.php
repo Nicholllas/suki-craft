@@ -34,4 +34,9 @@ class Admin extends Authenticatable
     {
         return $this->hasMany(IngredientStockMovement::class, 'created_by');
     }
+
+    public function customRequestHistories(): HasMany
+    {
+        return $this->hasMany(CustomRequestHistory::class);
+    }
 }

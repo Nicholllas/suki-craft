@@ -12,7 +12,10 @@ class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $attributes = ['allow_multiple_variants' => false];
+    protected $attributes = [
+        'allow_multiple_variants' => false,
+        'is_custom_request' => false,
+    ];
 
     protected $fillable = [
         'category_id',
@@ -26,6 +29,7 @@ class Product extends Model
         'is_active',
         'is_featured',
         'allow_multiple_variants',
+        'is_custom_request',
     ];
 
     protected function casts(): array
@@ -34,6 +38,7 @@ class Product extends Model
             'base_price' => 'decimal:2',
             'cost_price' => 'decimal:2',
             'is_active' => 'boolean',
+            'is_custom_request' => 'boolean',
             'is_featured' => 'boolean',
             'allow_multiple_variants' => 'boolean',
             'price' => 'decimal:2',
@@ -69,6 +74,11 @@ class Product extends Model
     public function bouquetSizes(): HasMany
     {
         return $this->hasMany(ProductBouquetSize::class)->orderBy('min_sheets');
+    }
+
+    public function customRequests(): HasMany
+    {
+        return $this->hasMany(CustomRequest::class);
     }
 
     public function getPrimaryImageAttribute(): ?ProductImage

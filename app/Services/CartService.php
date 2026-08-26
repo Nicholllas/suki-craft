@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Cart;
 use App\Models\CartItemGroup;
+use App\Models\Customer;
+use App\Models\CustomRequest;
 use App\Models\Product;
 use App\Models\ProductBouquetSize;
 use App\Models\ProductVariant;
@@ -27,6 +29,11 @@ class CartService
 
         return DB::transaction(function () use ($bundleQuantity, $customizations, $product, $selectedVariants): CartItemGroup {
             $product = Product::query()->where('is_active', true)->whereHas('category', fn ($query) => $query->where('is_active', true))->findOrFail($product->id);
+
+            if ($product->is_custom_request) {
+                throw ValidationException::withMessages(['product' => ['Produk ini hanya dapat dipesan melalui formulir Custom Bouquet.']]);
+            }
+
             $variants = $this->resolveVariants($product, $selectedVariants);
             $bouquetSize = $this->resolveBouquetSize($product, $variants, $selectedVariants);
             $cart = $this->findOrCreateCurrentCart();
@@ -51,9 +58,50 @@ class CartService
         });
     }
 
+    public function addApprovedCustomRequest(CustomRequest $customRequest, Customer $customer): CartItemGroup
+    {
+        return DB::transaction(function () use ($customRequest, $customer): CartItemGroup {
+            $customRequest = CustomRequest::query()
+                ->whereBelongsTo($customer, 'customer')
+                ->lockForUpdate()
+                ->findOrFail($customRequest->id);
+
+            if ($customRequest->quoted_price === null) {
+                throw ValidationException::withMessages(['custom_request' => ['Penawaran harga belum tersedia.']]);
+            }
+
+            $product = Product::query()
+                ->where('is_active', true)
+                ->where('is_custom_request', true)
+                ->whereHas('category', fn ($query) => $query->where('is_active', true))
+                ->findOrFail($customRequest->product_id);
+            $cart = Cart::query()->firstOrCreate(['customer_id' => $customer->id]);
+            $existingGroup = $cart->itemGroups()->where('custom_request_id', $customRequest->id)->first();
+
+            if ($existingGroup) {
+                return $existingGroup->load(['bouquetSize', 'customRequest.items', 'product', 'variants.productVariant']);
+            }
+
+            $group = $cart->itemGroups()->create([
+                'bundle_quantity' => 1,
+                'custom_request_id' => $customRequest->id,
+                'product_id' => $product->id,
+                'requires_quote' => false,
+                'service_price' => $customRequest->quoted_price,
+            ]);
+
+            return $group->load(['bouquetSize', 'customRequest.items', 'product', 'variants.productVariant']);
+        });
+    }
+
     public function updateQuantity(int $cartItemGroupId, int $quantity): CartItemGroup
     {
         $group = $this->currentCartItemGroup($cartItemGroupId);
+
+        if ($group->custom_request_id !== null) {
+            throw ValidationException::withMessages(['bundle_quantity' => ['Jumlah Custom Bouquet mengikuti penawaran dan tidak dapat diubah.']]);
+        }
+
         $group->update(['bundle_quantity' => $quantity]);
 
         return $group->refresh()->load(['bouquetSize', 'product', 'variants.productVariant']);
@@ -191,7 +239,8 @@ class CartService
 
     private function groupsMatch(CartItemGroup $first, CartItemGroup $second): bool
     {
-        return $first->product_id === $second->product_id
+        return $first->custom_request_id === $second->custom_request_id
+            && $first->product_id === $second->product_id
             && $first->bouquet_size_id === $second->bouquet_size_id
             && $first->card_message === $second->card_message
             && $first->special_note === $second->special_note

@@ -25,6 +25,7 @@ trait InteractsWithProductRules
             'description' => ['nullable', 'string', 'max:5000'],
             'is_active' => ['required', 'boolean'],
             'is_featured' => ['required', 'boolean'],
+            'is_custom_request' => ['required', 'boolean'],
             'allow_multiple_variants' => ['required', 'boolean'],
             'ingredients' => ['nullable', 'array'],
             'ingredients.*.ingredient_id' => ['required', 'integer', Rule::exists('ingredients', 'id')],
@@ -107,6 +108,7 @@ trait InteractsWithProductRules
         $this->merge([
             'description' => filled($this->description) ? trim($this->description) : null,
             'is_active' => $this->boolean('is_active'),
+            'is_custom_request' => $this->boolean('is_custom_request'),
             'allow_multiple_variants' => $this->boolean('allow_multiple_variants'),
             'is_featured' => $this->boolean('is_featured'),
             'name' => trim((string) $this->name),

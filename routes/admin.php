@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\Auth\AdminNewPasswordController;
 use App\Http\Controllers\Admin\Auth\AdminPasswordResetLinkController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CourierController;
+use App\Http\Controllers\Admin\CustomRequestController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\IngredientController;
@@ -37,6 +38,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('profile', [AdminProfileController::class, 'update'])->name('profile.update');
         Route::put('profile/password', [AdminProfileController::class, 'updatePassword'])->name('profile.password.update');
 
+        Route::get('custom-requests', [CustomRequestController::class, 'index'])->name('custom-requests.index');
+        Route::get('custom-requests/{customRequest}', [CustomRequestController::class, 'show'])->name('custom-requests.show');
+        Route::patch('custom-requests/{customRequest}/quote', [CustomRequestController::class, 'quote'])->name('custom-requests.quote');
+        Route::patch('custom-requests/{customRequest}/reject', [CustomRequestController::class, 'reject'])->name('custom-requests.reject');
+        Route::get('custom-requests/{customRequest}/reference', [CustomRequestController::class, 'referenceImage'])->name('custom-requests.reference');
         Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
