@@ -219,3 +219,36 @@ test('product recipe validation requires the value matching the selected variant
         ])
         ->assertSessionHasErrors('ingredients.0.quantity_needed');
 });
+test('product form directs missing photo validation to the gallery tab', function () {
+    $admin = Admin::create([
+        'email' => 'photo-validation@example.com',
+        'is_active' => true,
+        'name' => 'Admin Foto',
+        'password' => 'password',
+        'role' => AdminRole::ADMIN,
+    ]);
+    $category = Category::create([
+        'is_active' => true,
+        'name' => 'Buket Foto',
+        'slug' => 'buket-foto',
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->from(route('admin.products.create'))
+        ->post(route('admin.products.store'), [
+            'allow_multiple_variants' => false,
+            'base_price' => 100000,
+            'category_id' => $category->id,
+            'is_active' => true,
+            'is_featured' => false,
+            'name' => 'Buket Tanpa Foto',
+        ])
+        ->assertRedirect(route('admin.products.create'))
+        ->assertSessionHasErrors('images');
+
+    $this->get(route('admin.products.create'))
+        ->assertOk()
+        ->assertSee('novalidate', false)
+        ->assertSee('validateBeforeSubmit($event)', false)
+        ->assertSee('hasTabError(tab[0])', false);
+});

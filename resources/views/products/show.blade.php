@@ -124,8 +124,7 @@
                     <section class="mt-7 rounded-2xl border border-rose-100 bg-rose-50/60 p-4">
                         <div class="flex items-start justify-between gap-4">
                             <div>
-                                <p class="text-sm font-semibold text-stone-800">Ukuran buket otomatis</p>
-                                <p class="mt-1 text-xs leading-5 text-stone-500">Ukuran dan harga jasa mengikuti total lembar uang yang dipilih.</p>
+                                <p class="text-sm font-semibold text-stone-800">Ukuran Buket</p>
                             </div>
                             <template x-if="selectedBouquetSize()">
                                 <div class="rounded-xl bg-white px-3 py-2 text-right shadow-sm">
@@ -135,13 +134,13 @@
                                 </div>
                             </template>
                         </div>
-                        <p x-cloak x-show="!selectedBouquetSize()" class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">Pilih jumlah lembar uang sesuai rentang yang tersedia.</p>
+                        <p x-cloak x-show="!selectedBouquetSize()" class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">Otomatis terpilih sesuai variant atau add-on</p>
                         <div class="mt-3 grid gap-2 sm:grid-cols-2">
                             @foreach($bouquetSizes as $size)
                                 <div :class="selectedBouquetSize()?.label === @js($size->label) ? 'border-rose-300 bg-white ring-1 ring-rose-200' : 'border-transparent bg-white/70'" class="rounded-xl border px-3 py-2 text-xs text-stone-600">
                                     <span class="font-semibold text-stone-800">{{ $size->label }}</span> · {{ $size->range_label }}
                                     @if($size->is_custom)
-                                        <span class="text-rose-600">· harga dikonfirmasi admin</span>
+                                        <span class="text-rose-600">· Silakan buat pesanan dan checkout untuk harga dikonfirmasi admin</span>
                                     @else
                                         <span>· Jasa Rp{{ number_format($size->service_price, 0, ',', '.') }}</span>
                                     @endif
@@ -155,7 +154,7 @@
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
                     @if($activeVariants->isNotEmpty())
                         <fieldset>
-                            <legend class="text-sm font-semibold text-stone-800">Pilih ukuran atau varian</legend>
+                            <legend class="text-sm font-semibold text-stone-800">Pilih variant atau add-on</legend>
                             <div class="mt-3 grid gap-2 sm:grid-cols-2">
                                 @foreach($activeVariants as $variant)
                                     <div :class="isSelected({{ $variant->id }}) ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-stone-200 bg-white text-stone-700 hover:border-rose-200'" class="rounded-xl border p-4 text-sm transition">
@@ -197,7 +196,7 @@
                     <p x-cloak x-show="toast" x-text="toast" x-transition :class="toastType === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'" class="rounded-xl px-4 py-3 text-center text-sm font-medium" role="status"></p>
                 </form>
 
-                <div class="mt-7 rounded-2xl bg-rose-50 p-5"><div class="flex gap-3"><svg class="mt-0.5 h-5 w-5 shrink-0 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m12 3 1.66 5.1H19l-4.33 3.15 1.66 5.1L12 13.2l-4.33 3.15 1.66-5.1L5 8.1h5.34L12 3Z" /></svg><div><p class="text-sm font-semibold text-stone-800">Dirangkai saat pesanan dibuat</p><p class="mt-1 text-sm leading-6 text-stone-600">Bunga dipilih sesuai kesegaran dan setiap pesanan mendapat kartu ucapan gratis.</p></div></div></div>
+                <div class="mt-7 rounded-2xl bg-rose-50 p-5"><div class="flex gap-3"><svg class="mt-0.5 h-5 w-5 shrink-0 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m12 3 1.66 5.1H19l-4.33 3.15 1.66 5.1L12 13.2l-4.33 3.15 1.66-5.1L5 8.1h5.34L12 3Z" /></svg><div><p class="text-sm font-semibold text-stone-800">Dirangkai setelah pesanan dibuat dan pembayaran telah diverifikasi oleh admin.</p><p class="mt-1 text-sm leading-6 text-stone-600">Jenis bunga akan disesuaikan dengan ketersediaan stok. Setiap pesanan juga sudah termasuk kartu ucapan gratis.</p></div></div></div>
             </div>
         </div>
     </section>

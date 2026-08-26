@@ -22,7 +22,8 @@ Alpine.data('deliverySchedule', (slots, today, currentTime, selectedDate, select
     },
 }));
 
-Alpine.data('productForm', (variants = [], recipes = [], bouquetSizes = []) => ({
+Alpine.data('productForm', (variants = [], recipes = [], bouquetSizes = [], initialErrors = {}) => ({
+    alertIsOpen: false,
     bouquetSizes: bouquetSizes.map((size) => ({
         code: '',
         is_active: true,
@@ -35,6 +36,7 @@ Alpine.data('productForm', (variants = [], recipes = [], bouquetSizes = []) => (
         max_sheets: size.max_sheets ?? '',
         service_price: size.service_price ?? 0,
     })),
+    initialErrors,
     recipes: recipes.map((recipe) => ({
         ingredient_id: '',
         product_variant_id: '',
@@ -44,7 +46,15 @@ Alpine.data('productForm', (variants = [], recipes = [], bouquetSizes = []) => (
         ratio_per_unit: recipe.ratio_per_unit ?? 1,
     })),
     section: 'info',
+    validationErrors: {},
     variants,
+    init() {
+        this.validationErrors = Object.keys(this.initialErrors).reduce((errors, field) => ({ ...errors, [field]: true }), {});
+
+        if (Object.keys(this.validationErrors).length > 0) {
+            queueMicrotask(() => this.showValidationAlert());
+        }
+    },
     addBouquetSize() {
         this.bouquetSizes.push({ code: '', is_active: true, is_custom: false, label: '', max_sheets: '', min_sheets: 1, service_price: 0 });
     },
@@ -68,6 +78,100 @@ Alpine.data('productForm', (variants = [], recipes = [], bouquetSizes = []) => (
             { code: 'CUSTOM', is_active: true, is_custom: true, label: 'Custom', max_sheets: '', min_sheets: 46, service_price: 0 },
         ];
     },
+    clearFieldError(element) {
+        if (!element.matches?.('input, select, textarea') || !element.name) {
+            return;
+        }
+
+        const isFileInput = element instanceof HTMLInputElement && element.type === 'file';
+
+        if ((!isFileInput && !element.checkValidity()) || (isFileInput && element.files?.length === 0)) {
+            return;
+        }
+
+        const field = this.fieldKey(element.name);
+        const validationErrors = { ...this.validationErrors };
+
+        Object.keys(validationErrors).forEach((errorField) => {
+            if (errorField === field || errorField.startsWith(`${field}.`)) {
+                delete validationErrors[errorField];
+            }
+        });
+
+        this.validationErrors = validationErrors;
+    },
+    errorSummary() {
+        const form = this.form();
+        const tabs = [
+            ['info', 'Info dasar'],
+            ['variants', 'Varian'],
+            ['sizes', 'Ukuran buket'],
+            ['ingredients', 'Resep / Bahan'],
+            ['gallery', 'Galeri foto'],
+        ];
+        const groups = tabs.map(([id, label]) => ({
+            fields: [...new Set(Object.keys(this.validationErrors)
+                .filter((field) => this.tabForField(field) === id)
+                .map((field) => this.fieldLabel(field, form)))],
+            label,
+        })).filter((tab) => tab.fields.length > 0);
+
+        return `<p>Lengkapi field wajib berikut:</p><ul>${groups.map((tab) => `<li><strong>${this.escapeHtml(tab.label)}</strong>: ${tab.fields.map((field) => this.escapeHtml(field)).join(', ')}</li>`).join('')}</ul>`;
+    },
+    escapeHtml(value) {
+        return value.replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[character]);
+    },
+    fieldKey(name) {
+        return name.replace(/\[\]/g, '').replace(/\[([^\]]+)\]/g, '.$1').replace(/\.$/, '');
+    },
+    fieldLabel(field, form) {
+        const element = [...(form?.querySelectorAll('[name]') ?? [])].find((input) => {
+            const inputField = this.fieldKey(input.name);
+
+            return inputField === field || field.startsWith(`${inputField}.`);
+        });
+        const label = element?.id ? form.querySelector(`label[for="${element.id}"]`) : element?.closest('div')?.querySelector('label');
+        const fallbackLabels = {
+            base_price: 'Harga dasar/jasa',
+            category_id: 'Kategori',
+            code: 'Kode ukuran',
+            images: 'Foto produk',
+            ingredient_id: 'Bahan',
+            label: 'Label',
+            max_sheets: 'Maks. qty',
+            min_sheets: 'Min. qty',
+            name: 'Nama produk',
+            price_adjustment: 'Penyesuaian harga',
+            quantity_needed: 'Qty per buket',
+            ratio_per_unit: 'Rasio',
+            service_price: 'Jasa',
+        };
+
+        return label?.textContent?.trim() || fallbackLabels[field.split('.').at(-1)] || 'Field wajib';
+    },
+    firstErrorTab() {
+        return ['info', 'variants', 'sizes', 'ingredients', 'gallery'].find((tab) => this.hasTabError(tab)) ?? 'info';
+    },
+    focusFirstInvalidField() {
+        this.$nextTick(() => {
+            const form = this.form();
+            const field = Object.keys(this.validationErrors)[0];
+            const element = [...(form?.querySelectorAll('input, select, textarea') ?? [])].find((input) => {
+                const inputField = this.fieldKey(input.name);
+
+                return inputField === field || field.startsWith(`${inputField}.`);
+            });
+
+            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element?.focus({ preventScroll: true });
+        });
+    },
+    form() {
+        return this.$root.closest('form');
+    },
+    hasTabError(tab) {
+        return Object.keys(this.validationErrors).some((field) => this.tabForField(field) === tab);
+    },
     isQuantityBasedRecipe(recipe) {
         const selectedVariant = this.variants.find((variant) => String(variant.id) === String(recipe.product_variant_id));
 
@@ -75,6 +179,68 @@ Alpine.data('productForm', (variants = [], recipes = [], bouquetSizes = []) => (
     },
     persistedVariants() {
         return this.variants.filter((variant) => variant.id);
+    },
+    showValidationAlert() {
+        if (this.alertIsOpen || Object.keys(this.validationErrors).length === 0) {
+            return;
+        }
+
+        this.alertIsOpen = true;
+        this.section = this.firstErrorTab();
+
+        Swal.fire({
+            ...confirmationDefaults,
+            confirmButtonText: 'Tampilkan field',
+            focusCancel: false,
+            focusConfirm: true,
+            html: this.errorSummary(),
+            showCancelButton: false,
+            title: 'Lengkapi data wajib',
+        }).then(() => {
+            this.alertIsOpen = false;
+            this.section = this.firstErrorTab();
+            this.focusFirstInvalidField();
+        });
+    },
+    tabForField(field) {
+        const rootField = field.split('.')[0];
+
+        if (rootField === 'variants') {
+            return 'variants';
+        }
+
+        if (rootField === 'bouquet_sizes') {
+            return 'sizes';
+        }
+
+        if (rootField === 'ingredients') {
+            return 'ingredients';
+        }
+
+        if (['image_order', 'images', 'primary_image_id'].includes(rootField)) {
+            return 'gallery';
+        }
+
+        return 'info';
+    },
+    validateBeforeSubmit(event) {
+        const form = event.target;
+
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        const invalidFields = [...form.querySelectorAll('input, select, textarea')]
+            .filter((element) => element.name && element.willValidate && !element.checkValidity())
+            .map((element) => this.fieldKey(element.name));
+
+        if (invalidFields.length === 0) {
+            return;
+        }
+
+        event.preventDefault();
+        this.validationErrors = invalidFields.reduce((errors, field) => ({ ...errors, [field]: true }), { ...this.validationErrors });
+        this.showValidationAlert();
     },
 }));
 
