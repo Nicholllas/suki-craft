@@ -1,9 +1,12 @@
 @extends('layouts.store')
 
-@section('title', 'Cara Pesan | Sukicraft.id')
-@section('description', 'Panduan mudah memesan buket Sukicraft.id, dari memilih rangkaian hingga melacak pengiriman.')
+@section('title', __('storefront.how_to_order.title'))
+@section('description', __('storefront.how_to_order.description'))
 
 @section('content')
+    @if (app()->isLocale('en'))
+        @include('store.how-to-order-en')
+    @else
     <section class="relative isolate overflow-hidden bg-[#fff8f3]">
         <div class="absolute -left-20 top-8 -z-10 h-64 w-64 rounded-full bg-rose-200/60 blur-3xl"></div>
         <div class="absolute -right-16 bottom-0 -z-10 h-80 w-80 rounded-full bg-amber-100/70 blur-3xl"></div>
@@ -75,4 +78,5 @@
     <section class="bg-rose-500 px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-8 text-center lg:flex-row lg:text-left"><div><p class="text-sm font-semibold uppercase tracking-[0.18em] text-rose-100">Siap membuat kejutan?</p><h2 class="mt-2 font-serif text-4xl font-semibold tracking-tight text-white sm:text-5xl">Pilih buket yang paling mewakili cerita Anda.</h2></div><a href="{{ route('products.index') }}" class="shrink-0 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-rose-600 shadow-lg transition hover:-translate-y-0.5 hover:bg-rose-50">Lihat koleksi buket</a></div>
     </section>
+    @endif
 @endsection

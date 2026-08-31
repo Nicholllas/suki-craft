@@ -7,6 +7,7 @@ use App\Http\Controllers\Customer\CustomRequestController as CustomerCustomReque
 use App\Http\Controllers\Customer\OrderHistoryController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 use App\Http\Controllers\Customer\ReviewController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
@@ -16,11 +17,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [StorefrontController::class, 'index'])->name('home');
 
+Route::post('/language', [LocaleController::class, 'update'])->name('locale.update');
+
 Route::view('/tentang-kami', 'store.about')->name('about');
 Route::view('/cara-pesan', 'store.how-to-order')->name('how_to_order');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
-Route::post('/products/{product:slug}/custom-requests', [CustomerCustomRequestController::class, 'store'])->middleware('auth:customer')->name('custom-requests.store');
+Route::get('/custom-bouquet', [CustomerCustomRequestController::class, 'create'])->name('custom-requests.create');
+Route::post('/custom-bouquet/requests', [CustomerCustomRequestController::class, 'store'])->middleware('auth:customer')->name('custom-requests.store');
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/items', [CartController::class, 'add'])->name('cart.add');
 Route::patch('/cart/items/{cartItem}', [CartController::class, 'update'])->name('cart.update');

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Category;
+use App\Models\CustomBouquetCategory;
 use App\Models\Product;
 use Illuminate\Database\Seeder;
 
@@ -13,6 +14,22 @@ class CustomBouquetSeeder extends Seeder
      */
     public function run(): void
     {
+        $customBouquetCategories = [
+            ['name' => 'Buket Wisuda', 'slug' => 'buket-wisuda', 'description' => 'Rangkaian untuk perayaan kelulusan.', 'quantity_label' => null, 'quote_threshold' => null, 'sort_order' => 10],
+            ['name' => 'Buket Ulang Tahun', 'slug' => 'buket-ulang-tahun', 'description' => 'Rangkaian untuk kejutan ulang tahun.', 'quantity_label' => null, 'quote_threshold' => null, 'sort_order' => 20],
+            ['name' => 'Buket Anniversary', 'slug' => 'buket-anniversary', 'description' => 'Rangkaian untuk momen spesial bersama pasangan.', 'quantity_label' => null, 'quote_threshold' => null, 'sort_order' => 30],
+            ['name' => 'Buket Pernikahan', 'slug' => 'buket-pernikahan', 'description' => 'Rangkaian untuk akad, resepsi, atau seserahan.', 'quantity_label' => null, 'quote_threshold' => null, 'sort_order' => 40],
+            ['name' => 'Buket Uang', 'slug' => 'buket-uang', 'description' => 'Buket uang dengan nominal, bentuk, dan jumlah lembar sesuai kebutuhan.', 'quantity_label' => 'Jumlah lembar', 'quote_threshold' => 46, 'sort_order' => 50],
+            ['name' => 'Buket Lainnya', 'slug' => 'buket-lainnya', 'description' => 'Untuk ide buket di luar kategori yang tersedia.', 'quantity_label' => null, 'quote_threshold' => null, 'sort_order' => 99],
+        ];
+
+        foreach ($customBouquetCategories as $customBouquetCategory) {
+            CustomBouquetCategory::query()->updateOrCreate(
+                ['slug' => $customBouquetCategory['slug']],
+                [...$customBouquetCategory, 'is_active' => true],
+            );
+        }
+
         $category = Category::query()->firstOrCreate(
             ['slug' => 'buket-custom'],
             [
@@ -45,5 +62,13 @@ class CustomBouquetSeeder extends Seeder
             'category_id' => $category->id,
             'is_custom_request' => true,
         ]);
+
+        $moneyBouquetCategory = CustomBouquetCategory::query()->where('slug', 'buket-uang')->firstOrFail();
+        $moneyBouquetProduct = Product::query()->where('slug', 'buket-uang')->first();
+
+        if ($moneyBouquetProduct !== null) {
+            $moneyBouquetProduct->update(['custom_bouquet_category_id' => $moneyBouquetCategory->id]);
+            $moneyBouquetProduct->bouquetSizes()->where('is_custom', true)->update(['is_active' => false]);
+        }
     }
 }

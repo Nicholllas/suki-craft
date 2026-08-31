@@ -5,10 +5,11 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RequestCustomRequestRevisionRequest;
 use App\Http\Requests\StoreCustomRequestRequest;
+use App\Models\CustomBouquetCategory;
 use App\Models\Customer;
 use App\Models\CustomRequest;
-use App\Models\Product;
 use App\Services\CustomRequestService;
+use App\Services\CustomRequestWhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -17,17 +18,34 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CustomRequestController extends Controller
 {
-    public function __construct(private CustomRequestService $customRequestService) {}
+    public function __construct(
+        private CustomRequestService $customRequestService,
+        private CustomRequestWhatsAppService $customRequestWhatsAppService,
+    ) {}
 
     public function index(Request $request): View
     {
         $customRequests = CustomRequest::query()
             ->whereBelongsTo($this->customerFromRequest($request), 'customer')
-            ->with('product:id,name,slug')
+            ->with(['customBouquetCategory:id,name,slug', 'product:id,name,slug'])
             ->latest()
             ->paginate(10);
 
         return view('customer.custom-requests.index', ['customRequests' => $customRequests]);
+    }
+
+    public function create(Request $request): View
+    {
+        $customBouquetCategories = CustomBouquetCategory::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug', 'description', 'quantity_label', 'quote_threshold']);
+
+        return view('customer.custom-requests.create', [
+            'customBouquetCategories' => $customBouquetCategories,
+            'selectedCategorySlug' => $request->string('category')->toString(),
+        ]);
     }
 
     public function show(Request $request, CustomRequest $customRequest): View
@@ -36,23 +54,24 @@ class CustomRequestController extends Controller
         $this->customRequestService->expireIfQuoteExpired($customRequest);
         $customRequest->refresh()->load([
             'histories' => fn ($query) => $query->with(['admin:id,name', 'customer:id,name']),
+            'customer:id,name,phone',
+            'customBouquetCategory:id,name,slug',
             'items',
             'product:id,name,slug',
         ]);
 
         return view('customer.custom-requests.show', [
             'customRequest' => $customRequest,
+            'followUpWhatsAppUrl' => $this->customRequestWhatsAppService->customerFollowUpUrl($customRequest),
             'referenceImageUrl' => $customRequest->reference_image_path ? route('customer.custom-requests.reference', $customRequest) : null,
         ]);
     }
 
-    public function store(StoreCustomRequestRequest $request, Product $product): RedirectResponse
+    public function store(StoreCustomRequestRequest $request): RedirectResponse
     {
-        abort_unless($product->is_custom_request, 404);
-
         $customRequest = $this->customRequestService->create(
             $this->customerFromRequest($request),
-            $product,
+            CustomBouquetCategory::query()->findOrFail($request->validated('custom_bouquet_category_id')),
             $request->validated(),
             $request->file('reference_image'),
         );
@@ -66,6 +85,7 @@ class CustomRequestController extends Controller
             $this->ownedCustomRequest($request, $customRequest),
             $this->customerFromRequest($request),
             $request->validated('revision_note'),
+            $request->validated('counter_offer'),
         );
 
         return redirect()->route('customer.custom-requests.show', $customRequest)->with('success', 'Permintaan revisi sudah dikirim ke admin.');

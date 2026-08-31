@@ -18,7 +18,7 @@
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                             <p class="font-mono text-sm font-bold tracking-wide text-rose-600">{{ $customRequest->request_number }}</p>
-                            <h2 class="mt-2 font-serif text-xl font-semibold text-stone-800">{{ $customRequest->product->name }}</h2>
+                            <h2 class="mt-2 font-serif text-xl font-semibold text-stone-800">{{ $customRequest->custom_category_name ?? $customRequest->customBouquetCategory?->name ?? $customRequest->product->name }}</h2>
                             <p class="mt-2 text-sm text-stone-500">Dibutuhkan {{ $customRequest->needed_date->locale('id')->translatedFormat('d F Y') }} · dibuat {{ $customRequest->created_at->locale('id')->translatedFormat('d F Y, H.i') }} WIB</p>
                             @if ($customRequest->quoted_price !== null)
                                 <p class="mt-3 text-sm font-semibold text-stone-800">Penawaran: Rp{{ number_format($customRequest->quoted_price, 0, ',', '.') }}</p>
@@ -32,8 +32,8 @@
                 <div class="rounded-3xl border border-dashed border-rose-200 bg-rose-50/60 px-6 py-14 text-center">
                     <div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-white text-2xl text-rose-400">✿</div>
                     <h2 class="mt-5 font-serif text-2xl font-semibold text-stone-800">Belum ada permintaan custom</h2>
-                    <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-stone-500">Mulai dari halaman produk Buket Custom untuk menceritakan ide rangkaianmu.</p>
-                    <a href="{{ route('products.index', ['category' => 'buket-custom']) }}" class="mt-6 inline-flex rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-600">Buat buket custom</a>
+                    <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-stone-500">Pilih kategori dan ceritakan ide rangkaianmu untuk mendapatkan penawaran florist.</p>
+                    <a href="{{ route('custom-requests.create') }}" class="mt-6 inline-flex rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-600">Request buket spesifik</a>
                 </div>
             @endforelse
         </div>

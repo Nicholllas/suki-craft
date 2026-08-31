@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\RejectCustomRequestRequest;
 use App\Models\Admin;
 use App\Models\CustomRequest;
 use App\Services\CustomRequestService;
+use App\Services\CustomRequestWhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -16,12 +17,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CustomRequestController extends Controller
 {
-    public function __construct(private CustomRequestService $customRequestService) {}
+    public function __construct(
+        private CustomRequestService $customRequestService,
+        private CustomRequestWhatsAppService $customRequestWhatsAppService,
+    ) {}
 
     public function index(): View
     {
         $customRequests = CustomRequest::query()
-            ->with(['customer:id,name,phone', 'product:id,name,slug'])
+            ->with(['customer:id,name,phone', 'customBouquetCategory:id,name,slug', 'product:id,name,slug'])
             ->latest()
             ->paginate(15);
 
@@ -34,12 +38,14 @@ class CustomRequestController extends Controller
         $customRequest->refresh()->load([
             'customer:id,name,email,phone',
             'histories' => fn ($query) => $query->with(['admin:id,name', 'customer:id,name']),
+            'customBouquetCategory:id,name,slug',
             'items',
             'product:id,name,slug',
         ]);
 
         return view('admin.custom-requests.show', [
             'customRequest' => $customRequest,
+            'quoteWhatsAppUrl' => $this->customRequestWhatsAppService->quoteUrl($customRequest),
             'referenceImageUrl' => $customRequest->reference_image_path ? route('admin.custom-requests.reference', $customRequest) : null,
         ]);
     }

@@ -28,6 +28,7 @@ class StoreCustomRequestRequest extends FormRequest
         return [
             'additional_notes' => ['nullable', 'string', 'max:1000'],
             'budget_range' => ['required', Rule::in(array_keys(CustomRequestService::budgetRanges()))],
+            'custom_bouquet_category_id' => ['required', 'integer', Rule::exists('custom_bouquet_categories', 'id')->where('is_active', true)],
             'item_source' => ['required', Rule::in(['sukicraft_purchases', 'customer_provides'])],
             'items' => ['required', 'array', 'min:1', 'max:10'],
             'items.*.name' => ['required', 'string', 'max:255'],
@@ -47,6 +48,7 @@ class StoreCustomRequestRequest extends FormRequest
         return [
             'additional_notes' => 'catatan tambahan',
             'budget_range' => 'rentang anggaran',
+            'custom_bouquet_category_id' => 'kategori buket',
             'item_source' => 'sumber isi buket',
             'items' => 'daftar isi buket',
             'items.*.name' => 'nama isi buket',

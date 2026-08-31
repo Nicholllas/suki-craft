@@ -82,6 +82,11 @@ return [
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'id'),
 
+    'supported_locales' => [
+        'id' => 'Bahasa Indonesia',
+        'en' => 'English',
+    ],
+
     'faker_locale' => env('APP_FAKER_LOCALE', 'id_ID'),
 
     /*

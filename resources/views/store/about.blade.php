@@ -1,9 +1,13 @@
 @extends('layouts.store')
 
-@section('title', 'Tentang Sukicraft.id | Cerita di Balik Setiap Rangkaian')
-@section('description', 'Kenali cerita, nilai, tim, dan cara Sukicraft.id merangkai bunga untuk setiap momen istimewa.')
+@section('title', app()->isLocale('en') ? 'About Sukicraft.id | The Story Behind Every Arrangement' : 'Tentang Sukicraft.id | Cerita di Balik Setiap Rangkaian')
+@section('description', app()->isLocale('en') ? 'Discover the story and values behind Sukicraft.id arrangements for every special moment.' : 'Kenali cerita, nilai, tim, dan cara Sukicraft.id merangkai bunga untuk setiap momen istimewa.')
 
 @section('content')
+    @if (app()->isLocale('en'))
+        @include('store.about-en')
+        @include('store.about-en-extra')
+    @else
     <section class="relative isolate overflow-hidden bg-[#fff8f3]">
         <div class="absolute -left-24 top-10 -z-10 h-72 w-72 rounded-full bg-rose-200/50 blur-3xl"></div>
         <div class="absolute -right-24 bottom-0 -z-10 h-80 w-80 rounded-full bg-amber-100/70 blur-3xl"></div>
@@ -130,4 +134,5 @@
     <section class="bg-rose-500 px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-8 text-center lg:flex-row lg:text-left"><div><p class="text-sm font-semibold uppercase tracking-[0.18em] text-rose-100">09 · Mari mulai ceritanya</p><h2 class="mt-2 font-serif text-4xl font-semibold tracking-tight text-white sm:text-5xl">Temukan buket untuk perasaan yang ingin Anda sampaikan.</h2></div><a href="{{ route('products.index') }}" class="shrink-0 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-rose-600 shadow-lg transition hover:-translate-y-0.5 hover:bg-rose-50">Belanja Buket</a></div>
     </section>
+    @endif
 @endsection

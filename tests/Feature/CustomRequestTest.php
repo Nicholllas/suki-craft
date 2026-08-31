@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Models\Admin;
 use App\Models\CartItemGroup;
 use App\Models\Category;
+use App\Models\CustomBouquetCategory;
 use App\Models\Customer;
 use App\Models\CustomRequest;
 use App\Models\Order;
@@ -23,7 +24,8 @@ beforeEach(function () {
         'is_custom_request' => true,
         'name' => 'Buat Buket Custom',
     ]);
-    $this->customer = Customer::factory()->create();
+    $this->customBouquetCategory = CustomBouquetCategory::factory()->create(['name' => 'Buket Wisuda', 'slug' => 'buket-wisuda']);
+    $this->customer = Customer::factory()->create(['name' => 'Nadia Putri', 'phone' => '081234567890']);
     $this->admin = Admin::query()->create([
         'email' => 'custom-admin@example.com',
         'is_active' => true,
@@ -33,16 +35,24 @@ beforeEach(function () {
     ]);
 });
 
-test('regular and Custom Bouquet product pages render successfully', function () {
+test('regular product and generic Custom Bouquet request page render successfully', function () {
     $regularProduct = Product::factory()->create([
         'category_id' => $this->category->id,
         'is_active' => true,
         'is_custom_request' => false,
     ]);
 
-    $this->get(route('products.show', $this->customProduct))
+    $this->get(route('products.show', $this->customProduct))->assertNotFound();
+
+    $this->get(route('products.index'))
         ->assertOk()
-        ->assertSee('Buat Buket Sesukamu');
+        ->assertSee('Request buket custom')
+        ->assertSee(route('custom-requests.create'));
+
+    $this->actingAs($this->customer, 'customer')->get(route('custom-requests.create'))
+        ->assertOk()
+        ->assertSee('Request Buket Spesifik')
+        ->assertSee('Buket Wisuda');
 
     $this->get(route('products.show', $regularProduct))
         ->assertOk()
@@ -50,13 +60,14 @@ test('regular and Custom Bouquet product pages render successfully', function ()
 });
 
 test('a customer can submit a pure Custom Bouquet request with item details and a private reference image', function () {
-    $response = $this->actingAs($this->customer, 'customer')->post(route('custom-requests.store', $this->customProduct), customRequestPayload());
+    $response = $this->actingAs($this->customer, 'customer')->post(route('custom-requests.store'), customRequestPayload());
 
     $customRequest = CustomRequest::query()->with('items')->sole();
 
     $response->assertRedirect(route('customer.custom-requests.show', $customRequest));
     expect($customRequest->request_number)->toBe('CR00001')
         ->and($customRequest->status)->toBe(CustomRequestStatus::WAITING_REVIEW)
+        ->and($customRequest->custom_category_name)->toBe('Buket Wisuda')
         ->and($customRequest->items)->toHaveCount(2)
         ->and($customRequest->items->first()->item_name)->toBe('Cokelat Kinder')
         ->and(CartItemGroup::query()->count())->toBe(0);
@@ -64,13 +75,61 @@ test('a customer can submit a pure Custom Bouquet request with item details and 
 
     $this->actingAs($this->customer, 'customer')->get(route('customer.custom-requests.show', $customRequest))
         ->assertOk()
-        ->assertSee('Custom Bouquet #CR00001')
+        ->assertSee('Buket Wisuda #CR00001')
         ->assertSee('Cokelat Kinder');
+});
+
+test('custom request provides WhatsApp links for customer follow-up and admin quote delivery', function () {
+    config(['payment.whatsapp_number' => '628112223333']);
+    $this->actingAs($this->customer, 'customer')->post(route('custom-requests.store'), customRequestPayload(['reference_image' => null]))->assertRedirect();
+    $customRequest = CustomRequest::query()->sole();
+
+    $this->actingAs($this->customer, 'customer')->get(route('customer.custom-requests.show', $customRequest))
+        ->assertOk()
+        ->assertSee('Follow up via WhatsApp')
+        ->assertSee('wa.me/628112223333');
+
+    $this->actingAs($this->admin, 'admin')->patch(route('admin.custom-requests.quote', $customRequest), [
+        'quote_expires_at' => now()->addDay()->format('Y-m-d\\TH:i'),
+        'quote_note' => 'Harga sudah termasuk rangkaian dan wrapping.',
+        'quoted_price' => 325000,
+    ])->assertRedirect(route('admin.custom-requests.show', $customRequest));
+
+    $this->actingAs($this->admin, 'admin')->get(route('admin.custom-requests.show', $customRequest))
+        ->assertOk()
+        ->assertSee('Kirim penawaran via WhatsApp')
+        ->assertSee('wa.me/6281234567890')
+        ->assertSee(urlencode(route('customer.custom-requests.show', $customRequest)));
+
+    $this->actingAs($this->customer, 'customer')->get(route('customer.custom-requests.show', $customRequest))
+        ->assertOk()
+        ->assertDontSee('Follow up via WhatsApp');
+});
+
+test('a customer can submit a counter offer with their custom request revision', function () {
+    $this->actingAs($this->customer, 'customer')->post(route('custom-requests.store'), customRequestPayload(['reference_image' => null]))->assertRedirect();
+    $customRequest = CustomRequest::query()->sole();
+
+    $this->actingAs($this->admin, 'admin')->patch(route('admin.custom-requests.quote', $customRequest), [
+        'quote_expires_at' => now()->addDay()->format('Y-m-d\\TH:i'),
+        'quoted_price' => 325000,
+    ])->assertRedirect();
+
+    $this->actingAs($this->customer, 'customer')->post(route('customer.custom-requests.revision', $customRequest), [
+        'counter_offer' => 300000,
+        'revision_note' => 'Mohon wrapping dibuat lebih sederhana.',
+    ])->assertRedirect(route('customer.custom-requests.show', $customRequest));
+
+    $customRequest->refresh()->load('histories');
+
+    expect($customRequest->status)->toBe(CustomRequestStatus::REVISION_REQUESTED)
+        ->and($customRequest->histories->last()->note)->toContain('Rp300.000')
+        ->toContain('Mohon wrapping dibuat lebih sederhana.');
 });
 
 test('an approved custom request enters cart at the server quoted price and completes normal checkout', function () {
     config(['delivery.flat_fee' => 0]);
-    $this->actingAs($this->customer, 'customer')->post(route('custom-requests.store', $this->customProduct), customRequestPayload(['reference_image' => null]))->assertRedirect();
+    $this->actingAs($this->customer, 'customer')->post(route('custom-requests.store'), customRequestPayload(['reference_image' => null]))->assertRedirect();
     $customRequest = CustomRequest::query()->sole();
 
     $this->actingAs($this->admin, 'admin')->patch(route('admin.custom-requests.quote', $customRequest), [
@@ -117,7 +176,7 @@ test('an approved custom request enters cart at the server quoted price and comp
 });
 
 test('a customer cannot view or approve another customers Custom Bouquet request', function () {
-    $this->actingAs($this->customer, 'customer')->post(route('custom-requests.store', $this->customProduct), customRequestPayload(['reference_image' => null]))->assertRedirect();
+    $this->actingAs($this->customer, 'customer')->post(route('custom-requests.store'), customRequestPayload(['reference_image' => null]))->assertRedirect();
     $customRequest = CustomRequest::query()->sole();
     $otherCustomer = Customer::factory()->create();
 
@@ -146,6 +205,7 @@ function customRequestPayload(array $overrides = []): array
     return [
         'additional_notes' => 'Nuansa pastel dan elegan.',
         'budget_range' => '250k_500k',
+        'custom_bouquet_category_id' => CustomBouquetCategory::query()->value('id'),
         'item_source' => 'sukicraft_purchases',
         'items' => [
             ['name' => 'Cokelat Kinder', 'notes' => 'Susun bagian depan.', 'quantity' => 6],

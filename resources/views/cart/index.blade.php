@@ -1,8 +1,11 @@
 @extends('layouts.store')
 
-@section('title', 'Keranjang Belanja | Suki Craft')
+@section('title', app()->isLocale('en') ? 'Shopping Cart | Suki Craft' : 'Keranjang Belanja | Suki Craft')
 
 @section('content')
+    @if (app()->isLocale('en'))
+        @include('cart.index-en')
+    @else
     @php($items = $cart?->itemGroups ?? collect())
 
     <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
@@ -122,4 +125,5 @@
             </div>
         @endif
     </section>
+    @endif
 @endsection

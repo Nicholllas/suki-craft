@@ -23,6 +23,8 @@ class CustomRequest extends Model
     protected $fillable = [
         'customer_id',
         'product_id',
+        'custom_bouquet_category_id',
+        'custom_category_name',
         'request_number',
         'request_kind',
         'status',
@@ -66,6 +68,11 @@ class CustomRequest extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function customBouquetCategory(): BelongsTo
+    {
+        return $this->belongsTo(CustomBouquetCategory::class);
     }
 
     public function items(): HasMany

@@ -22,7 +22,10 @@ class RequestCustomRequestRevisionRequest extends FormRequest
      */
     public function rules(): array
     {
-        return ['revision_note' => ['required', 'string', 'max:1000']];
+        return [
+            'counter_offer' => ['nullable', 'integer', 'min:1'],
+            'revision_note' => ['required', 'string', 'max:1000'],
+        ];
     }
 
     protected function prepareForValidation(): void

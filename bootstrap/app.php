@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAdminHasRole;
 use App\Http\Middleware\EnsureAdminIsActive;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,6 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
 
+        $middleware->web(append: [
+            SetLocale::class,
+        ]);
+
         // Trust reverse proxy seperti ngrok, Nginx, Cloudflare, load balancer, dll.
         $middleware->trustProxies(at: '*');
 
@@ -34,8 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->redirectGuestsTo(
-            fn (Request $request) =>
-                $request->is('admin/*')
+            fn (Request $request) => $request->is('admin/*')
                     ? route('admin.login')
                     : (
                         $request->is('akun/*')
@@ -45,16 +49,14 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $middleware->redirectUsersTo(
-            fn (Request $request) =>
-                $request->is('admin/*') && auth('admin')->check()
+            fn (Request $request) => $request->is('admin/*') && auth('admin')->check()
                     ? route('admin.dashboard')
                     : route('home')
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) =>
-                $request->is('api/*') || $request->expectsJson(),
+            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
     })
     ->create();

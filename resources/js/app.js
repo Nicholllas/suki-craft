@@ -65,7 +65,7 @@ Alpine.data('productForm', (variants = [], recipes = [], bouquetSizes = [], init
         this.variants.push({ label: '', price_adjustment: 0, is_active: true, is_quantity_based: false });
     },
     applyDefaultBouquetSizes() {
-        if (this.bouquetSizes.length > 0 && !window.confirm('Aturan ukuran yang ada akan diganti dengan template S–XXL dan Custom. Lanjutkan?')) {
+        if (this.bouquetSizes.length > 0 && !window.confirm('Aturan ukuran yang ada akan diganti dengan template S–XXL. Lanjutkan?')) {
             return;
         }
 
@@ -75,7 +75,6 @@ Alpine.data('productForm', (variants = [], recipes = [], bouquetSizes = [], init
             { code: 'L', is_active: true, is_custom: false, label: 'Large', max_sheets: 29, min_sheets: 16, service_price: 165000 },
             { code: 'XL', is_active: true, is_custom: false, label: 'Extra Large', max_sheets: 40, min_sheets: 30, service_price: 180000 },
             { code: 'XXL', is_active: true, is_custom: false, label: 'Extra Extra Large', max_sheets: 45, min_sheets: 41, service_price: 250000 },
-            { code: 'CUSTOM', is_active: true, is_custom: true, label: 'Custom', max_sheets: '', min_sheets: 46, service_price: 0 },
         ];
     },
     clearFieldError(element) {

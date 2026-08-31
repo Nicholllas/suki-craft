@@ -21,6 +21,7 @@ class StorefrontController extends Controller
                     'variants:id,product_id,price_adjustment,is_active',
                 ])
                 ->where('is_active', true)
+                ->where('is_custom_request', false)
                 ->whereHas('category', fn ($query) => $query->where('is_active', true))
                 ->orderByDesc('is_featured')
                 ->latest()

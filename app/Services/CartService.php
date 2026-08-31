@@ -35,6 +35,7 @@ class CartService
             }
 
             $variants = $this->resolveVariants($product, $selectedVariants);
+            $this->ensureQuantityUsesCustomRequestWhenRequired($product, $variants, $selectedVariants);
             $bouquetSize = $this->resolveBouquetSize($product, $variants, $selectedVariants);
             $cart = $this->findOrCreateCurrentCart();
             $attributes = $this->customizationAttributes($customizations);
@@ -193,6 +194,23 @@ class CartService
         }
 
         return $variants;
+    }
+
+    private function ensureQuantityUsesCustomRequestWhenRequired(Product $product, Collection $variants, array $selectedVariants): void
+    {
+        $customBouquetCategory = $product->customBouquetCategory;
+
+        if ($customBouquetCategory === null) {
+            return;
+        }
+
+        $quantity = $variants->where('is_quantity_based', true)->sum(fn (ProductVariant $variant): int => $selectedVariants[$variant->id]);
+
+        if ($customBouquetCategory->requiresCustomRequestForQuantity($quantity)) {
+            throw ValidationException::withMessages([
+                'selected_variants' => ["{$customBouquetCategory->quantity_label} {$customBouquetCategory->quote_threshold} ke atas perlu penawaran. Ajukan melalui Request Buket Spesifik."],
+            ]);
+        }
     }
 
     private function resolveBouquetSize(Product $product, Collection $variants, array $selectedVariants): ?ProductBouquetSize

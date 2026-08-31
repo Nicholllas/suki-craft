@@ -1,5 +1,8 @@
 @extends('layouts.store')
 
+@if (app()->isLocale('en'))
+    @include('store.home-en')
+@else
 @section('title', 'Sukicraft.id | Buket Bunga untuk Setiap Cerita')
 @section('description', 'Temukan buket bunga pilihan yang dirangkai dengan penuh cinta untuk setiap momen spesial Anda.')
 
@@ -95,3 +98,4 @@
 
     <section class="bg-rose-500 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"><div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-8 text-center lg:flex-row lg:text-left"><div><p class="text-sm font-semibold uppercase tracking-[0.18em] text-rose-100">Ada pesan yang ingin disampaikan?</p><h2 class="mt-2 font-serif text-4xl font-semibold tracking-tight text-white sm:text-5xl">Biarkan bunga yang bercerita.</h2></div><a href="{{ route('products.index') }}" class="shrink-0 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-rose-600 shadow-lg transition hover:-translate-y-0.5 hover:bg-rose-50">Belanja Sekarang</a></div></section>
 @endsection
+@endif

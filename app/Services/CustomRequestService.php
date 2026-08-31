@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\CustomRequestStatus;
 use App\Models\Admin;
 use App\Models\CartItemGroup;
+use App\Models\CustomBouquetCategory;
 use App\Models\Customer;
 use App\Models\CustomRequest;
 use App\Models\Product;
@@ -33,13 +34,16 @@ class CustomRequestService
         ];
     }
 
-    public function create(Customer $customer, Product $product, array $data, ?UploadedFile $referenceImage = null): CustomRequest
+    public function create(Customer $customer, CustomBouquetCategory $customBouquetCategory, array $data, ?UploadedFile $referenceImage = null): CustomRequest
     {
+        $customBouquetCategory = CustomBouquetCategory::query()
+            ->where('is_active', true)
+            ->findOrFail($customBouquetCategory->id);
         $product = Product::query()
             ->where('is_active', true)
             ->where('is_custom_request', true)
             ->whereHas('category', fn ($query) => $query->where('is_active', true))
-            ->findOrFail($product->id);
+            ->firstOrFail();
         $budgetRange = self::budgetRanges()[$data['budget_range']] ?? null;
 
         if ($budgetRange === null) {
@@ -49,12 +53,14 @@ class CustomRequestService
         $referenceImagePath = $referenceImage?->store('custom-request-references', 'local');
 
         try {
-            return DB::transaction(function () use ($budgetRange, $customer, $data, $product, $referenceImagePath): CustomRequest {
+            return DB::transaction(function () use ($budgetRange, $customer, $customBouquetCategory, $data, $product, $referenceImagePath): CustomRequest {
                 $customRequest = CustomRequest::query()->create([
                     'additional_notes' => $data['additional_notes'] ?? null,
                     'budget_max' => $budgetRange['max'],
                     'budget_min' => $budgetRange['min'],
                     'customer_id' => $customer->id,
+                    'custom_bouquet_category_id' => $customBouquetCategory->id,
+                    'custom_category_name' => $customBouquetCategory->name,
                     'item_source' => $data['item_source'],
                     'needed_date' => $data['needed_date'],
                     'product_id' => $product->id,
@@ -72,11 +78,11 @@ class CustomRequestService
                 $customRequest->histories()->create([
                     'actor_type' => 'customer',
                     'customer_id' => $customer->id,
-                    'note' => 'Permintaan Custom Bouquet dibuat.',
+                    'note' => "Permintaan buket {$customBouquetCategory->name} dibuat.",
                     'status' => CustomRequestStatus::WAITING_REVIEW,
                 ]);
 
-                return $customRequest->load(['items', 'product']);
+                return $customRequest->load(['customBouquetCategory', 'items', 'product']);
             }, attempts: 3);
         } catch (Throwable $exception) {
             if ($referenceImagePath !== null) {
@@ -116,10 +122,10 @@ class CustomRequestService
         }, attempts: 3);
     }
 
-    public function requestRevision(CustomRequest $customRequest, Customer $customer, string $note): CustomRequest
+    public function requestRevision(CustomRequest $customRequest, Customer $customer, string $note, ?int $counterOffer = null): CustomRequest
     {
         $quoteExpired = false;
-        $updatedCustomRequest = DB::transaction(function () use ($customer, $customRequest, $note, &$quoteExpired): ?CustomRequest {
+        $updatedCustomRequest = DB::transaction(function () use ($counterOffer, $customer, $customRequest, $note, &$quoteExpired): ?CustomRequest {
             $customRequest = CustomRequest::query()->whereBelongsTo($customer, 'customer')->lockForUpdate()->findOrFail($customRequest->id);
 
             if ($customRequest->status !== CustomRequestStatus::QUOTATION_SENT) {
@@ -136,7 +142,7 @@ class CustomRequestService
             $customRequest->histories()->create([
                 'actor_type' => 'customer',
                 'customer_id' => $customer->id,
-                'note' => $note,
+                'note' => $counterOffer === null ? $note : 'Usulan harga pelanggan: Rp'.number_format($counterOffer, 0, ',', '.')."\n\n{$note}",
                 'status' => CustomRequestStatus::REVISION_REQUESTED,
             ]);
 

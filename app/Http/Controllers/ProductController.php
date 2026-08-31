@@ -20,8 +20,9 @@ class ProductController extends Controller
             ->get();
 
         $products = Product::query()
-            ->with(['bouquetSizes', 'category', 'images', 'variants'])
+            ->with(['bouquetSizes', 'category', 'customBouquetCategory', 'images', 'variants'])
             ->where('is_active', true)
+            ->where('is_custom_request', false)
             ->whereHas('category', function ($query) {
                 $query->where('is_active', true);
             })
@@ -57,11 +58,12 @@ class ProductController extends Controller
     {
         abort_unless(
             $product->is_active &&
+            ! $product->is_custom_request &&
             $product->category?->is_active,
             404
         );
 
-        $product->load(['bouquetSizes', 'category', 'images', 'variants']);
+        $product->load(['bouquetSizes', 'category', 'customBouquetCategory', 'images', 'variants']);
 
         $reviews = $this->reviewService->getApprovedForProduct($product);
 

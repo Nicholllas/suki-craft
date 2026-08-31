@@ -1,8 +1,11 @@
 @extends('layouts.store')
 
-@section('title', 'Lacak Pesanan | Suki Craft')
+@section('title', app()->isLocale('en') ? 'Track Order | Suki Craft' : 'Lacak Pesanan | Suki Craft')
 
 @section('content')
+    @if (app()->isLocale('en'))
+        @include('tracking.index-en')
+    @else
     <section class="mx-auto max-w-xl px-4 py-12 sm:px-6 sm:py-16">
         <div class="rounded-3xl border border-rose-100 bg-rose-50 px-6 py-8 text-center sm:px-10">
             <div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-white text-rose-500 shadow-sm"><svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-4.5-4.5 4.5 4.5-4.5 4.5M3.75 6.75h10.5m-10.5 10.5h10.5" /></svg></div>
@@ -26,4 +29,5 @@
             <button type="submit" class="mt-6 inline-flex h-12 w-full items-center justify-center rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-600">Lacak pesanan</button>
         </form>
     </section>
+    @endif
 @endsection
