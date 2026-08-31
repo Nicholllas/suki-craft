@@ -21,6 +21,7 @@ class Order extends Model
         'public_token',
         'customer_id',
         'promotion_id',
+        'idempotency_token',
         'customer_name',
         'customer_phone',
         'customer_email',

@@ -31,6 +31,82 @@ Alpine.data('deliverySchedule', (slots, today, currentTime, sameDayPreparationHo
     },
 }));
 
+Alpine.data('checkoutForm', () => ({
+    isSubmitting: false,
+    submitCheckout(event) {
+        if (this.isSubmitting) {
+            event.preventDefault();
+
+            return;
+        }
+
+        this.isSubmitting = true;
+    },
+}));
+
+Alpine.data('checkoutSummary', (initial, validationUrl, csrfToken) => ({
+    code: initial.code ?? '',
+    discount: initial.discount_amount,
+    error: initial.message ?? '',
+    loading: false,
+    promotionType: initial.promotion_type,
+    promotionValue: initial.promotion_value,
+    showItems: window.innerWidth >= 1024,
+    total: initial.total,
+    totalBeforeDiscount: initial.total_before_discount,
+    format(value) {
+        return new Intl.NumberFormat('id-ID').format(value);
+    },
+    resetPricing() {
+        this.discount = 0;
+        this.promotionType = null;
+        this.promotionValue = null;
+        this.total = this.totalBeforeDiscount;
+    },
+    async applyPromotion() {
+        this.loading = true;
+        this.error = '';
+
+        try {
+            const response = await fetch(validationUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    code: this.code,
+                    customer_phone: document.getElementById('customer-phone').value,
+                }),
+            });
+            const payload = await response.text();
+            const data = payload ? JSON.parse(payload) : {};
+
+            if (!response.ok) {
+                this.resetPricing();
+                this.error = data.errors?.promotion_code?.[0] ?? data.message ?? 'Kode promo tidak dapat diterapkan. Silakan coba lagi.';
+
+                return;
+            }
+
+            this.code = data.code;
+            this.discount = data.discount_amount;
+            this.promotionType = data.promotion_type;
+            this.promotionValue = data.promotion_value;
+            this.total = data.total;
+            this.totalBeforeDiscount = data.total_before_discount;
+        } catch (error) {
+            this.resetPricing();
+            this.error = 'Kode promo tidak dapat diterapkan. Muat ulang halaman lalu coba kembali.';
+        } finally {
+            this.loading = false;
+        }
+    },
+}));
+
 Alpine.data('productForm', (variants = [], recipes = [], bouquetSizes = [], initialErrors = {}) => ({
     alertIsOpen: false,
     bouquetSizes: bouquetSizes.map((size) => ({

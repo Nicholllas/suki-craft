@@ -62,7 +62,9 @@ test('a customer can checkout with server-calculated snapshots and view the conf
         ->assertDontSee('sticky bottom-3', false)
         ->assertSee('Biaya jasa merangkai')
         ->assertSee('Varian terpilih')
-        ->assertSee('Total = subtotal buket + biaya pengiriman − potongan promo.');
+        ->assertSee('Total = subtotal buket + biaya pengiriman − potongan promo.')
+        ->assertSee('name="idempotency_token"', false)
+        ->assertSee('submitCheckout', false);
 
     $response = $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData());
     $order = Order::query()->with(['itemGroups.variants', 'statusHistories'])->sole();
@@ -131,6 +133,40 @@ test('checkout snapshots every selected quantity-based variant and keeps the ful
         ->and((float) $order->total)->toBe(288000.0)
         ->and($order->itemGroups->sole()->variants)->toHaveCount(7)
         ->and((float) $order->itemGroups->sole()->variants->sum('line_subtotal'))->toBe(188000.0);
+});
+
+test('repeated checkout submissions with the same idempotency token return the existing order', function () {
+    $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
+        'product_id' => $this->product->id,
+        'bundle_quantity' => 1,
+        'selected_variants' => [$this->variant->id => 1],
+    ])->assertRedirect();
+
+    $checkoutData = checkoutData();
+    $firstResponse = $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), $checkoutData);
+    $order = Order::query()->sole();
+
+    $firstResponse->assertRedirect(route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]));
+
+    $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), $checkoutData)
+        ->assertRedirect(route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]));
+
+    expect(Order::query()->count())->toBe(1);
+});
+
+test('checkout rejects a processed cart when a different submission token is used', function () {
+    $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
+        'product_id' => $this->product->id,
+        'bundle_quantity' => 1,
+        'selected_variants' => [$this->variant->id => 1],
+    ])->assertRedirect();
+
+    $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData())->assertRedirect();
+
+    $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData(['idempotency_token' => fake()->uuid()]))
+        ->assertSessionHasErrors(['cart' => 'Keranjang checkout ini sudah diproses menjadi pesanan. Silakan lanjutkan dari halaman konfirmasi pesanan.']);
+
+    expect(Order::query()->count())->toBe(1);
 });
 
 test('checkout rejects past delivery dates', function () {
@@ -246,6 +282,7 @@ function checkoutData(array $overrides = []): array
         'delivery_address' => 'Jl. Mawar No. 10, Jakarta Selatan',
         'delivery_date' => today()->addDay()->toDateString(),
         'delivery_time_slot' => '12:00-15:00',
+        'idempotency_token' => session('checkout.idempotency_token', fake()->uuid()),
         'notes' => 'Hubungi sebelum tiba.',
         ...$overrides,
     ];

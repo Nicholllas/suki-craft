@@ -23,8 +23,9 @@
             <div class="mt-6 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{{ $errors->first('cart') }}</div>
         @endif
 
-        <form method="POST" action="{{ route('checkout.store') }}" class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start">
+        <form method="POST" action="{{ route('checkout.store') }}" x-data="checkoutForm" x-on:submit="submitCheckout($event)" class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start">
             @csrf
+            <input type="hidden" name="idempotency_token" value="{{ session('checkout.idempotency_token') }}">
 
             <div class="space-y-6">
                 <section x-data="deliverySchedule({{ Illuminate\Support\Js::from($timeSlots) }}, '{{ now('Asia/Jakarta')->toDateString() }}', '{{ now('Asia/Jakarta')->format('H:i') }}', {{ (int) config('delivery.same_day_prep_hours', 3) }}, '{{ old('delivery_date') }}', '{{ old('delivery_time_slot') }}')" class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
@@ -124,9 +125,11 @@
                 </dl>
                 <p class="mt-3 text-xs leading-5 text-stone-500">{{ __('storefront.checkout.total_formula') }}</p>
 
-                <button type="submit" class="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white shadow-lg shadow-rose-200 transition hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2">
-                    {{ __('storefront.checkout.submit') }}
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-5-5 5 5-5 5" /></svg>
+                <button type="submit" x-bind:disabled="isSubmitting" x-bind:aria-busy="isSubmitting" class="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white shadow-lg shadow-rose-200 transition hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70">
+                    <span x-cloak x-show="!isSubmitting">{{ __('storefront.checkout.submit') }}</span>
+                    <span x-cloak x-show="isSubmitting">Memproses pesanan...</span>
+                    <svg x-cloak x-show="isSubmitting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9" class="opacity-25" /><path d="M21 12a9 9 0 0 1-9 9" class="opacity-90" /></svg>
+                    <svg x-cloak x-show="!isSubmitting" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-5-5 5 5-5 5" /></svg>
                 </button>
                 <p class="mt-3 text-center text-xs leading-5 text-stone-400">{{ __('storefront.checkout.payment_note') }}</p>
             </aside>

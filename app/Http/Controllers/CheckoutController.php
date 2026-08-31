@@ -9,6 +9,8 @@ use App\Services\PromotionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CheckoutController extends Controller
@@ -31,6 +33,9 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Tambahkan buket ke keranjang sebelum checkout.');
         }
 
+        if (! $request->session()->has('checkout.idempotency_token')) {
+            $request->session()->put('checkout.idempotency_token', (string) Str::uuid());
+        }
         $cart->load(['itemGroups.bouquetSize', 'itemGroups.customRequest', 'itemGroups.product.category', 'itemGroups.product.images', 'itemGroups.variants.productVariant']);
 
         return view('checkout.index', [
@@ -60,7 +65,7 @@ class CheckoutController extends Controller
         }
 
         $order = $this->orderService->createFromCart($request->validated(), $request->validated('promotion_code') ?: $request->session()->get('checkout.promotion_code'));
-        $request->session()->forget('checkout.promotion_code');
+        $request->session()->forget(['checkout.idempotency_token', 'checkout.promotion_code']);
 
         return redirect()
             ->route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token])

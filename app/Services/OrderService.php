@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\OrderStatus;
 use App\Models\Admin;
+use App\Models\Cart;
 use App\Models\CartItemGroup;
 use App\Models\Order;
 use Illuminate\Support\Facades\DB;
@@ -17,10 +18,27 @@ class OrderService
     public function createFromCart(array $checkoutData, ?string $promotionCode = null): Order
     {
         return DB::transaction(function () use ($checkoutData, $promotionCode) {
+            $existingOrder = $this->existingOrder($checkoutData['idempotency_token']);
+
+            if ($existingOrder) {
+                return $existingOrder;
+            }
+
             $cart = $this->cartService->getCurrentCart();
 
             if (! $cart) {
                 throw $this->emptyCartException();
+            }
+
+            $cart = Cart::query()->lockForUpdate()->findOrFail($cart->id);
+            $existingOrder = $this->existingOrder($checkoutData['idempotency_token']);
+
+            if ($existingOrder) {
+                return $existingOrder;
+            }
+
+            if ($cart->checkout_processed_at !== null) {
+                throw $this->processedCartException();
             }
 
             $cart->load(['itemGroups.customRequest.items', 'itemGroups.product', 'itemGroups.variants.productVariant']);
@@ -48,6 +66,7 @@ class OrderService
                 'delivery_fee' => $deliveryFee,
                 'discount_amount' => $discountAmount,
                 'delivery_time_slot' => $checkoutData['delivery_time_slot'],
+                'idempotency_token' => $checkoutData['idempotency_token'],
                 'notes' => $checkoutData['notes'] ?? null,
                 'order_number' => $this->nextOrderNumber(),
                 'public_token' => (string) Str::uuid(),
@@ -89,6 +108,7 @@ class OrderService
                 'status' => $containsCustomBouquet ? OrderStatus::AWAITING_QUOTE : OrderStatus::PENDING_PAYMENT,
             ]);
 
+            $cart->update(['checkout_processed_at' => now()]);
             $cart->itemGroups()->delete();
 
             return $order;
@@ -125,11 +145,21 @@ class OrderService
         return ValidationException::withMessages(['cart' => 'Keranjang belanja Anda masih kosong.']);
     }
 
+    private function existingOrder(string $idempotencyToken): ?Order
+    {
+        return Order::query()->where('customer_id', auth('customer')->id())->where('idempotency_token', $idempotencyToken)->first();
+    }
+
     private function nextOrderNumber(): string
     {
         $prefix = 'SC-'.now()->format('Ymd');
         $sequence = Order::query()->where('order_number', 'like', $prefix.'-%')->lockForUpdate()->count() + 1;
 
         return sprintf('%s-%04d', $prefix, $sequence);
+    }
+
+    private function processedCartException(): ValidationException
+    {
+        return ValidationException::withMessages(['cart' => 'Keranjang checkout ini sudah diproses menjadi pesanan. Silakan lanjutkan dari halaman konfirmasi pesanan.']);
     }
 }

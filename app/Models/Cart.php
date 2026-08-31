@@ -11,7 +11,12 @@ class Cart extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['customer_id', 'session_id'];
+    protected $fillable = ['checkout_processed_at', 'customer_id', 'session_id'];
+
+    protected function casts(): array
+    {
+        return ['checkout_processed_at' => 'datetime'];
+    }
 
     public function customer(): BelongsTo
     {

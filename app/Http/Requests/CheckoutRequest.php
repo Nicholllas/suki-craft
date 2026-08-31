@@ -23,6 +23,7 @@ class CheckoutRequest extends FormRequest
             'delivery_address' => ['required', 'string', 'max:1000'],
             'delivery_date' => ['required', Rule::date()->format('Y-m-d')->afterOrEqual(Carbon::today('Asia/Jakarta'))],
             'delivery_time_slot' => ['required', 'string', Rule::in($this->deliveryTimeSlots())],
+            'idempotency_token' => ['required', 'uuid'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'promotion_code' => ['nullable', 'string', 'max:50'],
         ];

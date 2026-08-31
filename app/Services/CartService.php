@@ -77,6 +77,7 @@ class CartService
                 ->whereHas('category', fn ($query) => $query->where('is_active', true))
                 ->findOrFail($customRequest->product_id);
             $cart = Cart::query()->firstOrCreate(['customer_id' => $customer->id]);
+            $cart->update(['checkout_processed_at' => null]);
             $existingGroup = $cart->itemGroups()->where('custom_request_id', $customRequest->id)->first();
 
             if ($existingGroup) {
@@ -128,6 +129,7 @@ class CartService
             }
 
             $customerCart = Cart::query()->firstOrCreate(['customer_id' => $customerId]);
+            $customerCart->update(['checkout_processed_at' => null]);
             $customerCart->load('itemGroups.variants');
 
             foreach ($guestCart->itemGroups as $guestGroup) {
@@ -162,7 +164,10 @@ class CartService
 
     private function findOrCreateCurrentCart(): Cart
     {
-        return $this->customerId() ? Cart::query()->firstOrCreate(['customer_id' => $this->customerId()]) : Cart::query()->firstOrCreate(['session_id' => $this->sessionId()]);
+        $cart = $this->customerId() ? Cart::query()->firstOrCreate(['customer_id' => $this->customerId()]) : Cart::query()->firstOrCreate(['session_id' => $this->sessionId()]);
+        $cart->update(['checkout_processed_at' => null]);
+
+        return $cart;
     }
 
     private function resolveVariants(Product $product, array $selectedVariants): Collection

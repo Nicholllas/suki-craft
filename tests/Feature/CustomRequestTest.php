@@ -227,6 +227,7 @@ function customCheckoutData(array $overrides = []): array
         'delivery_address' => 'Jl. Mawar No. 10, Jakarta Selatan',
         'delivery_date' => now('Asia/Jakarta')->addDays(3)->toDateString(),
         'delivery_time_slot' => '12:00-15:00',
+        'idempotency_token' => fake()->uuid(),
         'notes' => 'Hubungi sebelum tiba.',
         ...$overrides,
     ];
