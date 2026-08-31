@@ -23,6 +23,27 @@ return [
         'sign_up' => 'Daftar',
         'sign_out' => 'Keluar',
     ],
+    'auth' => [
+        'forgot_password' => [
+            'title' => 'Lupa Password | Sukicraft.id',
+            'back_to_sign_in' => 'Kembali ke masuk',
+            'eyebrow' => 'Pemulihan akses',
+            'heading' => 'Lupa password?',
+            'description' => 'Masukkan email Anda dan kami akan mengirimkan tautan reset password.',
+            'email' => 'Email',
+            'submit' => 'Kirim tautan reset',
+        ],
+        'reset_password' => [
+            'title' => 'Reset Password | Suki Craft',
+            'eyebrow' => 'Password baru',
+            'heading' => 'Atur password baru',
+            'description' => 'Gunakan password yang kuat untuk menjaga akun Anda.',
+            'email' => 'Email',
+            'password' => 'Password baru',
+            'password_confirmation' => 'Konfirmasi password baru',
+            'submit' => 'Simpan password baru',
+        ],
+    ],
     'actions' => [
         'browse_bouquets' => 'Lihat Buket',
         'view_all_bouquets' => 'Lihat Semua Buket',

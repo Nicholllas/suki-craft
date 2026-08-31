@@ -23,6 +23,27 @@ return [
         'sign_up' => 'Create account',
         'sign_out' => 'Sign out',
     ],
+    'auth' => [
+        'forgot_password' => [
+            'title' => 'Forgot Password | Sukicraft.id',
+            'back_to_sign_in' => 'Back to sign in',
+            'eyebrow' => 'Access recovery',
+            'heading' => 'Forgot your password?',
+            'description' => 'Enter your email and we will send you a password reset link.',
+            'email' => 'Email',
+            'submit' => 'Send reset link',
+        ],
+        'reset_password' => [
+            'title' => 'Reset Password | Suki Craft',
+            'eyebrow' => 'New password',
+            'heading' => 'Set a new password',
+            'description' => 'Use a strong password to keep your account secure.',
+            'email' => 'Email',
+            'password' => 'New password',
+            'password_confirmation' => 'Confirm new password',
+            'submit' => 'Save new password',
+        ],
+    ],
     'actions' => [
         'browse_bouquets' => 'Browse bouquets',
         'view_all_bouquets' => 'View all bouquets',
