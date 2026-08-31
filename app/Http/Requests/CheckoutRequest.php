@@ -39,14 +39,14 @@ class CheckoutRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
-            if ($validator->errors()->has('delivery_date') || $validator->errors()->has('delivery_time_slot')) {
+            if ($this->hasInvalidDeliverySelection($validator)) {
                 return;
             }
 
             $deliveryDate = Carbon::createFromFormat('Y-m-d', (string) $this->input('delivery_date'), 'Asia/Jakarta')->startOfDay();
             $slot = config('delivery.time_slots.'.$this->input('delivery_time_slot'));
 
-            if ($deliveryDate->isToday('Asia/Jakarta') && Carbon::now('Asia/Jakarta')->format('H:i') >= $slot['end_time']) {
+            if ($deliveryDate->isToday('Asia/Jakarta') && Carbon::now('Asia/Jakarta')->greaterThanOrEqualTo($this->sameDayCutoff($deliveryDate, $slot))) {
                 $validator->errors()->add('delivery_time_slot', 'Slot waktu ini sudah tidak tersedia untuk hari ini, silakan pilih slot lain.');
             }
         }];
@@ -68,6 +68,16 @@ class CheckoutRequest extends FormRequest
     private function deliveryTimeSlots(): array
     {
         return array_keys(config('delivery.time_slots', []));
+    }
+
+    private function hasInvalidDeliverySelection(Validator $validator): bool
+    {
+        return $validator->errors()->has('delivery_date') || $validator->errors()->has('delivery_time_slot');
+    }
+
+    private function sameDayCutoff(Carbon $deliveryDate, array $slot): Carbon
+    {
+        return Carbon::parse($deliveryDate->toDateString().' '.$slot['start_time'], 'Asia/Jakarta')->subHours((int) config('delivery.same_day_prep_hours', 3));
     }
 
     private function trimmedInput(string $key): ?string

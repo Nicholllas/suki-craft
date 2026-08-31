@@ -2,6 +2,7 @@
 
 return [
     'flat_fee' => (int) env('DELIVERY_FLAT_FEE', 15000),
+    'same_day_prep_hours' => (int) env('DELIVERY_SAME_DAY_PREP_HOURS', 3),
     'time_slots' => [
         '09:00-12:00' => ['key' => '09:00-12:00', 'label' => 'Pagi, 09.00-12.00', 'start_time' => '09:00', 'end_time' => '12:00'],
         '12:00-15:00' => ['key' => '12:00-15:00', 'label' => 'Siang, 12.00-15.00', 'start_time' => '12:00', 'end_time' => '15:00'],

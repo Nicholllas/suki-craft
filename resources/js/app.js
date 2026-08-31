@@ -6,14 +6,23 @@ import 'sweetalert2/dist/sweetalert2.min.css';
 
 window.Alpine = Alpine;
 
-Alpine.data('deliverySchedule', (slots, today, currentTime, selectedDate, selectedSlot) => ({
+Alpine.data('deliverySchedule', (slots, today, currentTime, sameDayPreparationHours, selectedDate, selectedSlot) => ({
     currentTime,
+    sameDayPreparationHours,
     selectedDate,
     selectedSlot,
     slots,
     today,
     isSlotAvailable(slot) {
-        return this.selectedDate !== this.today || slot.end_time > this.currentTime;
+        if (this.selectedDate !== this.today) {
+            return true;
+        }
+
+        const [startHours, startMinutes] = slot.start_time.split(':').map(Number);
+        const [currentHours, currentMinutes] = this.currentTime.split(':').map(Number);
+        const cutoffMinutes = (startHours * 60) + startMinutes - (this.sameDayPreparationHours * 60);
+
+        return (currentHours * 60) + currentMinutes < cutoffMinutes;
     },
     clearUnavailableSlot() {
         if (this.selectedSlot && !this.isSlotAvailable(this.slots[this.selectedSlot])) {

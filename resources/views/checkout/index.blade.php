@@ -27,7 +27,7 @@
             @csrf
 
             <div class="space-y-6">
-                <section x-data="deliverySchedule({{ Illuminate\Support\Js::from($timeSlots) }}, '{{ now('Asia/Jakarta')->toDateString() }}', '{{ now('Asia/Jakarta')->format('H:i') }}', '{{ old('delivery_date') }}', '{{ old('delivery_time_slot') }}')" class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
+                <section x-data="deliverySchedule({{ Illuminate\Support\Js::from($timeSlots) }}, '{{ now('Asia/Jakarta')->toDateString() }}', '{{ now('Asia/Jakarta')->format('H:i') }}', {{ (int) config('delivery.same_day_prep_hours', 3) }}, '{{ old('delivery_date') }}', '{{ old('delivery_time_slot') }}')" class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
                     <div class="flex items-start gap-3">
                         <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rose-50 text-sm font-bold text-rose-600">1</span>
                         <div><h2 class="font-serif text-2xl font-semibold text-stone-800">{{ __('storefront.checkout.recipient_title') }}</h2><p class="mt-1 text-sm leading-6 text-stone-500">{{ __('storefront.checkout.recipient_intro') }}</p></div>

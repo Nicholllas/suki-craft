@@ -145,8 +145,8 @@ test('checkout rejects past delivery dates', function () {
     expect(Order::query()->doesntExist())->toBeTrue();
 });
 
-test('checkout rejects a delivery slot that has already ended today in Jakarta time', function () {
-    Carbon::setTestNow(Carbon::parse('2026-08-18 14:00', 'Asia/Jakarta'));
+test('checkout rejects a delivery slot after its same-day preparation cutoff in Jakarta time', function () {
+    Carbon::setTestNow(Carbon::parse('2026-08-18 13:00', 'Asia/Jakarta'));
 
     $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
         'product_id' => $this->product->id,
@@ -156,10 +156,44 @@ test('checkout rejects a delivery slot that has already ended today in Jakarta t
 
     $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData([
         'delivery_date' => '2026-08-18',
-        'delivery_time_slot' => '09:00-12:00',
+        'delivery_time_slot' => '12:00-15:00',
     ]))->assertSessionHasErrors(['delivery_time_slot' => 'Slot waktu ini sudah tidak tersedia untuk hari ini, silakan pilih slot lain.']);
 
     expect(Order::query()->doesntExist())->toBeTrue();
+});
+
+test('checkout rejects a same-day slot at its preparation cutoff', function () {
+    Carbon::setTestNow(Carbon::parse('2026-08-18 09:00', 'Asia/Jakarta'));
+
+    $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
+        'product_id' => $this->product->id,
+        'bundle_quantity' => 1,
+        'selected_variants' => [$this->variant->id => 1],
+    ])->assertRedirect();
+
+    $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData([
+        'delivery_date' => '2026-08-18',
+        'delivery_time_slot' => '12:00-15:00',
+    ]))->assertSessionHasErrors('delivery_time_slot');
+
+    expect(Order::query()->doesntExist())->toBeTrue();
+});
+
+test('checkout accepts a same-day slot before its preparation cutoff', function () {
+    Carbon::setTestNow(Carbon::parse('2026-08-18 08:59', 'Asia/Jakarta'));
+
+    $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
+        'product_id' => $this->product->id,
+        'bundle_quantity' => 1,
+        'selected_variants' => [$this->variant->id => 1],
+    ])->assertRedirect();
+
+    $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData([
+        'delivery_date' => '2026-08-18',
+        'delivery_time_slot' => '12:00-15:00',
+    ]))->assertRedirect();
+
+    expect(Order::query()->exists())->toBeTrue();
 });
 
 test('guests are directed to create or sign in before checkout', function () {
