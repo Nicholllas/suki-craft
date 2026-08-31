@@ -52,6 +52,21 @@ class PromotionService
         return min(round($discount, 2), $subtotal);
     }
 
+    public function checkoutPricing(?Promotion $promotion, float $subtotal, float $deliveryFee): array
+    {
+        $discountAmount = $promotion ? $this->calculateDiscount($promotion, $subtotal) : 0;
+        $totalBeforeDiscount = $subtotal + $deliveryFee;
+
+        return [
+            'code' => $promotion?->code,
+            'discount_amount' => $discountAmount,
+            'promotion_type' => $promotion?->type,
+            'promotion_value' => $promotion ? (float) $promotion->value : null,
+            'total' => $totalBeforeDiscount - $discountAmount,
+            'total_before_discount' => $totalBeforeDiscount,
+        ];
+    }
+
     public function applyToOrder(Order $order, Promotion $promotion, float $discountAmount): void
     {
         $order->update(['promotion_id' => $promotion->id, 'discount_amount' => $discountAmount]);

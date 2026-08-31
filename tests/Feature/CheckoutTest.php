@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\OrderItemGroup;
 use App\Models\OrderStatusHistory;
 use App\Models\Product;
+use App\Models\Promotion;
 use Carbon\Carbon;
 
 beforeEach(function () {
@@ -72,6 +73,7 @@ test('a customer can checkout with server-calculated snapshots and view the conf
     $response->assertRedirect(route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]));
     expect($order->status)->toBe(OrderStatus::PENDING_PAYMENT)
         ->and($order->customer_id)->toBe($this->customer->id)
+        ->and($order->customer_phone)->toBe('6281234567890')
         ->and((float) $order->subtotal)->toBe(350000.0)
         ->and((float) $order->delivery_fee)->toBe(20000.0)
         ->and((float) $order->total)->toBe(370000.0)
@@ -100,6 +102,85 @@ test('a customer can checkout with server-calculated snapshots and view the conf
         ->assertSee('Total pembayaran')
         ->assertSee('Konfirmasi via WhatsApp');
     $this->get(route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => fake()->uuid()]))->assertNotFound();
+});
+
+test('checkout stores accepted phone number variants in the canonical format', function (string $phone): void {
+    $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
+        'product_id' => $this->product->id,
+        'bundle_quantity' => 1,
+        'selected_variants' => [$this->variant->id => 1],
+    ])->assertRedirect();
+
+    $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData(['customer_phone' => $phone]))->assertRedirect();
+
+    expect(Order::query()->sole()->customer_phone)->toBe('6281234567890');
+})->with([
+    'local format' => '081234567890',
+    'international format' => '+6281234567890',
+    'international format without plus' => '6281234567890',
+    'separators' => '+62 812-3456 7890',
+]);
+
+test('checkout recomputes and displays the session promotion with server pricing', function () {
+    config(['delivery.flat_fee' => 20000]);
+    $promotion = Promotion::query()->create([
+        'code' => 'HEMAT10',
+        'expires_at' => now()->addDay(),
+        'starts_at' => now()->subDay(),
+        'type' => 'percentage',
+        'value' => 10,
+    ]);
+
+    $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
+        'product_id' => $this->product->id,
+        'bundle_quantity' => 1,
+        'selected_variants' => [$this->variant->id => 1],
+    ])->assertRedirect();
+
+    $this->actingAs($this->customer, 'customer')->withSession(['checkout.promotion_code' => $promotion->code])
+        ->get(route('checkout.index'))
+        ->assertOk()
+        ->assertSee('Promo diterapkan:')
+        ->assertSee('HEMAT10')
+        ->assertSee('10%')
+        ->assertSee('Total sebelum diskon')
+        ->assertSee('Rp195.000')
+        ->assertSee('177.500');
+
+    $this->actingAs($this->customer, 'customer')->postJson(route('checkout.promotions.validate'), [
+        'code' => $promotion->code,
+        'customer_phone' => '6281234567890',
+    ])->assertSuccessful()
+        ->assertJsonPath('discount_amount', 17500)
+        ->assertJsonPath('total', 177500)
+        ->assertJsonPath('total_before_discount', 195000);
+
+    $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData(['promotion_code' => $promotion->code]))->assertRedirect();
+
+    expect((float) Order::query()->sole()->discount_amount)->toBe(17500.0)
+        ->and((float) Order::query()->sole()->total)->toBe(177500.0);
+});
+
+test('checkout removes an invalid promotion from the session on reload', function () {
+    $promotion = Promotion::query()->create([
+        'code' => 'EXPIRED',
+        'expires_at' => now()->subMinute(),
+        'starts_at' => now()->subDay(),
+        'type' => 'fixed',
+        'value' => 10000,
+    ]);
+
+    $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
+        'product_id' => $this->product->id,
+        'bundle_quantity' => 1,
+        'selected_variants' => [$this->variant->id => 1],
+    ])->assertRedirect();
+
+    $this->actingAs($this->customer, 'customer')->withSession(['checkout.promotion_code' => $promotion->code])
+        ->get(route('checkout.index'))
+        ->assertOk()
+        ->assertSee('Promo tidak lagi berlaku.')
+        ->assertSessionMissing('checkout.promotion_code');
 });
 
 test('checkout snapshots every selected quantity-based variant and keeps the full subtotal', function () {

@@ -37,13 +37,16 @@ class CheckoutController extends Controller
             $request->session()->put('checkout.idempotency_token', (string) Str::uuid());
         }
         $cart->load(['itemGroups.bouquetSize', 'itemGroups.customRequest', 'itemGroups.product.category', 'itemGroups.product.images', 'itemGroups.variants.productVariant']);
+        $subtotal = $this->cartService->getTotal();
+        $deliveryFee = (float) config('delivery.flat_fee', 0);
 
         return view('checkout.index', [
             'cart' => $cart,
+            'checkoutPricing' => $this->sessionPromotionPricing($request, $subtotal, $deliveryFee),
             'customer' => $request->user('customer'),
-            'deliveryFee' => (float) config('delivery.flat_fee', 0),
+            'deliveryFee' => $deliveryFee,
             'minimumDeliveryDate' => now('Asia/Jakarta')->toDateString(),
-            'subtotal' => $this->cartService->getTotal(),
+            'subtotal' => $subtotal,
             'timeSlots' => config('delivery.time_slots', []),
         ]);
     }
@@ -83,10 +86,9 @@ class CheckoutController extends Controller
 
         $subtotal = $this->cartService->getTotal();
         $promotion = $this->promotionService->validate($data['code'], $subtotal, $data['customer_phone'] ?? null, $request->user('customer')?->id);
-        $discountAmount = $this->promotionService->calculateDiscount($promotion, $subtotal);
         $request->session()->put('checkout.promotion_code', $promotion->code);
 
-        return response()->json(['code' => $promotion->code, 'discount_amount' => $discountAmount, 'total' => $subtotal + (float) config('delivery.flat_fee', 0) - $discountAmount]);
+        return response()->json($this->promotionService->checkoutPricing($promotion, $subtotal, (float) config('delivery.flat_fee', 0)));
     }
 
     private function redirectToAccountRequirement(): RedirectResponse
@@ -94,5 +96,26 @@ class CheckoutController extends Controller
         redirect()->setIntendedUrl(route('checkout.index'));
 
         return redirect()->route('checkout.require-account');
+    }
+
+    private function sessionPromotionPricing(Request $request, float $subtotal, float $deliveryFee): array
+    {
+        $pricing = $this->promotionService->checkoutPricing(null, $subtotal, $deliveryFee);
+        $promotionCode = $request->session()->get('checkout.promotion_code');
+
+        if (blank($promotionCode)) {
+            return $pricing;
+        }
+
+        try {
+            $customer = $request->user('customer');
+            $promotion = $this->promotionService->validate($promotionCode, $subtotal, $customer?->phone, $customer?->id);
+
+            return $this->promotionService->checkoutPricing($promotion, $subtotal, $deliveryFee);
+        } catch (ValidationException) {
+            $request->session()->forget('checkout.promotion_code');
+
+            return [...$pricing, 'message' => __('storefront.checkout.promo_no_longer_valid')];
+        }
     }
 }

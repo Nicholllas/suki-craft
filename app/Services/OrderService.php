@@ -55,7 +55,7 @@ class OrderService
             }
 
             $promotion = ! $containsCustomBouquet && filled($promotionCode) ? $this->promotionService->validate($promotionCode, $subtotal, $checkoutData['customer_phone'], auth('customer')->id()) : null;
-            $discountAmount = $promotion ? $this->promotionService->calculateDiscount($promotion, $subtotal) : 0;
+            $pricing = $this->promotionService->checkoutPricing($promotion, $subtotal, $deliveryFee);
             $order = Order::query()->create([
                 'customer_id' => auth('customer')->id(),
                 'customer_email' => $checkoutData['customer_email'] ?? null,
@@ -64,7 +64,7 @@ class OrderService
                 'delivery_address' => $checkoutData['delivery_address'],
                 'delivery_date' => $checkoutData['delivery_date'],
                 'delivery_fee' => $deliveryFee,
-                'discount_amount' => $discountAmount,
+                'discount_amount' => $pricing['discount_amount'],
                 'delivery_time_slot' => $checkoutData['delivery_time_slot'],
                 'idempotency_token' => $checkoutData['idempotency_token'],
                 'notes' => $checkoutData['notes'] ?? null,
@@ -72,11 +72,11 @@ class OrderService
                 'public_token' => (string) Str::uuid(),
                 'status' => $containsCustomBouquet ? OrderStatus::AWAITING_QUOTE : OrderStatus::PENDING_PAYMENT,
                 'subtotal' => $subtotal,
-                'total' => $subtotal + $deliveryFee - $discountAmount,
+                'total' => $pricing['total'],
             ]);
 
             if ($promotion) {
-                $this->promotionService->applyToOrder($order, $promotion, $discountAmount);
+                $this->promotionService->applyToOrder($order, $promotion, $pricing['discount_amount']);
             }
 
             foreach ($cart->itemGroups as $cartItemGroup) {
