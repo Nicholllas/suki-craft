@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Customer\Concerns;
 
 use App\Models\Customer;
+use App\Services\PhoneNumberNormalizer;
 use Illuminate\Validation\Rule;
 
 trait InteractsWithCustomerAccountRules
@@ -12,12 +13,19 @@ trait InteractsWithCustomerAccountRules
         return [
             'email' => ['required', 'email', 'max:255', Rule::unique('customers')->ignore($customer?->id)],
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:25', 'regex:/^(?:08[1-9][0-9]{7,11}|\\+628[1-9][0-9]{7,11})$/', Rule::unique('customers')->ignore($customer?->id)],
+            'phone' => ['required', 'string', 'max:25', PhoneNumberNormalizer::validationRule(), Rule::unique('customers')->ignore($customer?->id)],
         ];
     }
 
     protected function accountMessages(): array
     {
-        return ['phone.regex' => 'Gunakan nomor WhatsApp Indonesia dengan format 08xx atau +628xx.'];
+        return ['phone.regex' => 'Gunakan nomor WhatsApp Indonesia dengan format 08xx, +628xx, atau 628xx.'];
+    }
+
+    protected function normalizedPhoneInput(): ?string
+    {
+        $phone = filled($this->phone) ? trim((string) $this->phone) : null;
+
+        return filled($phone) && PhoneNumberNormalizer::isValid($phone) ? PhoneNumberNormalizer::normalize($phone) : $phone;
     }
 }

@@ -30,7 +30,7 @@ class CustomerRegistrationRequest extends FormRequest
         $this->merge([
             'email' => filled($this->email) ? trim((string) $this->email) : null,
             'name' => filled($this->name) ? trim((string) $this->name) : null,
-            'phone' => filled($this->phone) ? trim((string) $this->phone) : null,
+            'phone' => $this->normalizedPhoneInput(),
         ]);
     }
 }

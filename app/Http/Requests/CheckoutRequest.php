@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\PhoneNumberNormalizer;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -19,7 +20,7 @@ class CheckoutRequest extends FormRequest
         return [
             'customer_email' => ['nullable', 'email', 'max:255'],
             'customer_name' => ['required', 'string', 'max:100'],
-            'customer_phone' => ['required', 'string', 'regex:/^(?:08[1-9][0-9]{7,11}|\\+628[1-9][0-9]{7,11})$/'],
+            'customer_phone' => ['required', 'string', 'max:25', PhoneNumberNormalizer::validationRule()],
             'delivery_address' => ['required', 'string', 'max:1000'],
             'delivery_date' => ['required', Rule::date()->format('Y-m-d')->afterOrEqual(Carbon::today('Asia/Jakarta'))],
             'delivery_time_slot' => ['required', 'string', Rule::in($this->deliveryTimeSlots())],
@@ -32,7 +33,7 @@ class CheckoutRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'customer_phone.regex' => 'Gunakan nomor telepon Indonesia dengan format 08xx atau +628xx.',
+            'customer_phone.regex' => 'Gunakan nomor telepon Indonesia dengan format 08xx, +628xx, atau 628xx.',
             'delivery_date.after_or_equal' => 'Tanggal pengiriman tidak boleh sebelum hari ini.',
         ];
     }
@@ -64,6 +65,17 @@ class CheckoutRequest extends FormRequest
             'notes' => $this->trimmedInput('notes'),
             'promotion_code' => $this->trimmedInput('promotion_code'),
         ]);
+    }
+
+    public function validated($key = null, $default = null): mixed
+    {
+        $validated = parent::validated();
+
+        if (array_key_exists('customer_phone', $validated)) {
+            $validated['customer_phone'] = PhoneNumberNormalizer::normalize($validated['customer_phone']);
+        }
+
+        return data_get($validated, $key, $default);
     }
 
     private function deliveryTimeSlots(): array

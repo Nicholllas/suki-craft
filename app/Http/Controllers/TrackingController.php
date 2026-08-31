@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\TrackOrderRequest;
 use App\Models\Order;
+use App\Services\PhoneNumberNormalizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -20,9 +21,10 @@ class TrackingController extends Controller
     public function store(TrackOrderRequest $request): RedirectResponse
     {
         $data = $request->validated();
+        $phone = PhoneNumberNormalizer::normalize($data['phone']);
         $order = Order::query()
             ->where('order_number', $data['order_number'])
-            ->where('customer_phone', $data['phone'])
+            ->whereIn('customer_phone', PhoneNumberNormalizer::equivalentNumbers($phone))
             ->first();
 
         if (! $order) {

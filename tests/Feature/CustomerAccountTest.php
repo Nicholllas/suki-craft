@@ -41,6 +41,7 @@ test('a guest can register a customer account and return to their intended check
     $customer = Customer::query()->sole();
 
     expect($customer->name)->toBe('Nadia Putri')
+        ->and($customer->phone)->toBe('6281234567890')
         ->and(Hash::check('password', $customer->password))->toBeTrue();
     $this->assertAuthenticatedAs($customer, 'customer');
     $this->assertGuest('web');
@@ -57,7 +58,13 @@ test('a customer can sign in with email or WhatsApp number', function (string $l
         ->assertRedirect(route('checkout.index'));
 
     $this->assertAuthenticatedAs($customer, 'customer');
-})->with(['email' => 'nadia@example.com', 'WhatsApp number' => '081234567890']);
+})->with([
+    'email' => 'nadia@example.com',
+    'local WhatsApp number' => '081234567890',
+    'international WhatsApp number' => '+6281234567890',
+    'international WhatsApp number without plus' => '6281234567890',
+    'WhatsApp number with separators' => '+62 812-3456 7890',
+]);
 
 test('a guest cart is merged after the session ID is regenerated', function () {
     $customer = Customer::factory()->create();
@@ -84,7 +91,7 @@ test('a customer can update their profile and password', function () {
     $this->actingAs($customer, 'customer')->put(route('customer.profile.update'), [
         'email' => 'baru@example.com',
         'name' => 'Nadia Baru',
-        'phone' => '081234567891',
+        'phone' => '08212618914',
         'address' => 'Jl. Melati No. 12, Jakarta Selatan 12110',
     ])->assertSessionHas('success');
     $this->actingAs($customer, 'customer')->put(route('customer.profile.password.update'), [
@@ -97,6 +104,7 @@ test('a customer can update their profile and password', function () {
 
     expect($customer->email)->toBe('baru@example.com')
         ->and($customer->name)->toBe('Nadia Baru')
+        ->and($customer->phone)->toBe('628212618914')
         ->and($customer->address)->toBe('Jl. Melati No. 12, Jakarta Selatan 12110')
         ->and(Hash::check('password-baru', $customer->password))->toBeTrue();
 });

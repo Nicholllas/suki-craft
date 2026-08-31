@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Customer\Auth;
 
+use App\Services\PhoneNumberNormalizer;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -50,16 +51,26 @@ class CustomerLoginRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge(['login' => filled($this->login) ? trim((string) $this->login) : null]);
+        $login = filled($this->login) ? trim((string) $this->login) : null;
+
+        $this->merge([
+            'login' => filled($login) && ! filter_var($login, FILTER_VALIDATE_EMAIL) && PhoneNumberNormalizer::isValid($login)
+                ? PhoneNumberNormalizer::normalize($login)
+                : $login,
+        ]);
     }
 
     private function credentials(): array
     {
-        return filter_var($this->login, FILTER_VALIDATE_EMAIL) ? ['email' => $this->login, 'password' => $this->password] : ['phone' => $this->login, 'password' => $this->password];
+        return filter_var($this->login, FILTER_VALIDATE_EMAIL)
+            ? ['email' => $this->login, 'password' => $this->password]
+            : ['phone' => PhoneNumberNormalizer::equivalentNumbers($this->login), 'password' => $this->password];
     }
 
     private function throttleKey(): string
     {
-        return 'customer|'.Str::transliterate(Str::lower($this->string('login')).'|'.$this->ip());
+        $login = filter_var($this->login, FILTER_VALIDATE_EMAIL) ? Str::lower($this->string('login')) : PhoneNumberNormalizer::normalize($this->login);
+
+        return 'customer|'.Str::transliterate($login.'|'.$this->ip());
     }
 }

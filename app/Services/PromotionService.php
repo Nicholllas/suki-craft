@@ -55,12 +55,12 @@ class PromotionService
     public function applyToOrder(Order $order, Promotion $promotion, float $discountAmount): void
     {
         $order->update(['promotion_id' => $promotion->id, 'discount_amount' => $discountAmount]);
-        $promotion->usages()->create(['order_id' => $order->id, 'customer_id' => $order->customer_id, 'customer_phone' => $this->normalizePhone($order->customer_phone)]);
+        $promotion->usages()->create(['order_id' => $order->id, 'customer_id' => $order->customer_id, 'customer_phone' => PhoneNumberNormalizer::normalize($order->customer_phone)]);
     }
 
     private function usageCountForCustomer(Promotion $promotion, ?string $customerPhone, ?int $customerId): int
     {
-        $phone = $this->normalizePhone($customerPhone);
+        $phone = filled($customerPhone) ? PhoneNumberNormalizer::normalize($customerPhone) : null;
         if (! $customerId && ! $phone) {
             throw $this->exception('Masukkan nomor WhatsApp untuk menggunakan kode promo.');
         }
@@ -73,17 +73,6 @@ class PromotionService
                 $query->{$customerId ? 'orWhere' : 'where'}('customer_phone', $phone);
             }
         })->count();
-    }
-
-    private function normalizePhone(?string $phone): ?string
-    {
-        if (blank($phone)) {
-            return null;
-        }
-
-        $normalized = preg_replace('/\D+/', '', $phone);
-
-        return str_starts_with($normalized, '62') ? '0'.substr($normalized, 2) : $normalized;
     }
 
     private function exception(string $message): ValidationException

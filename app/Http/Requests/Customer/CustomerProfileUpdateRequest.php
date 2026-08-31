@@ -33,7 +33,7 @@ class CustomerProfileUpdateRequest extends FormRequest
             'email' => filled($this->email) ? trim((string) $this->email) : null,
             'address' => filled($this->address) ? trim((string) $this->address) : null,
             'name' => filled($this->name) ? trim((string) $this->name) : null,
-            'phone' => filled($this->phone) ? trim((string) $this->phone) : null,
+            'phone' => $this->normalizedPhoneInput(),
         ]);
     }
 }

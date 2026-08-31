@@ -10,12 +10,12 @@ use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Models\Admin;
 use App\Models\Order;
 use App\Services\OrderService;
+use App\Services\PhoneNumberNormalizer;
 use App\Services\QuoteService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -109,14 +109,10 @@ class OrderController extends Controller
             return null;
         }
 
-        $phone = Str::of((string) $order->customer_phone)->replaceMatches('/\D+/', '')->toString();
+        $phone = PhoneNumberNormalizer::normalize((string) $order->customer_phone);
 
         if (blank($phone)) {
             return null;
-        }
-
-        if (str_starts_with($phone, '0')) {
-            $phone = '62'.substr($phone, 1);
         }
 
         $approvalUrl = route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]);

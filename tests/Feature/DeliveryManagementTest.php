@@ -78,6 +78,7 @@ test('the delivery schedule lists confirmed orders for the selected date', funct
 test('tracking requires the order number and checkout phone number to match', function () {
     $order = Order::factory()->create([
         'cancellation_reason' => 'Penerima tidak dapat dihubungi.',
+        'customer_phone' => '6281234567890',
         'status' => OrderStatus::CANCELLED,
     ]);
     $order->statusHistories()->create([
@@ -87,7 +88,7 @@ test('tracking requires the order number and checkout phone number to match', fu
 
     $this->post(route('tracking.store'), [
         'order_number' => $order->order_number,
-        'phone' => $order->customer_phone,
+        'phone' => '+62 812-3456 7890',
     ])->assertRedirect(route('tracking.show', $order));
 
     $this->get(route('tracking.show', $order))
