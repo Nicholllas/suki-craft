@@ -80,13 +80,13 @@ class AuthController extends Controller
             report($exception);
 
             return back()->withInput($request->only('email'))->withErrors([
-                'email' => 'Kami belum dapat mengirim tautan reset password. Silakan coba lagi nanti.',
+                'email' => __('store.validation.messages.reset_email_failed'),
             ]);
         }
 
         return $status === Password::RESET_LINK_SENT
             ? back()->with('status', 'Jika email terdaftar, tautan reset password telah dikirim.')
-            : back()->withInput($request->only('email'))->withErrors(['email' => 'Kami belum dapat mengirim tautan reset password.']);
+            : back()->withInput($request->only('email'))->withErrors(['email' => __('store.validation.messages.reset_email_failed')]);
     }
 
     public function createNewPassword(Request $request, string $token): View
@@ -103,6 +103,6 @@ class AuthController extends Controller
 
         return $status === Password::PASSWORD_RESET
             ? redirect()->route('customer.login')->with('status', 'Password berhasil diatur ulang. Silakan masuk.')
-            : back()->withInput($request->only('email'))->withErrors(['email' => 'Tautan reset password tidak valid atau telah kedaluwarsa.']);
+            : back()->withInput($request->only('email'))->withErrors(['email' => __('store.validation.messages.reset_link_invalid')]);
     }
 }

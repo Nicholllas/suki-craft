@@ -16,7 +16,7 @@
         $customBouquetCategory = $product->customBouquetCategory;
         $customRequestUrl = $customBouquetCategory ? route('custom-requests.create', ['category' => $customBouquetCategory->slug]) : null;
         $bouquetSizeOptions = $bouquetSizes->map(fn ($size) => [
-            'label' => $size->label,
+            'code' => $size->code,
             'maxSheets' => $size->max_sheets,
             'minSheets' => $size->min_sheets,
             'rangeLabel' => $size->range_label,
@@ -123,25 +123,26 @@
                 </div>
 
                 @if($bouquetSizes->isNotEmpty())
-                    <section class="mt-7 rounded-2xl border border-rose-100 bg-rose-50/60 p-4">
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <p class="text-sm font-semibold text-stone-800">{{ __('product.bouquet_size') }}</p>
-                            </div>
+                    <section class="mt-6 rounded-xl border border-stone-200 bg-white p-3 sm:p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <p class="text-sm font-semibold text-stone-800">{{ __('product.bouquet_size') }}</p>
                             <template x-if="selectedBouquetSize()">
-                                <div class="rounded-xl bg-white px-3 py-2 text-right shadow-sm">
-                                    <p class="text-xs font-semibold text-rose-600" x-text="`${selectedBouquetSize().label} · ${moneySheetCount()} {{ __('product.sheets', ['count' => '']).'' }}`"></p>
-                                    <p x-show="!requiresCustomRequest()" class="mt-1 text-xs text-stone-600">{{ __('product.service_price') }}<span x-text="formatPrice(servicePrice())"></span></p>
-                                    <p x-show="requiresCustomRequest()" class="mt-1 text-xs text-rose-600">{{ __('product.continue_custom_request') }}</p>
+                                <div class="flex items-center gap-1.5 text-xs text-stone-500">
+                                    <span class="inline-flex min-w-7 items-center justify-center rounded-md bg-rose-500 px-1.5 py-1 font-bold text-white" x-text="selectedBouquetSize().code"></span>
+                                    <span x-text="`${moneySheetCount()} {{ __('product.sheets', ['count' => '']).'' }}`"></span>
+                                    <span x-show="!requiresCustomRequest()" class="text-stone-300" aria-hidden="true">·</span>
+                                    <span x-show="!requiresCustomRequest()">{{ __('product.service_price') }}<span class="font-semibold text-stone-700" x-text="formatPrice(servicePrice())"></span></span>
+                                    <span x-show="requiresCustomRequest()" class="font-semibold text-rose-600">{{ __('product.continue_custom_request') }}</span>
                                 </div>
                             </template>
                         </div>
-                        <p x-cloak x-show="!selectedBouquetSize()" class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">{{ __('product.custom_request_hint') }}</p>
-                        <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                        <p x-cloak x-show="!selectedBouquetSize()" class="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">{{ __('product.custom_request_hint') }}</p>
+                        <div class="mt-3 grid grid-cols-3 gap-1.5 sm:grid-cols-5">
                             @foreach($bouquetSizes as $size)
-                                <div :class="selectedBouquetSize()?.label === @js($size->label) ? 'border-rose-300 bg-white ring-1 ring-rose-200' : 'border-transparent bg-white/70'" class="rounded-xl border px-3 py-2 text-xs text-stone-600">
-                                    <span class="font-semibold text-stone-800">{{ $size->label }}</span> · {{ $size->range_label }}
-                                    <span>· {{ __('product.service_price') }}{{ number_format($size->service_price, 0, app()->isLocale('en') ? '.' : ',', app()->isLocale('en') ? ',' : '.') }}</span>
+                                <div :class="selectedBouquetSize()?.code === @js($size->code) ? 'border-rose-400 bg-rose-50 ring-1 ring-rose-100' : 'border-stone-200 bg-stone-50/70'" :aria-current="selectedBouquetSize()?.code === @js($size->code) ? 'true' : null" class="rounded-lg border px-2 py-2 text-center transition">
+                                    <p class="text-sm font-bold text-stone-800">{{ $size->code }}</p>
+                                    <p class="mt-0.5 whitespace-nowrap text-[10px] text-stone-500">{{ $size->range_label }}</p>
+                                    <p class="mt-0.5 whitespace-nowrap text-[10px] font-medium text-stone-600">Rp{{ number_format($size->service_price, 0, app()->isLocale('en') ? '.' : ',', app()->isLocale('en') ? ',' : '.') }}</p>
                                 </div>
                             @endforeach
                         </div>

@@ -45,13 +45,13 @@ class QuoteService
             $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
 
             if ($lockedOrder->status !== OrderStatus::AWAITING_APPROVAL) {
-                throw ValidationException::withMessages(['quote' => 'Penawaran ini tidak lagi dapat disetujui.']);
+                throw ValidationException::withMessages(['quote' => __('store.validation.messages.quote_approval_unavailable')]);
             }
 
             if ($this->quoteHasExpired($lockedOrder)) {
                 $this->expireQuote($lockedOrder);
 
-                throw ValidationException::withMessages(['quote' => 'Masa berlaku penawaran telah berakhir. Silakan hubungi admin untuk penawaran baru.']);
+                throw ValidationException::withMessages(['quote' => __('store.validation.messages.quote_expired')]);
             }
 
             $lockedOrder->update([

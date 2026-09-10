@@ -13,13 +13,6 @@ enum CustomRequestStatus: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::WAITING_REVIEW => 'Menunggu ditinjau',
-            self::QUOTATION_SENT => 'Penawaran dikirim',
-            self::REVISION_REQUESTED => 'Revisi diminta',
-            self::REJECTED => 'Tidak dapat dipenuhi',
-            self::EXPIRED => 'Penawaran kedaluwarsa',
-            self::CONVERTED_TO_CART => 'Masuk keranjang',
-        };
+        return __('storefront.custom_request_status.'.$this->value);
     }
 }

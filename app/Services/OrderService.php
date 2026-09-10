@@ -51,7 +51,7 @@ class OrderService
             $subtotal = $cart->itemGroups->sum(fn (CartItemGroup $group): float => $group->subtotal);
             $deliveryFee = (float) config('delivery.flat_fee', 0);
             if ($containsCustomBouquet && filled($promotionCode)) {
-                throw ValidationException::withMessages(['promotion_code' => 'Promo belum dapat digunakan untuk pesanan custom.']);
+                throw ValidationException::withMessages(['promotion_code' => __('store.validation.messages.custom_order_promotion_unavailable')]);
             }
 
             $promotion = ! $containsCustomBouquet && filled($promotionCode) ? $this->promotionService->validate($promotionCode, $subtotal, $checkoutData['customer_phone'], auth('customer')->id()) : null;
@@ -142,7 +142,7 @@ class OrderService
 
     private function emptyCartException(): ValidationException
     {
-        return ValidationException::withMessages(['cart' => 'Keranjang belanja Anda masih kosong.']);
+        return ValidationException::withMessages(['cart' => __('store.validation.messages.promotion_cart_empty')]);
     }
 
     private function existingOrder(string $idempotencyToken): ?Order
@@ -160,6 +160,6 @@ class OrderService
 
     private function processedCartException(): ValidationException
     {
-        return ValidationException::withMessages(['cart' => 'Keranjang checkout ini sudah diproses menjadi pesanan. Silakan lanjutkan dari halaman konfirmasi pesanan.']);
+        return ValidationException::withMessages(['cart' => __('store.validation.messages.checkout_cart_processed')]);
     }
 }

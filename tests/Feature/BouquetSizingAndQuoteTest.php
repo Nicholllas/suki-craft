@@ -37,7 +37,8 @@ test('product page renders one automatic bouquet size panel with its configured 
     $response = $this->get(route('products.show', $this->product));
 
     $response->assertOk()
-        ->assertSee('Medium')
+        ->assertSee('>M<', false)
+        ->assertDontSee('Medium')
         ->assertSee('servicePrice');
 
     expect(substr_count($response->getContent(), 'Ukuran Buket'))->toBe(1);

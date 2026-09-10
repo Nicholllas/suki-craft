@@ -22,7 +22,7 @@ class CartService
     public function addToCart(Product $product, array $selectedVariants, int $bundleQuantity, array $customizations = []): CartItemGroup
     {
         if ($bundleQuantity < 1 || $bundleQuantity > 99) {
-            throw ValidationException::withMessages(['bundle_quantity' => ['Jumlah buket harus antara 1 dan 99.']]);
+            throw ValidationException::withMessages(['bundle_quantity' => [__('store.validation.messages.cart_bundle_quantity')]]);
         }
 
         $selectedVariants = collect($selectedVariants)->mapWithKeys(fn ($quantity, $variantId): array => [(int) $variantId => (int) $quantity])->all();
@@ -31,7 +31,7 @@ class CartService
             $product = Product::query()->where('is_active', true)->whereHas('category', fn ($query) => $query->where('is_active', true))->findOrFail($product->id);
 
             if ($product->is_custom_request) {
-                throw ValidationException::withMessages(['product' => ['Produk ini hanya dapat dipesan melalui formulir Custom Bouquet.']]);
+                throw ValidationException::withMessages(['product' => [__('store.validation.messages.cart_custom_request_only')]]);
             }
 
             $variants = $this->resolveVariants($product, $selectedVariants);
@@ -68,7 +68,7 @@ class CartService
                 ->findOrFail($customRequest->id);
 
             if ($customRequest->quoted_price === null) {
-                throw ValidationException::withMessages(['custom_request' => ['Penawaran harga belum tersedia.']]);
+                throw ValidationException::withMessages(['custom_request' => [__('store.validation.messages.custom_quote_unavailable')]]);
             }
 
             $product = Product::query()
@@ -101,7 +101,7 @@ class CartService
         $group = $this->currentCartItemGroup($cartItemGroupId);
 
         if ($group->custom_request_id !== null) {
-            throw ValidationException::withMessages(['bundle_quantity' => ['Jumlah Custom Bouquet mengikuti penawaran dan tidak dapat diubah.']]);
+            throw ValidationException::withMessages(['bundle_quantity' => [__('store.validation.messages.custom_quantity_locked')]]);
         }
 
         $group->update(['bundle_quantity' => $quantity]);
@@ -175,26 +175,26 @@ class CartService
         $selectedVariants = collect($selectedVariants)->mapWithKeys(fn ($quantity, $variantId): array => [(int) $variantId => (int) $quantity]);
 
         if (! $product->allow_multiple_variants && $selectedVariants->count() > 1) {
-            throw ValidationException::withMessages(['selected_variants' => ['Produk ini hanya dapat menggunakan satu varian.']]);
+            throw ValidationException::withMessages(['selected_variants' => [__('store.validation.messages.cart_single_variant')]]);
         }
 
         $variants = $product->variants()->where('is_active', true)->whereIn('id', $selectedVariants->keys())->get();
 
         if ($variants->count() !== $selectedVariants->count()) {
-            throw ValidationException::withMessages(['selected_variants' => ['Salah satu varian yang dipilih tidak tersedia.']]);
+            throw ValidationException::withMessages(['selected_variants' => [__('store.validation.messages.cart_variant_unavailable')]]);
         }
 
         if ($product->variants()->where('is_active', true)->exists() && $variants->isEmpty()) {
-            throw ValidationException::withMessages(['selected_variants' => ['Pilih varian produk terlebih dahulu.']]);
+            throw ValidationException::withMessages(['selected_variants' => [__('store.validation.messages.cart_variant_required')]]);
         }
 
         foreach ($variants as $variant) {
             if ($variant->is_quantity_based && $selectedVariants[$variant->id] <= 0) {
-                throw ValidationException::withMessages(['selected_variants' => ['Jumlah varian harus lebih dari nol.']]);
+                throw ValidationException::withMessages(['selected_variants' => [__('store.validation.messages.cart_variant_positive')]]);
             }
 
             if (! $variant->is_quantity_based && $selectedVariants[$variant->id] !== 1) {
-                throw ValidationException::withMessages(['selected_variants' => ['Jumlah untuk varian ini harus satu per buket.']]);
+                throw ValidationException::withMessages(['selected_variants' => [__('store.validation.messages.cart_variant_one')]]);
             }
         }
 
@@ -213,7 +213,7 @@ class CartService
 
         if ($customBouquetCategory->requiresCustomRequestForQuantity($quantity)) {
             throw ValidationException::withMessages([
-                'selected_variants' => ["{$customBouquetCategory->quantity_label} {$customBouquetCategory->quote_threshold} ke atas perlu penawaran. Ajukan melalui Request Buket Spesifik."],
+                'selected_variants' => [__('store.validation.messages.cart_custom_quantity_quote', ['label' => $customBouquetCategory->quantity_label, 'threshold' => $customBouquetCategory->quote_threshold])],
             ]);
         }
     }
@@ -230,7 +230,7 @@ class CartService
         $bouquetSize = $sizes->first(fn (ProductBouquetSize $size): bool => $size->appliesToSheetCount($sheetCount));
 
         if (! $bouquetSize) {
-            throw ValidationException::withMessages(['selected_variants' => ['Jumlah lembar uang belum sesuai dengan ukuran buket yang tersedia.']]);
+            throw ValidationException::withMessages(['selected_variants' => [__('store.validation.messages.cart_bouquet_size_unavailable')]]);
         }
 
         return $bouquetSize;

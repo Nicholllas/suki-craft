@@ -280,7 +280,7 @@ test('checkout rejects a delivery slot after its same-day preparation cutoff in 
 });
 
 test('checkout rejects a same-day slot at its preparation cutoff', function () {
-    Carbon::setTestNow(Carbon::parse('2026-08-18 09:00', 'Asia/Jakarta'));
+    Carbon::setTestNow(Carbon::parse('2026-08-18 08:00', 'Asia/Jakarta'));
 
     $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
         'product_id' => $this->product->id,
@@ -297,7 +297,7 @@ test('checkout rejects a same-day slot at its preparation cutoff', function () {
 });
 
 test('checkout accepts a same-day slot before its preparation cutoff', function () {
-    Carbon::setTestNow(Carbon::parse('2026-08-18 08:59', 'Asia/Jakarta'));
+    Carbon::setTestNow(Carbon::parse('2026-08-18 07:59', 'Asia/Jakarta'));
 
     $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
         'product_id' => $this->product->id,

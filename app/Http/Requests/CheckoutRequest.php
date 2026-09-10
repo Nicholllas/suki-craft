@@ -33,8 +33,8 @@ class CheckoutRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'customer_phone.regex' => 'Gunakan nomor telepon Indonesia dengan format 08xx, +628xx, atau 628xx.',
-            'delivery_date.after_or_equal' => 'Tanggal pengiriman tidak boleh sebelum hari ini.',
+            'customer_phone.regex' => __('store.validation.messages.phone_format'),
+            'delivery_date.after_or_equal' => __('store.validation.messages.delivery_date_past'),
         ];
     }
 
@@ -49,7 +49,7 @@ class CheckoutRequest extends FormRequest
             $slot = config('delivery.time_slots.'.$this->input('delivery_time_slot'));
 
             if ($deliveryDate->isToday('Asia/Jakarta') && Carbon::now('Asia/Jakarta')->greaterThanOrEqualTo($this->sameDayCutoff($deliveryDate, $slot))) {
-                $validator->errors()->add('delivery_time_slot', 'Slot waktu ini sudah tidak tersedia untuk hari ini, silakan pilih slot lain.');
+                $validator->errors()->add('delivery_time_slot', __('store.validation.messages.delivery_slot_unavailable'));
             }
         }];
     }
@@ -90,7 +90,7 @@ class CheckoutRequest extends FormRequest
 
     private function sameDayCutoff(Carbon $deliveryDate, array $slot): Carbon
     {
-        return Carbon::parse($deliveryDate->toDateString().' '.$slot['start_time'], 'Asia/Jakarta')->subHours((int) config('delivery.same_day_prep_hours', 3));
+        return Carbon::parse($deliveryDate->toDateString().' '.$slot['start_time'], 'Asia/Jakarta')->subHours((int) config('delivery.same_day_prep_hours', 4));
     }
 
     private function trimmedInput(string $key): ?string

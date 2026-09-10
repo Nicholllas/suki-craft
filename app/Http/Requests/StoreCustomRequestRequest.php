@@ -46,17 +46,17 @@ class StoreCustomRequestRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'additional_notes' => 'catatan tambahan',
-            'budget_range' => 'rentang anggaran',
-            'custom_bouquet_category_id' => 'kategori buket',
-            'item_source' => 'sumber isi buket',
-            'items' => 'daftar isi buket',
-            'items.*.name' => 'nama isi buket',
-            'items.*.notes' => 'catatan isi buket',
-            'items.*.quantity' => 'jumlah isi buket',
-            'needed_date' => 'tanggal dibutuhkan',
-            'reference_image' => 'foto referensi',
-            'wrapping_preference' => 'preferensi wrapping',
+            'additional_notes' => __('store.validation.attributes.custom_request.additional_notes'),
+            'budget_range' => __('store.validation.attributes.custom_request.budget_range'),
+            'custom_bouquet_category_id' => __('store.validation.attributes.custom_request.custom_bouquet_category_id'),
+            'item_source' => __('store.validation.attributes.custom_request.item_source'),
+            'items' => __('store.validation.attributes.custom_request.items'),
+            'items.*.name' => __('store.validation.attributes.custom_request.item_name'),
+            'items.*.notes' => __('store.validation.attributes.custom_request.item_notes'),
+            'items.*.quantity' => __('store.validation.attributes.custom_request.item_quantity'),
+            'needed_date' => __('store.validation.attributes.custom_request.needed_date'),
+            'reference_image' => __('store.validation.attributes.custom_request.reference_image'),
+            'wrapping_preference' => __('store.validation.attributes.custom_request.wrapping_preference'),
         ];
     }
 

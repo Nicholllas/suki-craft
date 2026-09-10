@@ -42,12 +42,11 @@ class CustomRequestService
         $product = Product::query()
             ->where('is_active', true)
             ->where('is_custom_request', true)
-            ->whereHas('category', fn ($query) => $query->where('is_active', true))
             ->firstOrFail();
         $budgetRange = self::budgetRanges()[$data['budget_range']] ?? null;
 
         if ($budgetRange === null) {
-            throw ValidationException::withMessages(['budget_range' => ['Rentang anggaran tidak valid.']]);
+            throw ValidationException::withMessages(['budget_range' => [__('store.validation.messages.custom_budget_invalid')]]);
         }
 
         $referenceImagePath = $referenceImage?->store('custom-request-references', 'local');
@@ -129,7 +128,7 @@ class CustomRequestService
             $customRequest = CustomRequest::query()->whereBelongsTo($customer, 'customer')->lockForUpdate()->findOrFail($customRequest->id);
 
             if ($customRequest->status !== CustomRequestStatus::QUOTATION_SENT) {
-                throw ValidationException::withMessages(['custom_request' => ['Revisi hanya dapat diminta setelah penawaran dikirim.']]);
+                throw ValidationException::withMessages(['custom_request' => [__('store.validation.messages.custom_revision_unavailable')]]);
             }
 
             if ($this->expireLockedRequestIfNeeded($customRequest)) {
@@ -150,7 +149,7 @@ class CustomRequestService
         }, attempts: 3);
 
         if ($quoteExpired) {
-            throw ValidationException::withMessages(['custom_request' => ['Penawaran ini sudah kedaluwarsa.']]);
+            throw ValidationException::withMessages(['custom_request' => [__('store.validation.messages.custom_quote_expired')]]);
         }
 
         return $updatedCustomRequest;
@@ -184,7 +183,7 @@ class CustomRequestService
             $customRequest = CustomRequest::query()->whereBelongsTo($customer, 'customer')->lockForUpdate()->findOrFail($customRequest->id);
 
             if ($customRequest->status !== CustomRequestStatus::QUOTATION_SENT) {
-                throw ValidationException::withMessages(['custom_request' => ['Penawaran ini tidak dapat ditambahkan ke keranjang.']]);
+                throw ValidationException::withMessages(['custom_request' => [__('store.validation.messages.custom_approval_unavailable')]]);
             }
 
             if ($this->expireLockedRequestIfNeeded($customRequest)) {
@@ -210,7 +209,7 @@ class CustomRequestService
         }, attempts: 3);
 
         if ($quoteExpired) {
-            throw ValidationException::withMessages(['custom_request' => ['Penawaran ini sudah kedaluwarsa.']]);
+            throw ValidationException::withMessages(['custom_request' => [__('store.validation.messages.custom_quote_expired')]]);
         }
 
         return $cartItemGroup;

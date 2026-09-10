@@ -34,11 +34,11 @@ class ReviewService
                 $lockedOrderItemGroup = OrderItemGroup::query()->with('order')->lockForUpdate()->findOrFail($orderItemGroup->id);
 
                 if (! $this->canReview($lockedOrderItemGroup)) {
-                    throw ValidationException::withMessages(['review' => 'Ulasan untuk produk ini tidak dapat dikirim.']);
+                    throw ValidationException::withMessages(['review' => __('store.validation.messages.review_unavailable')]);
                 }
 
                 if ($customer && $lockedOrderItemGroup->order->customer_id !== $customer->id) {
-                    throw ValidationException::withMessages(['review' => 'Pesanan ini bukan milik akun Anda.']);
+                    throw ValidationException::withMessages(['review' => __('store.validation.messages.review_not_owned')]);
                 }
 
                 if (($data['photo'] ?? null) instanceof UploadedFile) {

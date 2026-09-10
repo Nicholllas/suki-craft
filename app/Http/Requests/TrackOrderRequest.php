@@ -30,6 +30,6 @@ class TrackOrderRequest extends FormRequest
 
     public function messages(): array
     {
-        return ['phone.regex' => 'Gunakan nomor telepon Indonesia dengan format 08xx, +628xx, atau 628xx.'];
+        return ['phone.regex' => __('store.validation.messages.phone_format')];
     }
 }

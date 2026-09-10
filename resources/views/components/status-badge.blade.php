@@ -4,6 +4,15 @@
     $status = strtolower($status);
     $styles = [
         'pending' => 'bg-amber-50 text-amber-700 ring-amber-100',
+        'awaiting quote' => 'bg-amber-50 text-amber-700 ring-amber-100',
+        'awaiting price approval' => 'bg-rose-50 text-rose-700 ring-rose-100',
+        'awaiting payment' => 'bg-amber-50 text-amber-700 ring-amber-100',
+        'awaiting verification' => 'bg-amber-50 text-amber-700 ring-amber-100',
+        'payment confirmed' => 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+        'being arranged' => 'bg-sky-50 text-sky-700 ring-sky-100',
+        'out for delivery' => 'bg-violet-50 text-violet-700 ring-violet-100',
+        'delivered' => 'bg-emerald-50 text-emerald-700 ring-emerald-100',
+        'cancelled' => 'bg-rose-50 text-rose-700 ring-rose-100',
         'menunggu penawaran' => 'bg-amber-50 text-amber-700 ring-amber-100',
         'menunggu persetujuan harga' => 'bg-rose-50 text-rose-700 ring-rose-100',
         'menunggu pembayaran' => 'bg-amber-50 text-amber-700 ring-amber-100',

@@ -10,10 +10,7 @@ enum ReviewStatus: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::PENDING => 'Menunggu moderasi',
-            self::APPROVED => 'Disetujui',
-            self::REJECTED => 'Ditolak',
-        };
+        return __('storefront.review_status.'.$this->value);
+
     }
 }

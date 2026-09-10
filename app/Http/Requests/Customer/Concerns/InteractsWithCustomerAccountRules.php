@@ -19,7 +19,7 @@ trait InteractsWithCustomerAccountRules
 
     protected function accountMessages(): array
     {
-        return ['phone.regex' => 'Gunakan nomor WhatsApp Indonesia dengan format 08xx, +628xx, atau 628xx.'];
+        return ['phone.regex' => __('store.validation.messages.whatsapp_format')];
     }
 
     protected function normalizedPhoneInput(): ?string

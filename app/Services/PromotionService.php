@@ -14,25 +14,25 @@ class PromotionService
         $promotion = Promotion::query()->where('code', strtoupper(trim($code)))->lockForUpdate()->first();
 
         if (! $promotion) {
-            throw $this->exception('Kode promo tidak ditemukan.');
+            throw $this->exception('promo_not_found');
         }
         if (! $promotion->is_active) {
-            throw $this->exception('Kode promo sedang tidak aktif.');
+            throw $this->exception('promo_inactive');
         }
         if ($promotion->starts_at->isFuture()) {
-            throw $this->exception('Kode promo belum dapat digunakan.');
+            throw $this->exception('promo_not_started');
         }
         if ($promotion->expires_at->isPast()) {
-            throw $this->exception('Kode promo sudah kedaluwarsa.');
+            throw $this->exception('promo_expired');
         }
         if ($promotion->min_purchase !== null && $subtotal < (float) $promotion->min_purchase) {
-            throw $this->exception('Minimum pembelian untuk kode promo ini belum tercapai.');
+            throw $this->exception('promo_minimum');
         }
         if ($promotion->usage_limit !== null && $promotion->usages()->count() >= $promotion->usage_limit) {
-            throw $this->exception('Kuota penggunaan kode promo ini sudah habis.');
+            throw $this->exception('promo_usage_exhausted');
         }
         if ($promotion->usage_limit_per_customer !== null && $this->usageCountForCustomer($promotion, $customerPhone, $customerId) >= $promotion->usage_limit_per_customer) {
-            throw $this->exception('Kode promo ini sudah pernah digunakan.');
+            throw $this->exception('promo_already_used');
         }
 
         return $promotion;
@@ -77,7 +77,7 @@ class PromotionService
     {
         $phone = filled($customerPhone) ? PhoneNumberNormalizer::normalize($customerPhone) : null;
         if (! $customerId && ! $phone) {
-            throw $this->exception('Masukkan nomor WhatsApp untuk menggunakan kode promo.');
+            throw $this->exception('promo_phone_required');
         }
 
         return PromotionUsage::query()->whereBelongsTo($promotion)->where(function ($query) use ($customerId, $phone): void {
@@ -90,8 +90,8 @@ class PromotionService
         })->count();
     }
 
-    private function exception(string $message): ValidationException
+    private function exception(string $messageKey): ValidationException
     {
-        return ValidationException::withMessages(['promotion_code' => $message]);
+        return ValidationException::withMessages(['promotion_code' => __("store.validation.messages.{$messageKey}")]);
     }
 }

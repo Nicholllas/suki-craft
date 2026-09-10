@@ -79,6 +79,23 @@ test('a customer can submit a pure Custom Bouquet request with item details and 
         ->assertSee('Cokelat Kinder');
 });
 
+test('a customer can submit a Custom Bouquet request in each locale when the internal product category is inactive', function (string $locale) {
+    $this->category->update(['is_active' => false]);
+
+    $response = $this->actingAs($this->customer, 'customer')
+        ->withSession(['locale' => $locale])
+        ->post(route('custom-requests.store'), customRequestPayload(['reference_image' => null]));
+
+    $customRequest = CustomRequest::query()->sole();
+
+    $response->assertRedirect(route('customer.custom-requests.show', $customRequest));
+    expect($customRequest->customer_id)->toBe($this->customer->id)
+        ->and($customRequest->product_id)->toBe($this->customProduct->id);
+})->with([
+    'Indonesian' => 'id',
+    'English' => 'en',
+]);
+
 test('custom request provides WhatsApp links for customer follow-up and admin quote delivery', function () {
     config(['payment.whatsapp_number' => '628112223333']);
     $this->actingAs($this->customer, 'customer')->post(route('custom-requests.store'), customRequestPayload(['reference_image' => null]))->assertRedirect();

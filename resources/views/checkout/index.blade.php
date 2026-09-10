@@ -28,7 +28,7 @@
             <input type="hidden" name="idempotency_token" value="{{ session('checkout.idempotency_token') }}">
 
             <div class="space-y-6">
-                <section x-data="deliverySchedule({{ Illuminate\Support\Js::from($timeSlots) }}, '{{ now('Asia/Jakarta')->toDateString() }}', '{{ now('Asia/Jakarta')->format('H:i') }}', {{ (int) config('delivery.same_day_prep_hours', 3) }}, '{{ old('delivery_date') }}', '{{ old('delivery_time_slot') }}')" class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
+                <section x-data="deliverySchedule({{ Illuminate\Support\Js::from($timeSlots) }}, '{{ now('Asia/Jakarta')->toDateString() }}', '{{ now('Asia/Jakarta')->format('H:i') }}', {{ (int) config('delivery.same_day_prep_hours', 4) }}, '{{ old('delivery_date') }}', '{{ old('delivery_time_slot') }}')" class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
                     <div class="flex items-start gap-3">
                         <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rose-50 text-sm font-bold text-rose-600">1</span>
                         <div><h2 class="font-serif text-2xl font-semibold text-stone-800">{{ __('storefront.checkout.recipient_title') }}</h2><p class="mt-1 text-sm leading-6 text-stone-500">{{ __('storefront.checkout.recipient_intro') }}</p></div>
@@ -91,7 +91,7 @@
                 </section>
             </div>
 
-            <aside data-checkout-summary class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm lg:sticky lg:top-24 lg:p-6 lg:shadow-xl lg:shadow-stone-900/5" x-data="checkoutSummary({{ Illuminate\Support\Js::from($checkoutPricing) }}, '{{ route('checkout.promotions.validate') }}', '{{ csrf_token() }}')">
+            <aside data-checkout-summary class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm lg:sticky lg:top-24 lg:p-6 lg:shadow-xl lg:shadow-stone-900/5" x-data="checkoutSummary({{ Illuminate\Support\Js::from($checkoutPricing) }}, '{{ route('checkout.promotions.validate') }}', '{{ csrf_token() }}', {{ Illuminate\Support\Js::from(['promoFailed' => __('storefront.checkout.promo_failed'), 'promoNetworkFailed' => __('storefront.checkout.promo_network_failed')]) }})">
                 <div class="flex items-center justify-between gap-4">
                     <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">{{ __('storefront.checkout.order_eyebrow') }}</p><h2 class="mt-1 font-serif text-2xl font-semibold text-stone-800">{{ __('storefront.checkout.summary') }}</h2></div>
                     <button type="button" @click="showItems = !showItems" :aria-expanded="showItems" class="rounded-lg px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 lg:hidden"><span x-text="showItems ? '{{ __('storefront.checkout.close') }}' : '{{ __('storefront.checkout.view_bouquets') }}'"></span></button>

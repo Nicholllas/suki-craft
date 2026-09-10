@@ -44,7 +44,7 @@ Alpine.data('checkoutForm', () => ({
     },
 }));
 
-Alpine.data('checkoutSummary', (initial, validationUrl, csrfToken) => ({
+Alpine.data('checkoutSummary', (initial, validationUrl, csrfToken, messages) => ({
     code: initial.code ?? '',
     discount: initial.discount_amount,
     error: initial.message ?? '',
@@ -87,7 +87,7 @@ Alpine.data('checkoutSummary', (initial, validationUrl, csrfToken) => ({
 
             if (!response.ok) {
                 this.resetPricing();
-                this.error = data.errors?.promotion_code?.[0] ?? data.message ?? 'Kode promo tidak dapat diterapkan. Silakan coba lagi.';
+                this.error = data.errors?.promotion_code?.[0] ?? data.message ?? messages.promoFailed;
 
                 return;
             }
@@ -100,7 +100,7 @@ Alpine.data('checkoutSummary', (initial, validationUrl, csrfToken) => ({
             this.totalBeforeDiscount = data.total_before_discount;
         } catch (error) {
             this.resetPricing();
-            this.error = 'Kode promo tidak dapat diterapkan. Muat ulang halaman lalu coba kembali.';
+            this.error = messages.promoNetworkFailed;
         } finally {
             this.loading = false;
         }

@@ -30,7 +30,7 @@ class CheckoutController extends Controller
         $cart = $this->cartService->getCurrentCart();
 
         if (! $cart || $cart->itemGroups()->doesntExist()) {
-            return redirect()->route('cart.index')->with('error', 'Tambahkan buket ke keranjang sebelum checkout.');
+            return redirect()->route('cart.index')->with('error', __('store.validation.messages.checkout_cart_empty'));
         }
 
         if (! $request->session()->has('checkout.idempotency_token')) {
@@ -81,7 +81,7 @@ class CheckoutController extends Controller
         $cart = $this->cartService->getCurrentCart();
 
         if (! $cart || $cart->itemGroups()->doesntExist()) {
-            return response()->json(['message' => 'Keranjang belanja Anda masih kosong.'], 422);
+            return response()->json(['message' => __('store.validation.messages.promotion_cart_empty')], 422);
         }
 
         $subtotal = $this->cartService->getTotal();

@@ -29,7 +29,7 @@ class CustomerLoginRequest extends FormRequest
         if (! Auth::guard('customer')->attempt($this->credentials(), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
-            throw ValidationException::withMessages(['login' => 'Email atau nomor WhatsApp dan password tidak sesuai.']);
+            throw ValidationException::withMessages(['login' => __('store.validation.messages.customer_login_failed')]);
         }
 
         RateLimiter::clear($this->throttleKey());
@@ -45,7 +45,7 @@ class CustomerLoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'login' => "Terlalu banyak percobaan masuk. Coba lagi dalam {$seconds} detik.",
+            'login' => __('store.validation.messages.customer_login_throttled', ['seconds' => $seconds]),
         ]);
     }
 

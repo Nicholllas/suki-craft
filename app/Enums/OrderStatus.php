@@ -16,16 +16,7 @@ enum OrderStatus: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::AWAITING_QUOTE => 'Menunggu penawaran',
-            self::AWAITING_APPROVAL => 'Menunggu persetujuan harga',
-            self::PENDING_PAYMENT => 'Menunggu pembayaran',
-            self::AWAITING_VERIFICATION => 'Menunggu verifikasi',
-            self::PAYMENT_CONFIRMED => 'Pembayaran dikonfirmasi',
-            self::PROCESSING => 'Sedang dirangkai',
-            self::OUT_FOR_DELIVERY => 'Dalam pengiriman',
-            self::DELIVERED => 'Telah diterima',
-            self::CANCELLED => 'Dibatalkan',
-        };
+        return __('storefront.order_status.'.$this->value);
+
     }
 }

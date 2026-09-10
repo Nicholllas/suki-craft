@@ -28,7 +28,7 @@ class TrackingController extends Controller
             ->first();
 
         if (! $order) {
-            throw ValidationException::withMessages(['order_number' => 'Nomor pesanan atau nomor WhatsApp tidak cocok.']);
+            throw ValidationException::withMessages(['order_number' => __('store.validation.messages.tracking_mismatch')]);
         }
 
         $request->session()->put('tracked_order_id', $order->id);

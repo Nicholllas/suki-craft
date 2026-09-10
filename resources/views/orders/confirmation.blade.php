@@ -1,6 +1,6 @@
 @extends('layouts.store')
 
-@section('title', 'Pesanan ' . $order->order_number . ' | Suki Craft')
+@section('title', __('storefront.confirmation.title', ['number' => $order->order_number]))
 
 @section('content')
     <section class="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
@@ -8,9 +8,9 @@
             <div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-white text-emerald-600 shadow-sm">
                 <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 4 4L19 6" /></svg>
             </div>
-            <p class="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">Pesanan berhasil dibuat</p>
-            <h1 class="mt-2 font-serif text-3xl font-semibold text-stone-800 sm:text-4xl">Terima kasih, buketmu segera kami siapkan.</h1>
-            <p class="mx-auto mt-3 max-w-xl text-sm leading-6 text-stone-600">Simpan nomor pesanan ini untuk memudahkan komunikasi dengan tim Suki Craft.</p>
+            <p class="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">{{ __('storefront.confirmation.created') }}</p>
+            <h1 class="mt-2 font-serif text-3xl font-semibold text-stone-800 sm:text-4xl">{{ __('storefront.confirmation.thank_you') }}</h1>
+            <p class="mx-auto mt-3 max-w-xl text-sm leading-6 text-stone-600">{{ __('storefront.confirmation.save_number') }}</p>
             <p class="mt-5 font-mono text-lg font-bold tracking-wide text-stone-800">{{ $order->order_number }}</p>
         </div>
 
@@ -21,7 +21,7 @@
         <div class="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
             <div class="space-y-6">
                 <section class="rounded-3xl border border-stone-200 bg-white p-5 sm:p-7">
-                    <div class="flex items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Status pesanan</p><h2 class="mt-2 font-serif text-2xl font-semibold text-stone-800">{{ $order->status->label() }}</h2></div><x-status-badge :status="$order->status->label()" /></div>
+                    <div class="flex items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">{{ __('storefront.confirmation.order_status') }}</p><h2 class="mt-2 font-serif text-2xl font-semibold text-stone-800">{{ $order->status->label() }}</h2></div><x-status-badge :status="$order->status->label()" /></div>
 
                     @if ($order->status === \App\Enums\OrderStatus::AWAITING_QUOTE)
                         <div class="mt-6 rounded-2xl bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-800"><p class="font-semibold">Pesanan custom sudah kami terima.</p><p class="mt-1">Admin akan menghitung harga lalu mengirimkan link persetujuan melalui WhatsApp.</p></div>
@@ -30,7 +30,7 @@
                     @endif
                     @if (in_array($order->status, [\App\Enums\OrderStatus::PENDING_PAYMENT, \App\Enums\OrderStatus::AWAITING_VERIFICATION], true))
                         <div class="mt-6 border-t border-stone-100 pt-6">
-                            <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Instruksi pembayaran</p>
+                            <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">{{ __('storefront.confirmation.payment_instructions') }}</p>
                             <h3 class="mt-2 font-serif text-xl font-semibold text-stone-800">Bayar total Rp{{ number_format($order->total, 0, ',', '.') }}</h3>
                             <p class="mt-2 text-sm leading-6 text-stone-500">Gunakan QRIS atau transfer bank, lalu unggah bukti pembayaran agar tim kami dapat memproses pesananmu.</p>
                             @if ($order->status === \App\Enums\OrderStatus::PENDING_PAYMENT)
@@ -53,11 +53,11 @@
 
                                 <form method="POST" action="{{ route('orders.payment-proofs.store', ['orderNumber' => $order->order_number, 'token' => $order->public_token]) }}" enctype="multipart/form-data" class="mt-5 rounded-2xl border border-stone-200 p-4">
                                     @csrf
-                                    <label for="proof" class="text-sm font-semibold text-stone-800">Unggah bukti pembayaran</label>
+                                    <label for="proof" class="text-sm font-semibold text-stone-800">{{ __('storefront.confirmation.upload_proof') }}</label>
                                     <input id="proof" name="proof" type="file" accept="image/jpeg,image/png,application/pdf" required class="mt-3 block w-full rounded-xl border border-stone-200 bg-white text-sm text-stone-600 file:mr-4 file:rounded-lg file:border-0 file:bg-rose-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-rose-700 hover:file:bg-rose-100 focus:border-rose-300 focus:ring-rose-200">
-                                    <p class="mt-2 text-xs leading-5 text-stone-400">Format JPG, PNG, atau PDF dengan ukuran maksimal 5 MB.</p>
+                                    <p class="mt-2 text-xs leading-5 text-stone-400">{{ __('storefront.confirmation.upload_hint') }}</p>
                                     @error('proof')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
-                                    <button type="submit" class="mt-4 inline-flex h-11 items-center justify-center rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-600">Kirim bukti pembayaran</button>
+                                    <button type="submit" class="mt-4 inline-flex h-11 items-center justify-center rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-600">{{ __('storefront.confirmation.send_proof') }}</button>
                                 </form>
                             @endif
 
@@ -94,7 +94,7 @@
 
             <aside class="space-y-6">
                 <section class="rounded-3xl border border-stone-200 bg-white p-5">
-                    <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Pengiriman</p>
+                    <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">{{ __('storefront.confirmation.delivery') }}</p>
                     <p class="mt-3 text-sm font-semibold text-stone-800">{{ $order->customer_name }}</p>
                     <p class="mt-1 text-sm text-stone-500">{{ $order->customer_phone }}</p>
                     <p class="mt-4 text-sm font-semibold text-stone-800">{{ $order->delivery_date->translatedFormat('d F Y') }}</p>
@@ -104,7 +104,7 @@
                 </section>
 
                 <section class="rounded-3xl border border-stone-200 bg-white p-5">
-                    <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">Ringkasan pembayaran</p>
+                    <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">{{ __('storefront.confirmation.payment_summary') }}</p>
                     <dl class="mt-4 space-y-3 text-sm">
                         <div class="flex justify-between gap-4 text-stone-500"><dt>Subtotal buket</dt><dd>Rp{{ number_format($order->subtotal, 0, ',', '.') }}</dd></div>
                         <div class="flex justify-between gap-4 text-stone-500"><dt>Biaya pengiriman</dt><dd>Rp{{ number_format($order->delivery_fee, 0, ',', '.') }}</dd></div>
@@ -121,6 +121,6 @@
             </aside>
         </div>
 
-        <div class="mt-8 text-center"><a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-rose-600 transition hover:text-rose-700"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19 12H5m5-5-5 5 5 5" /></svg>Kembali ke koleksi buket</a></div>
+        <div class="mt-8 text-center"><a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-rose-600 transition hover:text-rose-700"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m19 12H5m5-5-5 5 5 5" /></svg>{{ __('storefront.confirmation.back_to_collection') }}</a></div>
     </section>
 @endsection
