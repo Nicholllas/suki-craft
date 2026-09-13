@@ -1,5 +1,6 @@
 <?php
 
+use App\Contracts\LocationProvider;
 use App\Enums\AdminRole;
 use App\Enums\CustomRequestStatus;
 use App\Enums\OrderStatus;
@@ -11,11 +12,13 @@ use App\Models\Customer;
 use App\Models\CustomRequest;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\DeliveryPricingService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     Storage::fake('local');
+    $this->app->instance(LocationProvider::class, customCheckoutLocationProvider());
 
     $this->category = Category::factory()->create(['is_active' => true]);
     $this->customProduct = Product::factory()->create([
@@ -237,15 +240,51 @@ function customRequestPayload(array $overrides = []): array
 
 function customCheckoutData(array $overrides = []): array
 {
+    $latitude = -6.25;
+    $longitude = 107.05;
+    $quote = app(DeliveryPricingService::class)->quote(
+        $latitude,
+        $longitude,
+        (int) auth('customer')->id(),
+    );
+
     return [
         'customer_email' => 'penerima@example.com',
         'customer_name' => 'Nadia Putri',
         'customer_phone' => '081234567890',
         'delivery_address' => 'Jl. Mawar No. 10, Jakarta Selatan',
+        'delivery_latitude' => $latitude,
+        'delivery_longitude' => $longitude,
+        'delivery_quote' => $quote['quote'],
         'delivery_date' => now('Asia/Jakarta')->addDays(3)->toDateString(),
         'delivery_time_slot' => '12:00-15:00',
         'idempotency_token' => fake()->uuid(),
         'notes' => 'Hubungi sebelum tiba.',
         ...$overrides,
     ];
+}
+
+function customCheckoutLocationProvider(): LocationProvider
+{
+    return new class implements LocationProvider
+    {
+        public function search(string $query): array
+        {
+            return [];
+        }
+
+        public function reverse(float $latitude, float $longitude): ?string
+        {
+            return null;
+        }
+
+        public function drivingDistance(
+            float $originLatitude,
+            float $originLongitude,
+            float $destinationLatitude,
+            float $destinationLongitude,
+        ): int {
+            return 4000;
+        }
+    };
 }

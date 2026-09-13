@@ -26,16 +26,24 @@
                     </div>
 
 
-                    <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <a href="{{ route('customer.orders.show', $order) }}" class="inline-flex items-center justify-center rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">{{ __('storefront.account_pages.orders.view_details') }}</a>
-                        @if ($order->whats_app_url)
-                            <a href="{{ $order->whats_app_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.5 2 2 6.44 2 11.9c0 2.15.7 4.15 1.9 5.78L2.68 22l4.48-1.18a10.1 10.1 0 0 0 4.88 1.24h.01c5.53 0 10.03-4.44 10.03-9.9C22.08 6.44 17.58 2 12.04 2Zm0 18.4c-1.55 0-3.07-.41-4.39-1.19l-.32-.19-2.66.7.71-2.57-.21-.34a8.09 8.09 0 0 1-1.25-4.3c0-4.48 3.65-8.13 8.13-8.13 4.48 0 8.12 3.65 8.12 8.13 0 4.48-3.65 8.13-8.13 8.13Zm4.46-6.1c-.24-.12-1.42-.7-1.64-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06a6.55 6.55 0 0 1-1.93-1.18 7.17 7.17 0 0 1-1.32-1.62c-.14-.24-.01-.37.11-.49.11-.1.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.4h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.66 4.13 3.73.58.25 1.03.4 1.38.5.58.18 1.11.15 1.53.09.47-.07 1.42-.58 1.62-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z" /></svg>
-                                {{ __('storefront.account_pages.orders.contact_admin') }}
-                            </a>
-                        @else
-                            <p class="text-xs text-stone-400">{{ __('storefront.account_pages.orders.contact_unavailable') }}</p>
-                        @endif
+                        <div class="flex flex-col gap-2">
+                            @if ($order->status === \App\Enums\OrderStatus::PENDING_PAYMENT)
+                                <a href="{{ route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]) }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2">
+                                    {{ __('storefront.account_pages.orders.continue_payment') }}
+                                    <span aria-hidden="true">→</span>
+                                </a>
+                            @endif
+                            @if ($order->whats_app_url)
+                                <a href="{{ $order->whats_app_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.5 2 2 6.44 2 11.9c0 2.15.7 4.15 1.9 5.78L2.68 22l4.48-1.18a10.1 10.1 0 0 0 4.88 1.24h.01c5.53 0 10.03-4.44 10.03-9.9C22.08 6.44 17.58 2 12.04 2Zm0 18.4c-1.55 0-3.07-.41-4.39-1.19l-.32-.19-2.66.7.71-2.57-.21-.34a8.09 8.09 0 0 1-1.25-4.3c0-4.48 3.65-8.13 8.13-8.13 4.48 0 8.12 3.65 8.12 8.13 0 4.48-3.65 8.13-8.13 8.13Zm4.46-6.1c-.24-.12-1.42-.7-1.64-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06a6.55 6.55 0 0 1-1.93-1.18 7.17 7.17 0 0 1-1.32-1.62c-.14-.24-.01-.37.11-.49.11-.1.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.4h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.66 4.13 3.73.58.25 1.03.4 1.38.5.58.18 1.11.15 1.53.09.47-.07 1.42-.58 1.62-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z" /></svg>
+                                    {{ __('storefront.account_pages.orders.contact_admin') }}
+                                </a>
+                            @else
+                                <p class="text-xs text-stone-400">{{ __('storefront.account_pages.orders.contact_unavailable') }}</p>
+                            @endif
+                        </div>
                     </div>
                 </article>
             @empty

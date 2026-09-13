@@ -115,7 +115,7 @@
                             Rincian pada setiap buket sudah mencakup biaya jasa merangkai dan harga varian yang dipilih.
                         </div>
                     </dl>
-                    <p class="mt-4 text-xs leading-5 text-stone-500">Biaya pengiriman Rp{{ number_format((float) config('delivery.flat_fee', 0), 0, ',', '.') }} akan ditambahkan pada tahap checkout.</p>
+                    <p class="mt-4 text-xs leading-5 text-stone-500">Biaya pengiriman mulai Rp{{ number_format((float) config('delivery.flat_fee', 0), 0, ',', '.') }} akan dihitung berdasarkan jarak rute pada tahap checkout.</p>
                     <div class="mt-5 flex items-end justify-between border-t border-stone-100 pt-4">
                         <span class="text-sm font-semibold text-stone-800">Total sementara</span>
                         <span class="font-serif text-2xl font-semibold text-stone-800">Rp{{ number_format($total, 0, ',', '.') }}</span>

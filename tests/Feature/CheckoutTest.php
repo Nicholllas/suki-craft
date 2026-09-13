@@ -1,5 +1,6 @@
 <?php
 
+use App\Contracts\LocationProvider;
 use App\Enums\OrderStatus;
 use App\Models\Cart;
 use App\Models\Category;
@@ -9,9 +10,11 @@ use App\Models\OrderItemGroup;
 use App\Models\OrderStatusHistory;
 use App\Models\Product;
 use App\Models\Promotion;
+use App\Services\DeliveryPricingService;
 use Carbon\Carbon;
 
 beforeEach(function () {
+    $this->app->instance(LocationProvider::class, checkoutLocationProvider());
     $this->category = Category::create([
         'is_active' => true,
         'name' => 'Buket Bunga',
@@ -65,6 +68,8 @@ test('a customer can checkout with server-calculated snapshots and view the conf
         ->assertSee('Varian terpilih')
         ->assertSee('Total = subtotal buket + biaya pengiriman − potongan promo.')
         ->assertSee('name="idempotency_token"', false)
+        ->assertSee('id="delivery-location-search"', false)
+        ->assertSee('x-ref="map"', false)
         ->assertSee('submitCheckout', false);
 
     $response = $this->actingAs($this->customer, 'customer')->post(route('checkout.store'), checkoutData());
@@ -76,6 +81,11 @@ test('a customer can checkout with server-calculated snapshots and view the conf
         ->and($order->customer_phone)->toBe('6281234567890')
         ->and((float) $order->subtotal)->toBe(350000.0)
         ->and((float) $order->delivery_fee)->toBe(20000.0)
+        ->and((float) $order->delivery_latitude)->toBe(-6.25)
+        ->and((float) $order->delivery_longitude)->toBe(107.05)
+        ->and($order->delivery_distance_meters)->toBe(4000)
+        ->and($order->delivery_route_provider)->toBe('openrouteservice')
+        ->and($order->delivery_route_calculated_at)->not->toBeNull()
         ->and((float) $order->total)->toBe(370000.0)
         ->and($order->itemGroups)->toHaveCount(1)
         ->and($order->statusHistories)->toHaveCount(1);
@@ -144,12 +154,13 @@ test('checkout recomputes and displays the session promotion with server pricing
         ->assertSee('HEMAT10')
         ->assertSee('10%')
         ->assertSee('Total sebelum diskon')
-        ->assertSee('Rp195.000')
+        ->assertSee('195.000')
         ->assertSee('177.500');
 
     $this->actingAs($this->customer, 'customer')->postJson(route('checkout.promotions.validate'), [
         'code' => $promotion->code,
         'customer_phone' => '6281234567890',
+        ...checkoutDeliveryQuoteData(),
     ])->assertSuccessful()
         ->assertJsonPath('discount_amount', 17500)
         ->assertJsonPath('total', 177500)
@@ -397,10 +408,53 @@ function checkoutData(array $overrides = []): array
         'customer_name' => 'Nadia Putri',
         'customer_phone' => '081234567890',
         'delivery_address' => 'Jl. Mawar No. 10, Jakarta Selatan',
+        ...checkoutDeliveryQuoteData(),
         'delivery_date' => today()->addDay()->toDateString(),
         'delivery_time_slot' => '12:00-15:00',
         'idempotency_token' => session('checkout.idempotency_token', fake()->uuid()),
         'notes' => 'Hubungi sebelum tiba.',
         ...$overrides,
     ];
+}
+
+function checkoutDeliveryQuoteData(): array
+{
+    $latitude = -6.25;
+    $longitude = 107.05;
+    $quote = app(DeliveryPricingService::class)->quote(
+        $latitude,
+        $longitude,
+        (int) (auth('customer')->id() ?? 0),
+    );
+
+    return [
+        'delivery_latitude' => $latitude,
+        'delivery_longitude' => $longitude,
+        'delivery_quote' => $quote['quote'],
+    ];
+}
+
+function checkoutLocationProvider(): LocationProvider
+{
+    return new class implements LocationProvider
+    {
+        public function search(string $query): array
+        {
+            return [];
+        }
+
+        public function reverse(float $latitude, float $longitude): ?string
+        {
+            return null;
+        }
+
+        public function drivingDistance(
+            float $originLatitude,
+            float $originLongitude,
+            float $destinationLatitude,
+            float $destinationLongitude,
+        ): int {
+            return 4000;
+        }
+    };
 }

@@ -138,6 +138,9 @@ return [
             'review_not_owned' => 'Pesanan ini bukan milik akun Anda.',
             'quote_approval_unavailable' => 'Penawaran ini tidak lagi dapat disetujui.',
             'quote_expired' => 'Masa berlaku penawaran telah berakhir. Silakan hubungi admin untuk penawaran baru.',
+            'delivery_out_of_range' => 'Jarak pengiriman :distance km melebihi batas maksimal :maximum km.',
+            'delivery_quote_invalid' => 'Perhitungan ongkir tidak valid atau sudah kedaluwarsa. Tentukan ulang titik pengiriman.',
+            'delivery_service_unavailable' => 'Layanan perhitungan jarak sedang tidak tersedia. Silakan coba lagi.',
         ],
     ],
 ];

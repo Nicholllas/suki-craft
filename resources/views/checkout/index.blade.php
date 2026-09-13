@@ -23,6 +23,17 @@
             <div class="mt-6 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{{ $errors->first('cart') }}</div>
         @endif
 
+        @php
+            $deliveryLocationMessages = [
+                'geolocationDenied' => __('storefront.delivery_location.geolocation_denied'),
+                'geolocationUnavailable' => __('storefront.delivery_location.geolocation_unavailable'),
+                'locationRequired' => __('storefront.delivery_location.location_required'),
+                'reverseFailed' => __('storefront.delivery_location.reverse_failed'),
+                'serviceUnavailable' => __('storefront.delivery_location.service_unavailable'),
+                'storeLocation' => __('storefront.delivery_location.store_location'),
+            ];
+        @endphp
+
         <form method="POST" action="{{ route('checkout.store') }}" x-data="checkoutForm" x-on:submit="submitCheckout($event)" class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start">
             @csrf
             <input type="hidden" name="idempotency_token" value="{{ session('checkout.idempotency_token') }}">
@@ -78,10 +89,59 @@
                             </select>
                             @error('delivery_time_slot')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
                         </div>
-                        <div class="sm:col-span-2">
-                            <label for="delivery-address" class="text-sm font-semibold text-stone-700">{{ __('storefront.checkout.delivery_address') }}</label>
-                            <textarea id="delivery-address" name="delivery_address" rows="4" required class="mt-2 w-full rounded-xl border-stone-200 px-4 py-3 text-sm leading-6 text-stone-800 placeholder:text-stone-400 focus:border-rose-300 focus:ring-rose-200 @error('delivery_address') border-rose-400 @enderror" placeholder="{{ __('storefront.checkout.address_placeholder') }}">{{ old('delivery_address', $customer?->address) }}</textarea>
+                        <div
+                            class="sm:col-span-2"
+                            x-data="deliveryLocation"
+                            x-on:delivery-quote-required.window="error = messages.locationRequired"
+                            data-csrf-token="{{ csrf_token() }}"
+                            data-initial-latitude="{{ old('delivery_latitude') }}"
+                            data-initial-longitude="{{ old('delivery_longitude') }}"
+                            data-messages="{{ json_encode($deliveryLocationMessages, JSON_THROW_ON_ERROR) }}"
+                            data-quote-url="{{ route('checkout.location.quote') }}"
+                            data-reverse-url="{{ route('checkout.location.reverse') }}"
+                            data-search-url="{{ route('checkout.location.search') }}"
+                            data-store-latitude="{{ config('delivery.store.latitude') }}"
+                            data-store-longitude="{{ config('delivery.store.longitude') }}"
+                        >
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                                <div class="min-w-0 flex-1">
+                                    <label for="delivery-location-search" class="text-sm font-semibold text-stone-700">{{ __('storefront.delivery_location.search_label') }}</label>
+                                    <input id="delivery-location-search" type="search" x-model="searchQuery" x-on:input.debounce.600ms="search" autocomplete="off" class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-rose-300 focus:ring-rose-200" placeholder="{{ __('storefront.delivery_location.search_placeholder') }}">
+                                </div>
+                                <button type="button" x-on:click="useCurrentLocation" x-bind:disabled="locating" class="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-wait disabled:opacity-60">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path stroke-linecap="round" d="M12 2v3m0 14v3M2 12h3m14 0h3" /></svg>
+                                    <span x-text="locating ? '{{ __('storefront.delivery_location.detecting') }}' : '{{ __('storefront.delivery_location.use_my_location') }}'"></span>
+                                </button>
+                            </div>
+
+                            <div class="relative">
+                                <div x-cloak x-show="searchLoading" class="mt-2 text-xs text-stone-500">{{ __('storefront.delivery_location.searching') }}</div>
+                                <div x-cloak x-show="searchResults.length > 0" class="absolute z-[1000] mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-stone-200 bg-white p-1 shadow-xl">
+                                    <template x-for="location in searchResults" :key="location.address">
+                                        <button type="button" x-on:click="selectSearchResult(location)" class="block w-full rounded-lg px-3 py-2 text-left text-sm leading-5 text-stone-700 hover:bg-rose-50" x-text="location.address"></button>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div x-ref="map" class="mt-4 h-72 w-full overflow-hidden rounded-2xl border border-stone-200 bg-stone-100"></div>
+                            <p class="mt-2 text-xs leading-5 text-stone-500">{{ __('storefront.delivery_location.map_hint') }}</p>
+
+                            <div x-cloak x-show="quoteLoading" class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">{{ __('storefront.delivery_location.calculating') }}</div>
+                            <div x-cloak x-show="quote && !quoteLoading" class="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
+                                <span>{{ __('storefront.delivery_location.quote_ready') }}</span>
+                                <span x-text="distanceKm"></span>
+                                <span>km - Rp<span x-text="new Intl.NumberFormat('id-ID').format(deliveryFee)"></span></span>
+                            </div>
+                            <p x-cloak x-show="error" x-text="error" class="mt-3 text-xs font-medium text-rose-600"></p>
+
+                            <label for="delivery-address" class="mt-5 block text-sm font-semibold text-stone-700">{{ __('storefront.checkout.delivery_address') }}</label>
+                            <textarea x-ref="address" x-model="address" id="delivery-address" name="delivery_address" rows="4" required class="mt-2 w-full rounded-xl border-stone-200 px-4 py-3 text-sm leading-6 text-stone-800 placeholder:text-stone-400 focus:border-rose-300 focus:ring-rose-200 @error('delivery_address') border-rose-400 @enderror" placeholder="{{ __('storefront.checkout.address_placeholder') }}">{{ old('delivery_address', $customer?->address) }}</textarea>
+                            <input id="delivery-latitude" type="hidden" name="delivery_latitude" x-model="latitude">
+                            <input id="delivery-longitude" type="hidden" name="delivery_longitude" x-model="longitude">
+                            <input id="delivery-quote" type="hidden" name="delivery_quote" x-model="quote">
                             @error('delivery_address')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
+                            @error('delivery_location')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
+                            @error('delivery_quote')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
                         </div>
                         <div class="sm:col-span-2">
                             <label for="notes" class="text-sm font-semibold text-stone-700">{{ __('storefront.checkout.additional_notes') }} <span class="font-normal text-stone-400">({{ __('storefront.checkout.optional') }})</span></label>
@@ -92,7 +152,7 @@
                 </section>
             </div>
 
-            <aside data-checkout-summary class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm lg:sticky lg:top-24 lg:p-6 lg:shadow-xl lg:shadow-stone-900/5" x-data="checkoutSummary({{ Illuminate\Support\Js::from($checkoutPricing) }}, '{{ route('checkout.promotions.validate') }}', '{{ csrf_token() }}', {{ Illuminate\Support\Js::from(['promoFailed' => __('storefront.checkout.promo_failed'), 'promoNetworkFailed' => __('storefront.checkout.promo_network_failed')]) }})">
+            <aside data-checkout-summary class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm lg:sticky lg:top-24 lg:p-6 lg:shadow-xl lg:shadow-stone-900/5" x-data="checkoutSummary({{ Illuminate\Support\Js::from($checkoutPricing) }}, {{ (int) $deliveryFee }}, '{{ route('checkout.promotions.validate') }}', '{{ csrf_token() }}', {{ Illuminate\Support\Js::from(['locationRequired' => __('storefront.delivery_location.location_required'), 'promoFailed' => __('storefront.checkout.promo_failed'), 'promoNetworkFailed' => __('storefront.checkout.promo_network_failed')]) }})">
                 <div class="flex items-center justify-between gap-4">
                     <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">{{ __('storefront.checkout.order_eyebrow') }}</p><h2 class="mt-1 font-serif text-2xl font-semibold text-stone-800">{{ __('storefront.checkout.summary') }}</h2></div>
                     <button type="button" @click="showItems = !showItems" :aria-expanded="showItems" class="rounded-lg px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 lg:hidden"><span x-text="showItems ? '{{ __('storefront.checkout.close') }}' : '{{ __('storefront.checkout.view_bouquets') }}'"></span></button>
@@ -119,8 +179,8 @@
 
                 <dl class="mt-5 space-y-3 text-sm">
                     <div class="flex items-center justify-between text-stone-500"><dt>{{ __('storefront.checkout.subtotal') }}</dt><dd class="font-medium text-stone-800">Rp{{ number_format($subtotal, 0, ',', '.') }}</dd></div>
-                    <div class="flex items-center justify-between text-stone-500"><dt>{{ __('storefront.checkout.delivery_fee') }}</dt><dd class="font-medium text-stone-800">Rp{{ number_format($deliveryFee, 0, ',', '.') }}</dd></div>
-                    <div class="flex items-center justify-between border-t border-stone-100 pt-3 text-stone-600"><dt class="font-semibold">{{ __('storefront.checkout.total_before_discount') }}</dt><dd class="font-semibold">Rp{{ number_format($checkoutPricing['total_before_discount'], 0, ',', '.') }}</dd></div>
+                    <div class="flex items-center justify-between text-stone-500"><dt>{{ __('storefront.checkout.delivery_fee') }}</dt><dd class="font-medium text-stone-800">Rp<span x-text="format(deliveryFee)">{{ number_format($deliveryFee, 0, ',', '.') }}</span></dd></div>
+                    <div class="flex items-center justify-between border-t border-stone-100 pt-3 text-stone-600"><dt class="font-semibold">{{ __('storefront.checkout.total_before_discount') }}</dt><dd class="font-semibold">Rp<span x-text="format(totalBeforeDiscount)">{{ number_format($checkoutPricing['total_before_discount'], 0, ',', '.') }}</span></dd></div>
                     <div class="rounded-xl bg-rose-50 p-3">
                         <label for="promotion-code" class="text-xs font-semibold text-stone-700">{{ __('storefront.checkout.promo_code') }}</label>
                         <div class="mt-2 flex gap-2">
@@ -138,7 +198,7 @@
                 </dl>
                 <p class="mt-3 text-xs leading-5 text-stone-500">{{ __('storefront.checkout.total_formula') }}</p>
 
-                <button type="submit" x-bind:disabled="isSubmitting" x-bind:aria-busy="isSubmitting" class="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white shadow-lg shadow-rose-200 transition hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70">
+                <button type="submit" x-bind:disabled="isSubmitting || !quoteReady" x-bind:aria-busy="isSubmitting" class="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-rose-500 px-5 text-sm font-semibold text-white shadow-lg shadow-rose-200 transition hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70">
                     <span x-cloak x-show="!isSubmitting">{{ __('storefront.checkout.submit') }}</span>
                     <span x-cloak x-show="isSubmitting">Memproses pesanan...</span>
                     <svg x-cloak x-show="isSubmitting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9" class="opacity-25" /><path d="M21 12a9 9 0 0 1-9 9" class="opacity-90" /></svg>

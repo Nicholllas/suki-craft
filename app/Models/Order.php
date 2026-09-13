@@ -26,6 +26,11 @@ class Order extends Model
         'customer_phone',
         'customer_email',
         'delivery_address',
+        'delivery_latitude',
+        'delivery_longitude',
+        'delivery_distance_meters',
+        'delivery_route_provider',
+        'delivery_route_calculated_at',
         'delivery_date',
         'delivery_time_slot',
         'courier_id',
@@ -48,6 +53,10 @@ class Order extends Model
     {
         return [
             'delivery_date' => 'date',
+            'delivery_latitude' => 'decimal:7',
+            'delivery_longitude' => 'decimal:7',
+            'delivery_distance_meters' => 'integer',
+            'delivery_route_calculated_at' => 'datetime',
             'delivered_at' => 'datetime',
             'delivery_fee' => 'decimal:2',
             'discount_amount' => 'decimal:2',

@@ -1,10 +1,255 @@
 
 
 import Alpine from 'alpinejs';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 
 window.Alpine = Alpine;
+
+const deliveryMarkerIcon = L.icon({
+    iconAnchor: [12, 41],
+    iconRetinaUrl: markerIcon2x,
+    iconSize: [25, 41],
+    iconUrl: markerIcon,
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+    shadowUrl: markerShadow,
+    tooltipAnchor: [16, -28],
+});
+
+Alpine.data('deliveryLocation', () => ({
+    address: '',
+    csrfToken: '',
+    deliveryFee: 0,
+    distanceKm: null,
+    error: '',
+    latitude: '',
+    locating: false,
+    longitude: '',
+    map: null,
+    marker: null,
+    messages: {},
+    quote: '',
+    quoteLoading: false,
+    quoteUrl: '',
+    reverseUrl: '',
+    searchLoading: false,
+    searchQuery: '',
+    searchResults: [],
+    searchUrl: '',
+    selectionRevision: 0,
+    storeLatitude: 0,
+    storeLongitude: 0,
+    init() {
+        this.address = this.$refs.address.value;
+        this.csrfToken = this.$el.dataset.csrfToken;
+        this.messages = JSON.parse(this.$el.dataset.messages);
+        this.quoteUrl = this.$el.dataset.quoteUrl;
+        this.reverseUrl = this.$el.dataset.reverseUrl;
+        this.searchUrl = this.$el.dataset.searchUrl;
+        this.storeLatitude = Number(this.$el.dataset.storeLatitude);
+        this.storeLongitude = Number(this.$el.dataset.storeLongitude);
+
+        this.$nextTick(() => {
+            this.map = L.map(this.$refs.map).setView([this.storeLatitude, this.storeLongitude], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Routing: <a href="https://openrouteservice.org/">openrouteservice.org</a>',
+                maxZoom: 19,
+            }).addTo(this.map);
+            L.marker([this.storeLatitude, this.storeLongitude], { icon: deliveryMarkerIcon })
+                .addTo(this.map)
+                .bindPopup(this.messages.storeLocation);
+            this.map.on('click', (event) => this.selectLocation(event.latlng.lat, event.latlng.lng, true));
+
+            const initialLatitude = Number(this.$el.dataset.initialLatitude);
+            const initialLongitude = Number(this.$el.dataset.initialLongitude);
+
+            if (Number.isFinite(initialLatitude) && Number.isFinite(initialLongitude) && initialLatitude !== 0 && initialLongitude !== 0) {
+                this.selectLocation(initialLatitude, initialLongitude, false);
+
+                return;
+            }
+
+            this.useCurrentLocation();
+        });
+    },
+    async apiRequest(url, options = {}) {
+        const response = await fetch(url, {
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': this.csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                ...options.headers,
+            },
+            ...options,
+        });
+        const payload = await response.text();
+        const data = payload ? JSON.parse(payload) : {};
+
+        if (!response.ok) {
+            const message = data.errors?.delivery_location?.[0]
+                ?? data.errors?.delivery_quote?.[0]
+                ?? data.message
+                ?? this.messages.serviceUnavailable;
+
+            throw new Error(message);
+        }
+
+        return data;
+    },
+    async calculateQuote(revision) {
+        this.quoteLoading = true;
+
+        try {
+            const data = await this.apiRequest(this.quoteUrl, {
+                body: JSON.stringify({
+                    latitude: this.latitude,
+                    longitude: this.longitude,
+                }),
+                method: 'POST',
+            });
+
+            if (revision !== this.selectionRevision) {
+                return;
+            }
+
+            this.quote = data.quote;
+            this.deliveryFee = data.delivery_fee;
+            this.distanceKm = data.distance_km;
+            this.error = '';
+            this.notifyQuoteUpdated({
+                deliveryFee: data.delivery_fee,
+                distanceKm: data.distance_km,
+                quote: data.quote,
+            });
+        } catch (error) {
+            if (revision !== this.selectionRevision) {
+                return;
+            }
+
+            this.quote = '';
+            this.deliveryFee = 0;
+            this.distanceKm = null;
+            this.error = error.message;
+            this.notifyQuoteUpdated({ deliveryFee: 0, quote: '' });
+        } finally {
+            if (revision === this.selectionRevision) {
+                this.quoteLoading = false;
+            }
+        }
+    },
+    placeMarker() {
+        const coordinates = [Number(this.latitude), Number(this.longitude)];
+
+        if (!this.marker) {
+            this.marker = L.marker(coordinates, { draggable: true, icon: deliveryMarkerIcon }).addTo(this.map);
+            this.marker.on('dragend', (event) => {
+                const position = event.target.getLatLng();
+                this.selectLocation(position.lat, position.lng, true);
+            });
+        } else {
+            this.marker.setLatLng(coordinates);
+        }
+
+        this.map.setView(coordinates, Math.max(this.map.getZoom(), 15));
+    },
+    async reverseAddress(revision) {
+        try {
+            const data = await this.apiRequest(this.reverseUrl, {
+                body: JSON.stringify({
+                    latitude: this.latitude,
+                    longitude: this.longitude,
+                }),
+                method: 'POST',
+            });
+
+            if (revision === this.selectionRevision && data.address) {
+                this.address = data.address;
+            }
+        } catch (error) {
+            if (revision === this.selectionRevision && !this.error) {
+                this.error = this.messages.reverseFailed;
+            }
+        }
+    },
+    async search() {
+        const query = this.searchQuery.trim();
+
+        if (query.length < 3) {
+            this.searchResults = [];
+
+            return;
+        }
+
+        this.searchLoading = true;
+        this.error = '';
+
+        try {
+            const data = await this.apiRequest(`${this.searchUrl}?query=${encodeURIComponent(query)}`);
+            this.searchResults = data.locations;
+        } catch (error) {
+            this.error = error.message;
+            this.searchResults = [];
+        } finally {
+            this.searchLoading = false;
+        }
+    },
+    selectSearchResult(location) {
+        this.address = location.address;
+        this.searchQuery = location.address;
+        this.searchResults = [];
+        this.selectLocation(location.latitude, location.longitude, false);
+    },
+    notifyQuoteUpdated(detail) {
+        window.dispatchEvent(new CustomEvent('delivery-quote-updated', { detail }));
+    },
+    selectLocation(latitude, longitude, shouldReverse) {
+        this.selectionRevision += 1;
+        const revision = this.selectionRevision;
+        this.latitude = Number(latitude).toFixed(7);
+        this.longitude = Number(longitude).toFixed(7);
+        this.quote = '';
+        this.deliveryFee = 0;
+        this.distanceKm = null;
+        this.error = '';
+        this.placeMarker();
+        this.notifyQuoteUpdated({ deliveryFee: 0, quote: '' });
+
+        if (shouldReverse) {
+            this.reverseAddress(revision);
+        }
+
+        this.calculateQuote(revision);
+    },
+    useCurrentLocation() {
+        if (!navigator.geolocation) {
+            this.error = this.messages.geolocationUnavailable;
+
+            return;
+        }
+
+        this.locating = true;
+        this.error = '';
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                this.locating = false;
+                this.selectLocation(position.coords.latitude, position.coords.longitude, true);
+            },
+            () => {
+                this.locating = false;
+                this.error = this.messages.geolocationDenied;
+            },
+            { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 },
+        );
+    },
+}));
 
 Alpine.data('deliverySchedule', (slots, today, currentTime, sameDayPreparationHours, selectedDate, selectedSlot) => ({
     clockTimer: null,
@@ -70,9 +315,24 @@ Alpine.data('deliverySchedule', (slots, today, currentTime, sameDayPreparationHo
 
 Alpine.data('checkoutForm', () => ({
     isSubmitting: false,
+    quoteReady: false,
+    quoteUpdatedListener: null,
+    init() {
+        this.quoteUpdatedListener = (event) => {
+            this.quoteReady = Boolean(event.detail.quote);
+        };
+        window.addEventListener('delivery-quote-updated', this.quoteUpdatedListener);
+    },
+    destroy() {
+        window.removeEventListener('delivery-quote-updated', this.quoteUpdatedListener);
+    },
     submitCheckout(event) {
-        if (this.isSubmitting) {
+        if (this.isSubmitting || !this.quoteReady) {
             event.preventDefault();
+
+            if (!this.quoteReady) {
+                window.dispatchEvent(new CustomEvent('delivery-quote-required'));
+            }
 
             return;
         }
@@ -81,16 +341,30 @@ Alpine.data('checkoutForm', () => ({
     },
 }));
 
-Alpine.data('checkoutSummary', (initial, validationUrl, csrfToken, messages) => ({
+Alpine.data('checkoutSummary', (initial, initialDeliveryFee, validationUrl, csrfToken, messages) => ({
     code: initial.code ?? '',
+    deliveryFee: initialDeliveryFee,
     discount: initial.discount_amount,
     error: initial.message ?? '',
     loading: false,
     promotionType: initial.promotion_type,
     promotionValue: initial.promotion_value,
+    quoteUpdatedListener: null,
     showItems: window.innerWidth >= 1024,
+    subtotal: initial.total_before_discount - initialDeliveryFee,
     total: initial.total,
     totalBeforeDiscount: initial.total_before_discount,
+    init() {
+        this.quoteUpdatedListener = (event) => {
+            this.deliveryFee = Number(event.detail.deliveryFee);
+            this.totalBeforeDiscount = this.subtotal + this.deliveryFee;
+            this.total = this.totalBeforeDiscount - this.discount;
+        };
+        window.addEventListener('delivery-quote-updated', this.quoteUpdatedListener);
+    },
+    destroy() {
+        window.removeEventListener('delivery-quote-updated', this.quoteUpdatedListener);
+    },
     format(value) {
         return new Intl.NumberFormat('id-ID').format(value);
     },
@@ -101,6 +375,14 @@ Alpine.data('checkoutSummary', (initial, validationUrl, csrfToken, messages) => 
         this.total = this.totalBeforeDiscount;
     },
     async applyPromotion() {
+        const deliveryQuote = document.getElementById('delivery-quote').value;
+
+        if (!deliveryQuote) {
+            this.error = messages.locationRequired;
+
+            return;
+        }
+
         this.loading = true;
         this.error = '';
 
@@ -117,6 +399,9 @@ Alpine.data('checkoutSummary', (initial, validationUrl, csrfToken, messages) => 
                 body: JSON.stringify({
                     code: this.code,
                     customer_phone: document.getElementById('customer-phone').value,
+                    delivery_latitude: document.getElementById('delivery-latitude').value,
+                    delivery_longitude: document.getElementById('delivery-longitude').value,
+                    delivery_quote: deliveryQuote,
                 }),
             });
             const payload = await response.text();
@@ -124,7 +409,10 @@ Alpine.data('checkoutSummary', (initial, validationUrl, csrfToken, messages) => 
 
             if (!response.ok) {
                 this.resetPricing();
-                this.error = data.errors?.promotion_code?.[0] ?? data.message ?? messages.promoFailed;
+                this.error = data.errors?.promotion_code?.[0]
+                    ?? data.errors?.delivery_quote?.[0]
+                    ?? data.message
+                    ?? messages.promoFailed;
 
                 return;
             }

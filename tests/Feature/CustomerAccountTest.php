@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\OrderStatus;
 use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Customer;
@@ -143,16 +144,35 @@ test('a customer only sees and opens their own orders', function () {
         ->assertSee('Rp185.000')
         ->assertDontSee('Buket Mawar')
         ->assertDontSee('Biaya jasa merangkai')
+        ->assertSeeInOrder(['Lanjutkan pembayaran', 'Hubungi admin via WhatsApp'])
+        ->assertSee($paymentUrl)
         ->assertSee('Hubungi admin via WhatsApp')
         ->assertDontSee($otherOrder->order_number);
     $this->actingAs($customer, 'customer')->get(route('customer.orders.show', $order))
         ->assertSuccessful()
         ->assertSee('Lanjutkan pembayaran')
+        ->assertSeeInOrder(['Lanjutkan pembayaran pesananmu', 'Rincian pesanan'])
         ->assertSee('Rincian pesanan')
         ->assertSee('Total pembayaran')
         ->assertSee('Hubungi admin')
         ->assertSee($paymentUrl);
     $this->actingAs($customer, 'customer')->get(route('customer.orders.show', $otherOrder))->assertNotFound();
+});
+
+test('paid orders do not show a continue payment action', function () {
+    $customer = Customer::factory()->create();
+    $order = Order::factory()->create([
+        'customer_id' => $customer->id,
+        'status' => OrderStatus::PAYMENT_CONFIRMED,
+    ]);
+
+    $this->actingAs($customer, 'customer')->get(route('customer.orders.index'))
+        ->assertSuccessful()
+        ->assertDontSee('Lanjutkan pembayaran');
+
+    $this->actingAs($customer, 'customer')->get(route('customer.orders.show', $order))
+        ->assertSuccessful()
+        ->assertDontSee('Lanjutkan pembayaran');
 });
 
 test('a customer can reset their password through the customer password broker', function () {

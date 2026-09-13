@@ -138,6 +138,9 @@ return [
             'review_not_owned' => 'This order does not belong to your account.',
             'quote_approval_unavailable' => 'This quote can no longer be approved.',
             'quote_expired' => 'The quote has expired. Please contact the admin for a new quote.',
+            'delivery_out_of_range' => 'The :distance km delivery route exceeds the :maximum km maximum.',
+            'delivery_quote_invalid' => 'The delivery quote is invalid or has expired. Please choose the delivery point again.',
+            'delivery_service_unavailable' => 'The route calculation service is currently unavailable. Please try again.',
         ],
     ],
 ];

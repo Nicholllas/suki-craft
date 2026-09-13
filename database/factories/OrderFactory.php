@@ -10,7 +10,7 @@ class OrderFactory extends Factory
     public function definition(): array
     {
         $subtotal = fake()->numberBetween(100000, 500000);
-        $deliveryFee = 15000;
+        $deliveryFee = 17000;
 
         return [
             'customer_email' => fake()->safeEmail(),
@@ -18,6 +18,11 @@ class OrderFactory extends Factory
             'customer_name' => fake()->name(),
             'customer_phone' => '08'.fake()->numerify('##########'),
             'delivery_address' => fake()->address(),
+            'delivery_latitude' => -6.3312937,
+            'delivery_longitude' => 107.0187463,
+            'delivery_distance_meters' => 4000,
+            'delivery_route_provider' => 'openrouteservice',
+            'delivery_route_calculated_at' => now(),
             'delivery_date' => fake()->dateTimeBetween('+1 day', '+30 days')->format('Y-m-d'),
             'delivery_fee' => $deliveryFee,
             'delivery_time_slot' => '12:00-15:00',

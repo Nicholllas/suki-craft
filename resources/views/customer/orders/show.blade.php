@@ -25,6 +25,17 @@
             </div>
         </div>
 
+        @if ($order->status === \App\Enums\OrderStatus::PENDING_PAYMENT)
+            <section class="mt-6 rounded-3xl border border-rose-200 bg-rose-50 p-5 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-7">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Pembayaran belum selesai</p>
+                    <h2 class="mt-2 font-serif text-2xl font-semibold text-stone-800">Lanjutkan pembayaran pesananmu</h2>
+                    <p class="mt-2 text-sm leading-6 text-stone-600">Lihat instruksi pembayaran dan unggah bukti pembayaran sebelum {{ $order->paymentDeadline()->locale('id')->translatedFormat('d F Y, H.i') }} WIB.</p>
+                </div>
+                <a href="{{ route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]) }}" class="mt-5 inline-flex shrink-0 items-center justify-center rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 sm:mt-0">Lanjutkan pembayaran</a>
+            </section>
+        @endif
+
         <section class="mt-6 rounded-3xl border border-stone-200 bg-white p-5 sm:p-7">
             <p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Rincian pesanan</p>
             <h2 class="mt-2 font-serif text-2xl font-semibold text-stone-800">Komponen harga buket</h2>
@@ -61,17 +72,6 @@
                 @endif
             </div>
         </section>
-
-        @if ($order->status === \App\Enums\OrderStatus::PENDING_PAYMENT)
-            <section class="mt-6 rounded-3xl border border-rose-200 bg-rose-50 p-5 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-7">
-                <div>
-                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-rose-500">Pembayaran belum selesai</p>
-                    <h2 class="mt-2 font-serif text-2xl font-semibold text-stone-800">Lanjutkan pembayaran pesananmu</h2>
-                    <p class="mt-2 text-sm leading-6 text-stone-600">Lihat instruksi pembayaran dan unggah bukti pembayaran sebelum {{ $order->paymentDeadline()->locale('id')->translatedFormat('d F Y, H.i') }} WIB.</p>
-                </div>
-                <a href="{{ route('orders.confirmation', ['orderNumber' => $order->order_number, 'token' => $order->public_token]) }}" class="mt-5 inline-flex shrink-0 items-center justify-center rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 sm:mt-0">Lanjutkan pembayaran</a>
-            </section>
-        @endif
 
         <div class="mt-6"><x-order-tracking-timeline :delivery-proof-url="$deliveryProofUrl" :order="$order" /></div>
 

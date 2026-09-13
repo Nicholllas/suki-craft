@@ -7,6 +7,7 @@ use App\Http\Controllers\Customer\CustomRequestController as CustomerCustomReque
 use App\Http\Controllers\Customer\OrderHistoryController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 use App\Http\Controllers\Customer\ReviewController;
+use App\Http\Controllers\DeliveryLocationController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
@@ -32,7 +33,12 @@ Route::delete('/cart/items/{cartItem}', [CartController::class, 'remove'])->name
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::get('/checkout/require-account', [CheckoutController::class, 'requireAccount'])->name('checkout.require-account');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-Route::post('/checkout/promotion', [CheckoutController::class, 'validatePromotion'])->middleware('throttle:10,1')->name('checkout.promotions.validate');
+Route::post('/checkout/promotion', [CheckoutController::class, 'validatePromotion'])->middleware(['auth:customer', 'throttle:10,1'])->name('checkout.promotions.validate');
+Route::middleware('auth:customer')->prefix('checkout/location')->name('checkout.location.')->group(function () {
+    Route::get('search', [DeliveryLocationController::class, 'search'])->middleware('throttle:delivery-geocoding')->name('search');
+    Route::post('reverse', [DeliveryLocationController::class, 'reverse'])->middleware('throttle:delivery-geocoding')->name('reverse');
+    Route::post('quote', [DeliveryLocationController::class, 'quote'])->middleware('throttle:delivery-directions')->name('quote');
+});
 Route::get('/orders/{orderNumber}/confirmation/{token}', [PaymentController::class, 'show'])->name('orders.confirmation');
 Route::post('/orders/{orderNumber}/confirmation/{token}/quote/approve', [PaymentController::class, 'approveQuote'])->name('orders.quotes.approve');
 Route::get('/orders/{orderNumber}/confirmation/{token}/qris', [PaymentController::class, 'qris'])->name('orders.qris.show');

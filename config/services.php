@@ -22,6 +22,11 @@ return [
         'key' => env('RESEND_API_KEY'),
     ],
 
+    'openrouteservice' => [
+        'base_url' => env('OPENROUTESERVICE_BASE_URL', 'https://api.heigit.org'),
+        'key' => env('OPENROUTESERVICE_API_KEY'),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

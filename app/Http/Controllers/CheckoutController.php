@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CheckoutRequest;
 use App\Services\CartService;
+use App\Services\DeliveryPricingService;
 use App\Services\OrderService;
 use App\Services\PromotionService;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +18,7 @@ class CheckoutController extends Controller
 {
     public function __construct(
         private CartService $cartService,
+        private DeliveryPricingService $deliveryPricingService,
         private OrderService $orderService,
         private PromotionService $promotionService,
     ) {}
@@ -77,7 +79,13 @@ class CheckoutController extends Controller
 
     public function validatePromotion(Request $request): JsonResponse
     {
-        $data = $request->validate(['code' => ['required', 'string', 'max:50'], 'customer_phone' => ['nullable', 'string', 'max:25']]);
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:50'],
+            'customer_phone' => ['nullable', 'string', 'max:25'],
+            'delivery_latitude' => ['required', 'numeric', 'between:-90,90'],
+            'delivery_longitude' => ['required', 'numeric', 'between:-180,180'],
+            'delivery_quote' => ['required', 'string'],
+        ]);
         $cart = $this->cartService->getCurrentCart();
 
         if (! $cart || $cart->itemGroups()->doesntExist()) {
@@ -85,10 +93,16 @@ class CheckoutController extends Controller
         }
 
         $subtotal = $this->cartService->getTotal();
+        $deliveryQuote = $this->deliveryPricingService->resolveQuote(
+            $data['delivery_quote'],
+            (int) $request->user('customer')->id,
+            (float) $data['delivery_latitude'],
+            (float) $data['delivery_longitude'],
+        );
         $promotion = $this->promotionService->validate($data['code'], $subtotal, $data['customer_phone'] ?? null, $request->user('customer')?->id);
         $request->session()->put('checkout.promotion_code', $promotion->code);
 
-        return response()->json($this->promotionService->checkoutPricing($promotion, $subtotal, (float) config('delivery.flat_fee', 0)));
+        return response()->json($this->promotionService->checkoutPricing($promotion, $subtotal, $deliveryQuote['delivery_fee']));
     }
 
     /**

@@ -13,7 +13,11 @@ use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
-    public function __construct(private CartService $cartService, private PromotionService $promotionService) {}
+    public function __construct(
+        private CartService $cartService,
+        private DeliveryPricingService $deliveryPricingService,
+        private PromotionService $promotionService,
+    ) {}
 
     public function createFromCart(array $checkoutData, ?string $promotionCode = null): Order
     {
@@ -47,9 +51,15 @@ class OrderService
                 throw $this->emptyCartException();
             }
 
+            $deliveryQuote = $this->deliveryPricingService->resolveQuote(
+                $checkoutData['delivery_quote'],
+                (int) auth('customer')->id(),
+                (float) $checkoutData['delivery_latitude'],
+                (float) $checkoutData['delivery_longitude'],
+            );
             $containsCustomBouquet = $cart->itemGroups->contains('requires_quote', true);
             $subtotal = $cart->itemGroups->sum(fn (CartItemGroup $group): float => $group->subtotal);
-            $deliveryFee = (float) config('delivery.flat_fee', 0);
+            $deliveryFee = (float) $deliveryQuote['delivery_fee'];
             if ($containsCustomBouquet && filled($promotionCode)) {
                 throw ValidationException::withMessages(['promotion_code' => __('store.validation.messages.custom_order_promotion_unavailable')]);
             }
@@ -62,6 +72,11 @@ class OrderService
                 'customer_name' => $checkoutData['customer_name'],
                 'customer_phone' => $checkoutData['customer_phone'],
                 'delivery_address' => $checkoutData['delivery_address'],
+                'delivery_latitude' => $deliveryQuote['latitude'],
+                'delivery_longitude' => $deliveryQuote['longitude'],
+                'delivery_distance_meters' => $deliveryQuote['distance_meters'],
+                'delivery_route_provider' => $deliveryQuote['provider'],
+                'delivery_route_calculated_at' => $deliveryQuote['calculated_at'],
                 'delivery_date' => $checkoutData['delivery_date'],
                 'delivery_fee' => $deliveryFee,
                 'discount_amount' => $pricing['discount_amount'],
