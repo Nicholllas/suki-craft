@@ -7,24 +7,61 @@ import 'sweetalert2/dist/sweetalert2.min.css';
 window.Alpine = Alpine;
 
 Alpine.data('deliverySchedule', (slots, today, currentTime, sameDayPreparationHours, selectedDate, selectedSlot) => ({
+    clockTimer: null,
     currentTime,
     sameDayPreparationHours,
     selectedDate,
     selectedSlot,
     slots,
     today,
-    isSlotAvailable(slot) {
-        if (this.selectedDate !== this.today) {
-            return true;
-        }
+    init() {
+        this.clearUnavailableSlot();
+        this.clockTimer = window.setInterval(() => this.refreshClock(), 60000);
+    },
+    destroy() {
+        window.clearInterval(this.clockTimer);
+    },
+    addDay(date) {
+        const [year, month, day] = date.split('-').map(Number);
 
+        return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+    },
+    isSlotAvailableToday(slot) {
         const [startHours, startMinutes] = slot.start_time.split(':').map(Number);
         const [currentHours, currentMinutes] = this.currentTime.split(':').map(Number);
         const cutoffMinutes = (startHours * 60) + startMinutes - (this.sameDayPreparationHours * 60);
 
         return (currentHours * 60) + currentMinutes < cutoffMinutes;
     },
+    minimumDeliveryDate() {
+        return Object.values(this.slots).some((slot) => this.isSlotAvailableToday(slot)) ? this.today : this.addDay(this.today);
+    },
+    isSlotAvailable(slot) {
+        if (!this.selectedDate || this.selectedDate < this.minimumDeliveryDate()) {
+            return false;
+        }
+
+        return this.selectedDate !== this.today || this.isSlotAvailableToday(slot);
+    },
+    refreshClock() {
+        const formatter = new Intl.DateTimeFormat('en-GB', {
+            hour: '2-digit',
+            hourCycle: 'h23',
+            minute: '2-digit',
+            timeZone: 'Asia/Jakarta',
+        });
+
+        this.currentTime = formatter.format(new Date());
+        this.clearUnavailableSlot();
+    },
     clearUnavailableSlot() {
+        if (this.selectedDate && this.selectedDate < this.minimumDeliveryDate()) {
+            this.selectedDate = '';
+            this.selectedSlot = '';
+
+            return;
+        }
+
         if (this.selectedSlot && !this.isSlotAvailable(this.slots[this.selectedSlot])) {
             this.selectedSlot = '';
         }
@@ -380,6 +417,38 @@ document.addEventListener('submit', (event) => {
             form.requestSubmit();
         }
     });
+});
+
+const copyFeedbackTimers = new WeakMap();
+
+document.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-copy-account]');
+
+    if (!(button instanceof HTMLButtonElement) || button.disabled || !button.dataset.copyValue) {
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(button.dataset.copyValue);
+    } catch {
+        return;
+    }
+
+    const label = button.querySelector('[data-copy-account-label]');
+
+    if (!label) {
+        return;
+    }
+
+    window.clearTimeout(copyFeedbackTimers.get(button));
+    label.textContent = button.dataset.copiedLabel;
+
+    const timer = window.setTimeout(() => {
+        label.textContent = button.dataset.copyLabel;
+        copyFeedbackTimers.delete(button);
+    }, 1800);
+
+    copyFeedbackTimers.set(button, timer);
 });
 
 Alpine.start();

@@ -82,4 +82,22 @@ return [
         'faq_eyebrow' => 'Frequently asked questions', 'faq_heading' => 'What you need to know before ordering.', 'faqs' => [['question' => 'Do I need an account to place an order?', 'answer' => 'No. You can choose a bouquet, enter recipient details, and place an order as a guest. A customer account is useful when you want to manage your profile and order history.'], ['question' => 'When do I pay for my order?', 'answer' => 'Payment is made after you place your order. The confirmation page shows QRIS or bank-transfer information, where you can also upload proof of payment.'], ['question' => 'How can I check my order status?', 'answer' => 'Open Track Order to see your order progress after payment is confirmed and delivery is scheduled.']],
         'cta_eyebrow' => 'Ready to create a surprise?', 'cta_heading' => 'Choose a bouquet that tells your story.', 'cta_action' => 'Browse bouquet collections',
     ],
+    'bank_transfer' => [
+        'manual' => 'Manual bank transfer',
+        'bank' => 'Bank',
+        'account_number' => 'Account number',
+        'account_holder' => 'Account holder',
+        'account_unset' => 'The account number has not been set',
+        'copy' => 'Copy',
+        'copied' => 'Copied',
+        'hint' => 'After transferring, upload your proof of payment using the form below.',
+    ],
+    'qris' => [
+        'method' => 'QRIS',
+        'image_alt' => 'Suki Craft payment QRIS',
+        'scan_dynamic' => 'Scan to pay the exact order total.',
+        'open_static' => 'Tap to enlarge the QRIS code.',
+        'unavailable' => 'QRIS is unavailable',
+        'above_limit' => 'For transactions above Rp:amount, please use a bank transfer.',
+    ],
 ];

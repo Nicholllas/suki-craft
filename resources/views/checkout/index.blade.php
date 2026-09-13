@@ -27,8 +27,9 @@
             @csrf
             <input type="hidden" name="idempotency_token" value="{{ session('checkout.idempotency_token') }}">
 
-            <div class="space-y-6">
-                <section x-data="deliverySchedule({{ Illuminate\Support\Js::from($timeSlots) }}, '{{ now('Asia/Jakarta')->toDateString() }}', '{{ now('Asia/Jakarta')->format('H:i') }}', {{ (int) config('delivery.same_day_prep_hours', 4) }}, '{{ old('delivery_date') }}', '{{ old('delivery_time_slot') }}')" class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
+            @php($selectedDeliveryDate = old('delivery_date', $minimumDeliveryDate))
+            <div x-data="deliverySchedule({{ Illuminate\Support\Js::from($timeSlots) }}, '{{ $deliveryScheduleToday }}', '{{ $deliveryScheduleCurrentTime }}', {{ (int) config('delivery.same_day_prep_hours', 4) }}, '{{ $selectedDeliveryDate }}', '{{ old('delivery_time_slot') }}')" class="space-y-6">
+                <section class="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
                     <div class="flex items-start gap-3">
                         <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rose-50 text-sm font-bold text-rose-600">1</span>
                         <div><h2 class="font-serif text-2xl font-semibold text-stone-800">{{ __('storefront.checkout.recipient_title') }}</h2><p class="mt-1 text-sm leading-6 text-stone-500">{{ __('storefront.checkout.recipient_intro') }}</p></div>
@@ -63,16 +64,16 @@
                     <div class="mt-6 grid gap-5 sm:grid-cols-2">
                         <div>
                             <label for="delivery-date" class="text-sm font-semibold text-stone-700">{{ __('storefront.checkout.delivery_date') }}</label>
-                            <input id="delivery-date" name="delivery_date" type="date" value="{{ old('delivery_date') }}" min="{{ $minimumDeliveryDate }}" x-model="selectedDate" x-on:change="clearUnavailableSlot" required class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm text-stone-800 focus:border-rose-300 focus:ring-rose-200 @error('delivery_date') border-rose-400 @enderror">
+                            <input id="delivery-date" name="delivery_date" type="date" value="{{ $selectedDeliveryDate }}" min="{{ $minimumDeliveryDate }}" x-bind:min="minimumDeliveryDate()" x-model="selectedDate" x-on:change="clearUnavailableSlot" required class="mt-2 h-12 w-full rounded-xl border-stone-200 px-4 text-sm text-stone-800 focus:border-rose-300 focus:ring-rose-200 @error('delivery_date') border-rose-400 @enderror">
                             <p class="mt-2 text-xs text-stone-400">{{ __('storefront.checkout.delivery_date_hint') }}</p>
                             @error('delivery_date')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
                             <label for="delivery-time-slot" class="text-sm font-semibold text-stone-700">{{ __('storefront.checkout.arrival_time') }}</label>
-                            <select id="delivery-time-slot" name="delivery_time_slot" x-model="selectedSlot" required class="mt-2 h-12 w-full rounded-xl border-stone-200 bg-white px-4 text-sm text-stone-800 focus:border-rose-300 focus:ring-rose-200 @error('delivery_time_slot') border-rose-400 @enderror">
+                            <select id="delivery-time-slot" name="delivery_time_slot" x-model="selectedSlot" x-bind:disabled="!selectedDate" required class="mt-2 h-12 w-full rounded-xl border-stone-200 bg-white px-4 text-sm text-stone-800 focus:border-rose-300 focus:ring-rose-200 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400 @error('delivery_time_slot') border-rose-400 @enderror">
                                 <option value="">{{ __('storefront.checkout.choose_delivery_time') }}</option>
                                 @foreach ($timeSlots as $value => $slot)
-                                    <option value="{{ $value }}" :disabled="!isSlotAvailable(slots['{{ $value }}'])" @selected(old('delivery_time_slot') === $value)>{{ __('delivery.slots.'.$value) }}</option>
+                                    <option value="{{ $value }}" :disabled="!isSlotAvailable(slots['{{ $value }}'])" @disabled($selectedDeliveryDate === $deliveryScheduleToday && ! $slot['is_available_today']) @selected(old('delivery_time_slot') === $value)>{{ __('delivery.slots.'.$value) }}</option>
                                 @endforeach
                             </select>
                             @error('delivery_time_slot')<p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>@enderror

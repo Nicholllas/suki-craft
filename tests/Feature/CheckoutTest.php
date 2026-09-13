@@ -262,6 +262,42 @@ test('checkout rejects past delivery dates', function () {
     expect(Order::query()->doesntExist())->toBeTrue();
 });
 
+test('checkout disables delivery dates and slots that have passed the four-hour cutoff', function (string $time, string $minimumDate, array $disabledSlots) {
+    Carbon::setTestNow(Carbon::parse("2026-08-18 {$time}", 'Asia/Jakarta'));
+    config(['delivery.same_day_prep_hours' => 4]);
+
+    $this->actingAs($this->customer, 'customer')->post(route('cart.add'), [
+        'bundle_quantity' => 1,
+        'product_id' => $this->product->id,
+        'selected_variants' => [$this->variant->id => 1],
+    ])->assertRedirect();
+
+    $response = $this->actingAs($this->customer, 'customer')->get(route('checkout.index'));
+    $previousLibxmlState = libxml_use_internal_errors(true);
+    $document = new DOMDocument;
+    $document->loadHTML($response->getContent());
+    libxml_clear_errors();
+    libxml_use_internal_errors($previousLibxmlState);
+    $xpath = new DOMXPath($document);
+
+    $deliveryDate = $xpath->query('//*[@id="delivery-date"]')->item(0);
+    expect($deliveryDate?->getAttribute('min'))->toBe($minimumDate)
+        ->and($deliveryDate?->getAttribute('value'))->toBe($minimumDate)
+        ->and($deliveryDate?->hasAttribute('x-bind:min'))->toBeTrue();
+
+    foreach (array_keys(config('delivery.time_slots')) as $slot) {
+        $option = $xpath->query("//option[@value='{$slot}']")->item(0);
+
+        expect($option?->hasAttribute('disabled'))->toBe(in_array($slot, $disabledSlots, true));
+    }
+
+    $response->assertOk()->assertSee('x-bind:disabled="!selectedDate"', false);
+})->with([
+    'before the afternoon cutoff' => ['07:59', '2026-08-18', ['09:00-12:00']],
+    'at the afternoon cutoff' => ['08:00', '2026-08-18', ['09:00-12:00', '12:00-15:00']],
+    'after every cutoff today' => ['11:00', '2026-08-19', []],
+]);
+
 test('checkout rejects a delivery slot after its same-day preparation cutoff in Jakarta time', function () {
     Carbon::setTestNow(Carbon::parse('2026-08-18 13:00', 'Asia/Jakarta'));
 

@@ -40,12 +40,15 @@ class PaymentController extends Controller
             'latestPaymentProof',
             'statusHistories' => fn ($query) => $query->orderBy('created_at')->orderBy('id'),
         ]);
+        $qrisAvailable = $this->qrisDynamicPayloadService->isAvailableFor($order);
 
         return view('orders.confirmation', [
             'deliveryProofUrl' => $order->delivery_proof_path ? route('orders.delivery-proofs.show', ['orderNumber' => $order->order_number, 'token' => $order->public_token]) : null,
             'order' => $order,
             'payment' => $payment,
-            'qrisImageUrl' => $this->qrisDynamicPayloadService->isEnabled($payment)
+            'qrisAvailable' => $qrisAvailable,
+            'qrisMaximumOrderAmount' => $this->qrisDynamicPayloadService->maximumOrderAmount(),
+            'qrisImageUrl' => $qrisAvailable && $this->qrisDynamicPayloadService->isEnabled($payment)
                 ? route('orders.qris.show', ['orderNumber' => $order->order_number, 'token' => $order->public_token])
                 : null,
             'whatsAppUrl' => $this->orderWhatsAppService->followUpUrl($order),
@@ -63,6 +66,8 @@ class PaymentController extends Controller
     public function qris(string $orderNumber, string $token): Response
     {
         $order = $this->orderFromToken($orderNumber, $token);
+        abort_unless($this->qrisDynamicPayloadService->isAvailableFor($order), 404);
+
         $svg = $this->qrisDynamicPayloadService->svgFor($order, $this->qrisDynamicPayloadService->paymentConfiguration());
 
         abort_unless($svg, 404);

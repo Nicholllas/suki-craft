@@ -39,15 +39,15 @@ class CheckoutController extends Controller
         $cart->load(['itemGroups.bouquetSize', 'itemGroups.customRequest', 'itemGroups.product.category', 'itemGroups.product.images', 'itemGroups.variants.productVariant']);
         $subtotal = $this->cartService->getTotal();
         $deliveryFee = (float) config('delivery.flat_fee', 0);
+        $deliverySchedule = $this->deliverySchedule();
 
         return view('checkout.index', [
             'cart' => $cart,
             'checkoutPricing' => $this->sessionPromotionPricing($request, $subtotal, $deliveryFee),
             'customer' => $request->user('customer'),
             'deliveryFee' => $deliveryFee,
-            'minimumDeliveryDate' => now('Asia/Jakarta')->toDateString(),
             'subtotal' => $subtotal,
-            'timeSlots' => config('delivery.time_slots', []),
+            ...$deliverySchedule,
         ]);
     }
 
@@ -89,6 +89,28 @@ class CheckoutController extends Controller
         $request->session()->put('checkout.promotion_code', $promotion->code);
 
         return response()->json($this->promotionService->checkoutPricing($promotion, $subtotal, (float) config('delivery.flat_fee', 0)));
+    }
+
+    /**
+     * @return array{deliveryScheduleCurrentTime: string, deliveryScheduleToday: string, minimumDeliveryDate: string, timeSlots: array<string, array<string, mixed>>}
+     */
+    private function deliverySchedule(): array
+    {
+        $now = now('Asia/Jakarta');
+        $today = $now->copy()->startOfDay();
+        $preparationHours = (int) config('delivery.same_day_prep_hours', 4);
+        $timeSlots = collect(config('delivery.time_slots', []))->map(function (array $slot) use ($now, $preparationHours, $today): array {
+            $cutoff = $today->copy()->setTimeFromTimeString($slot['start_time'])->subHours($preparationHours);
+
+            return [...$slot, 'is_available_today' => $now->lessThan($cutoff)];
+        })->all();
+
+        return [
+            'deliveryScheduleCurrentTime' => $now->format('H:i'),
+            'deliveryScheduleToday' => $today->toDateString(),
+            'minimumDeliveryDate' => collect($timeSlots)->contains('is_available_today', true) ? $today->toDateString() : $today->copy()->addDay()->toDateString(),
+            'timeSlots' => $timeSlots,
+        ];
     }
 
     private function redirectToAccountRequirement(): RedirectResponse

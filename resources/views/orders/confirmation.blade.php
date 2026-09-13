@@ -37,11 +37,32 @@
                                 <p class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">Selesaikan pembayaran sebelum {{ $order->paymentDeadline()->locale('id')->translatedFormat('d F Y, H.i') }} WIB, yaitu sebelum slot pengiriman dimulai.</p>
                             @endif
 
-                            <div class="mt-5 grid gap-5 sm:grid-cols-2">
+                            <div class="mt-5 grid gap-5 sm:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
                                 @if (filled($payment['bank_name']) || filled($payment['bank_account_number']))
-                                    <div class="rounded-2xl bg-stone-50 p-4"><p class="text-xs font-bold uppercase tracking-[0.14em] text-stone-400">Transfer bank</p><p class="mt-3 text-sm font-semibold text-stone-800">{{ $payment['bank_name'] ?: 'Bank' }}</p><p class="mt-1 font-mono text-base font-bold text-stone-800">{{ $payment['bank_account_number'] ?: 'Nomor rekening belum diatur' }}</p>@if (filled($payment['bank_account_holder']))<p class="mt-1 text-xs text-stone-500">a.n. {{ $payment['bank_account_holder'] }}</p>@endif</div>
+                                    <x-bank-transfer-card :bank-name="$payment['bank_name']" :account-number="$payment['bank_account_number']" :account-holder="$payment['bank_account_holder']" />
                                 @endif
-                                <a href="{{ $qrisImageUrl ?? asset($payment['qris_path']) }}" target="_blank" rel="noopener noreferrer" class="group rounded-2xl border border-rose-100 bg-rose-50 p-3 text-center transition hover:border-rose-200 hover:bg-rose-100/60"><img src="{{ $qrisImageUrl ?? asset($payment['qris_path']) }}" alt="QRIS pembayaran Suki Craft" class="mx-auto aspect-square w-full max-w-52 rounded-xl bg-white object-contain p-2"><span class="mt-2 block text-xs font-semibold text-rose-700">{{ $qrisImageUrl ? 'Scan untuk bayar sesuai total pesanan' : 'Ketuk untuk perbesar QRIS' }}</span></a>
+                                @if ($qrisAvailable)
+                                    <a href="{{ $qrisImageUrl ?? asset($payment['qris_path']) }}" target="_blank" rel="noopener noreferrer" class="group flex min-w-0 flex-col rounded-2xl border border-rose-100 bg-white p-5 text-left shadow-sm transition hover:border-rose-200 hover:shadow-md" data-qris-payment-card>
+                                        <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">{{ __('storefront.qris.method') }}</p>
+                                        <div class="mt-4 flex flex-1 items-center justify-center border-t border-stone-200 pt-5">
+                                            <img src="{{ $qrisImageUrl ?? asset($payment['qris_path']) }}" alt="{{ __('storefront.qris.image_alt') }}" class="aspect-square w-full max-w-48 rounded-xl bg-rose-50 object-contain p-3 transition group-hover:bg-rose-100/70">
+                                        </div>
+                                        <span class="mt-5 block border-t border-stone-100 pt-4 text-center text-xs leading-5 text-stone-500">{{ $qrisImageUrl ? __('storefront.qris.scan_dynamic') : __('storefront.qris.open_static') }}</span>
+                                    </a>
+                                @else
+                                    <div class="flex min-w-0 flex-col rounded-2xl border border-rose-100 bg-white p-5 shadow-sm" data-qris-payment-card data-qris-disabled aria-disabled="true">
+                                        <p class="text-xs font-bold uppercase tracking-[0.16em] text-rose-500">{{ __('storefront.qris.method') }}</p>
+                                        <div class="mt-4 flex flex-1 flex-col items-center justify-center border-t border-stone-200 pt-5 text-center">
+                                            <span class="grid h-11 w-11 place-items-center rounded-full bg-stone-100 text-stone-500">
+                                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 10V8a4 4 0 1 1 8 0v2m-9 0h10a1 1 0 0 1 1 1v8H6v-8a1 1 0 0 1 1-1Z"/>
+                                                </svg>
+                                            </span>
+                                            <p class="mt-3 text-sm font-semibold text-stone-700">{{ __('storefront.qris.unavailable') }}</p>
+                                        </div>
+                                        <p class="mt-5 border-t border-stone-100 pt-4 text-center text-xs leading-5 text-stone-500">{{ __('storefront.qris.above_limit', ['amount' => number_format($qrisMaximumOrderAmount, 0, ',', '.')]) }}</p>
+                                    </div>
+                                @endif
                             </div>
 
                             @if ($order->status === \App\Enums\OrderStatus::AWAITING_VERIFICATION)

@@ -98,4 +98,22 @@ return [
         'faq_eyebrow' => 'Pertanyaan umum', 'faq_heading' => 'Yang perlu Anda tahu sebelum memesan.', 'faqs' => [['question' => 'Apakah saya perlu membuat akun untuk memesan?', 'answer' => 'Tidak. Anda dapat memilih buket, mengisi detail penerima, dan membuat pesanan sebagai tamu. Akun pelanggan dapat digunakan bila Anda ingin mengelola profil dan riwayat pesanan.'], ['question' => 'Kapan saya membayar pesanan?', 'answer' => 'Pembayaran dilakukan setelah pesanan dibuat. Halaman konfirmasi akan menampilkan QRIS atau informasi transfer bank, lalu Anda dapat mengunggah bukti pembayaran.'], ['question' => 'Bagaimana cara mengetahui status pesanan?', 'answer' => 'Buka menu Lacak Pesanan untuk melihat perkembangan pesanan setelah pembayaran dikonfirmasi dan pengiriman dijadwalkan.']],
         'cta_eyebrow' => 'Siap membuat kejutan?', 'cta_heading' => 'Pilih buket yang paling mewakili cerita Anda.', 'cta_action' => 'Lihat koleksi buket',
     ],
+    'bank_transfer' => [
+        'manual' => 'Transfer manual',
+        'bank' => 'Bank',
+        'account_number' => 'Nomor rekening',
+        'account_holder' => 'Atas nama',
+        'account_unset' => 'Nomor rekening belum diatur',
+        'copy' => 'Salin',
+        'copied' => 'Tersalin',
+        'hint' => 'Setelah transfer, unggah bukti pembayaran melalui formulir di bawah.',
+    ],
+    'qris' => [
+        'method' => 'QRIS',
+        'image_alt' => 'QRIS pembayaran Suki Craft',
+        'scan_dynamic' => 'Scan untuk membayar sesuai total pesanan.',
+        'open_static' => 'Ketuk untuk memperbesar QRIS.',
+        'unavailable' => 'QRIS tidak tersedia',
+        'above_limit' => 'Untuk transaksi di atas Rp:amount, silakan gunakan transfer bank.',
+    ],
 ];

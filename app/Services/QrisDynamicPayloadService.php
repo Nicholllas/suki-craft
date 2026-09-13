@@ -39,6 +39,16 @@ class QrisDynamicPayloadService
         return filled($payment['qris_payload']);
     }
 
+    public function isAvailableFor(Order $order): bool
+    {
+        return (float) $order->total <= $this->maximumOrderAmount();
+    }
+
+    public function maximumOrderAmount(): int
+    {
+        return (int) config('payment.qris_max_order_amount', 500_000);
+    }
+
     public function svgFor(Order $order, array $payment): ?string
     {
         $staticPayload = $payment['qris_payload'];
